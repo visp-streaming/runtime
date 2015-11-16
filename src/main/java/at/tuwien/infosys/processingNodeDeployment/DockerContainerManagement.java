@@ -2,12 +2,15 @@ package at.tuwien.infosys.processingNodeDeployment;
 
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.spotify.docker.client.*;
 import com.spotify.docker.client.messages.Container;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -27,18 +29,13 @@ public class DockerContainerManagement {
     @Autowired
     private OperatorConfiguration operatorConfiguration;
 
+    @Autowired
+    private DockerContainerRepository dcr;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
-    private HashMap<String, DockerContainer> deployedContainer;
-
-    public DockerContainerManagement() {
-        if (deployedContainer==null) {
-            deployedContainer = new HashMap<>();
-        }
-    }
-
     public void updateDeployedContainer(List<String> hosts) throws DockerCertificateException, DockerException, InterruptedException {
-        deployedContainer = new HashMap<>();
+        dcr.deleteAll();
 
         for (String host : hosts) {
             final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(host)).build();
@@ -52,16 +49,16 @@ public class DockerContainerManagement {
 
             for (Container container : containers) {
                 DockerContainer dc = new DockerContainer();
-                dc.setId(container.id());
+                dc.setContainerid(container.id());
                 dc.setImage(container.image());
                 dc.setHost(host);
-                deployedContainer.put(container.id(), dc);
+                dc.setStatus("running");
+                dcr.save(dc);
             }
         }
     }
 
     public void startContainer(String dockerHost, String operator, String infrastructureHost) throws DockerException, InterruptedException {
-        //TODO add configuration to manage multiple hosts
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).build();
 
         docker.pull(operatorConfiguration.getImage(operator));
@@ -72,6 +69,7 @@ public class DockerContainerManagement {
         environmentVariables.add("SPRING_REDIS_HOST=" + infrastructureHost);
         environmentVariables.add("OUTGOINGEXCHANGE=" + operator);
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(operator));
+        environmentVariables.add("ROLE=" + operator);
 
 
         //TODO make this flexible in terms of core and memory
@@ -97,36 +95,35 @@ public class DockerContainerManagement {
         docker.startContainer(id);
 
         DockerContainer dc = new DockerContainer();
-        dc.setId(id);
+        dc.setContainerid(id);
         dc.setImage(operatorConfiguration.getImage(operator));
         dc.setHost(dockerHost);
         dc.setOperator(operator);
 
-        deployedContainer.put(dc.getId(), dc);
+        dcr.save(dc);
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
-        docker.killContainer(dc.getId());
-        docker.removeContainer(dc.getId());
+        docker.killContainer(dc.getContainerid());
+        docker.removeContainer(dc.getContainerid());
+        dcr.delete(dc);
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
         final String[] command = {"bash", "-c", cmd};
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
 
-        final String execId = docker.execCreate(dc.getId(), command, DockerClient.ExecParameter.STDOUT, DockerClient.ExecParameter.STDERR);
+        final String execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecParameter.STDOUT, DockerClient.ExecParameter.STDERR);
         final LogStream output = docker.execStart(execId);
         String result = output.readFully();
         LOG.info(result);
         return result;
     }
 
-    public HashMap<String, DockerContainer> getDeployedContainer() {
-        return deployedContainer;
-    }
-
-    public void removeDeployedContainerFromList(String id) {
-        deployedContainer.remove(id);
+    public void removeDeployedContainerFromList(DockerContainer dc) {
+        dc.setStatus("stopping");
+        dc.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dcr.save(dc);
     }
 }

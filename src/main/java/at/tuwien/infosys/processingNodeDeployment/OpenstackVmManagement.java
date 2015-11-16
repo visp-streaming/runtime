@@ -1,12 +1,15 @@
 package at.tuwien.infosys.processingNodeDeployment;
 
 
+import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.entities.DockerHost;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.*;
 import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +26,10 @@ public class OpenstackVmManagement {
     private String OPENSTACK_TENANT_NAME;
 
     private OSClient os;
+
+    @Autowired
+    private DockerHostRepository dhr;
+
 
     //TODO implement management for Openstack images
 
@@ -65,12 +72,25 @@ public class OpenstackVmManagement {
 
         LOG.info("Server with id: " + server.getId() + " was started.");
 
+        DockerHost dh = new DockerHost();
+        //TODO set actual cores and ram
+        dh.setCores(3);
+        dh.setRam(5120);
+        dh.setUrl(server.getAccessIPv4());
+        dh.setHostid(server.getId());
+
+        dhr.save(dh);
+
         return server.getId();
     }
 
     public void stopVM(String serverId) {
         setup();
+
         os.compute().servers().delete(serverId);
+        DockerHost dh = dhr.findByHostid(serverId).get(0);
+        dhr.delete(dh);
+
         LOG.info("Server with id: " + serverId + " was stopped.");
     }
 

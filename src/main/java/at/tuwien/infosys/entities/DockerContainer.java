@@ -1,21 +1,30 @@
 package at.tuwien.infosys.entities;
 
-/**
- * Created by hochi on 13/11/15.
- */
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
 public class DockerContainer {
 
-    private String id;
+    @Id
+    @GeneratedValue(strategy= GenerationType.AUTO)
+    private long id;
+    private String containerid;
     private String host;
     private String image;
     private String operator;
+    private String status;
+    private String terminationTime;
 
-    public String getId() {
-        return id;
+    public String getContainerid() {
+        return containerid;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setContainerid(String containerid) {
+        this.containerid = containerid;
     }
 
     public String getHost() {
@@ -40,5 +49,44 @@ public class DockerContainer {
 
     public void setOperator(String operator) {
         this.operator = operator;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getTerminationTime() {
+        return terminationTime;
+    }
+
+    public void setTerminationTime(String terminationTime) {
+        this.terminationTime = terminationTime;
+    }
+
+    public DockerContainer() {
+    }
+
+    public DockerContainer(String containerid, String host, String image, String operator) {
+        this.containerid = containerid;
+        this.host = host;
+        this.image = image;
+        this.operator = operator;
+        this.status = "running";
+    }
+
+    @Override
+    public String toString() {
+        return "DockerContainer{" +
+                "id=" + id +
+                ", containerid='" + containerid + '\'' +
+                ", host='" + host + '\'' +
+                ", image='" + image + '\'' +
+                ", operator='" + operator + '\'' +
+                ", status='" + status + '\'' +
+                '}';
     }
 }

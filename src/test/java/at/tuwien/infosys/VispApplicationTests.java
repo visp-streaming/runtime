@@ -9,8 +9,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(classes = VispApplication.class)
 public class VispApplicationTests {
 
+
 	@Test
 	public void contextLoads() {
 	}
+
 
 }

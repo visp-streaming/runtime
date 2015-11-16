@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 @Service
@@ -91,6 +93,28 @@ public class TopologyManagement {
             }
         }
         return incomingQueues.toString();
+    }
+
+    public List<String> getIncomingQueuesAsList(String operator) {
+        List<String> incomingQueues = new ArrayList<>();
+        for (Operator op : topology.getTopologyAsList()) {
+            if (op.getName().equals(operator)) {
+                if (op.getSources()!=null) {
+                    for (Operator source : op.getSources()) {
+                        incomingQueues.add(op.getName() + source.getName());
+                    }
+                }
+            }
+        }
+        return incomingQueues;
+    }
+
+    public List<String> getOperatorsAsList() {
+        List<String> operators = new ArrayList<>();
+        for (Operator op : topology.getTopologyAsList()) {
+            operators.add(op.getName());
+        }
+        return operators;
     }
 
 }

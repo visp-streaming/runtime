@@ -1,7 +1,10 @@
 package at.tuwien.infosys.processingNodeDeployment;
 
 import at.tuwien.infosys.configuration.Topology;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.Operator;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerException;
@@ -11,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @Service
@@ -27,23 +28,19 @@ public class ProcessingNodeManagement {
 
     private Integer graceperiod = 2;
 
-    private Map<DateTime, DockerContainer> toBeShutDown = new HashMap<>();
+    @Autowired
+    private DockerContainerRepository dcr;
 
-
-    //TODO remove host definition from here
-
-    private String dockerHost = "http://128.130.172.224:2375";
-    //TODO split up for different hosts broker, redis, ...
-    private String infrastructureHost = "128.130.172.225";
+    @Autowired
+    private DockerHostRepository dhr;
 
 
     private void housekeeping() {
-        for (Map.Entry<DateTime, DockerContainer> container : toBeShutDown.entrySet()) {
+        for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-
-            if (now.isAfter(container.getKey().plusMinutes(2))) {
+            if (now.isAfter(new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod))) {
                 try {
-                    dcm.removeContainer(container.getValue());
+                    dcm.removeContainer(dc);
                 } catch (DockerException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -53,7 +50,7 @@ public class ProcessingNodeManagement {
         }
     }
 
-    public void initializeTopology() {
+    public void initializeTopology(String dockerHost, String infrastructureHost) {
         try {
             for (Operator op : topology.getTopologyAsList()) {
                 if (op.getName().equals("source")) {
@@ -61,8 +58,6 @@ public class ProcessingNodeManagement {
                 }
                 dcm.startContainer(dockerHost, op.getName(), infrastructureHost);
             }
-
-
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (DockerException e) {
@@ -71,16 +66,19 @@ public class ProcessingNodeManagement {
     }
 
     public void cleanup() {
-        List<String> hosts = new ArrayList<>();
-        hosts.add(dockerHost);
+        List<String> hostString = new ArrayList<>();
+
+        for (DockerHost dh : dhr.findAll()) {
+            hostString.add(dh.getHostid());
+        }
+
 
         try {
-            dcm.updateDeployedContainer(hosts);
+            dcm.updateDeployedContainer(hostString);
 
-            for (Map.Entry<String, DockerContainer> container : dcm.getDeployedContainer().entrySet()) {
-                dcm.removeContainer(container.getValue());
+            for (DockerContainer dc : dcr.findAll()) {
+                dcm.removeContainer(dc);
             }
-
 
         } catch (DockerCertificateException e) {
             e.printStackTrace();
@@ -89,12 +87,9 @@ public class ProcessingNodeManagement {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
-        //TODO consider more than 1 dockerHost
     }
 
-    public void scaleup(String operator) {
+    public void scaleup(String operator, String dockerHost, String infrastructureHost) {
         housekeeping();
         try {
             dcm.startContainer(dockerHost, operator, infrastructureHost);
@@ -108,28 +103,19 @@ public class ProcessingNodeManagement {
     public void scaleDown(String operator) {
         housekeeping();
 
-        for (Map.Entry<String, DockerContainer> container : dcm.getDeployedContainer().entrySet()) {
-            if (container.getValue().getOperator().equals(operator)) {
-                //TODO in processing nodes: check if killme file is available
-
-
+        for (DockerContainer dc : dcr.findByOperator(operator)) {
                 try {
-                    dcm.executeCommand(container.getValue(), "cd ~ ; touch killme");
+                    dcm.executeCommand(dc, "cd ~ ; touch killme");
                 } catch (DockerException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
-                toBeShutDown.put(new DateTime(DateTimeZone.UTC), container.getValue());
-                dcm.removeDeployedContainerFromList(container.getKey());
-
+                dcm.removeDeployedContainerFromList(dc);
                 break;
-            }
         }
-
     }
-
 
 
 }

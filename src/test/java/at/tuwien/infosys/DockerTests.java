@@ -1,11 +1,15 @@
 package at.tuwien.infosys;
 
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.processingNodeDeployment.DockerContainerManagement;
 import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
 import com.spotify.docker.client.DockerException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -20,6 +24,11 @@ public class DockerTests {
     @Autowired
     private ProcessingNodeManagement pcm;
 
+    @Autowired
+    private DockerContainerRepository dcr;
+
+    private static final Logger LOG = LoggerFactory.getLogger(DockerTests.class);
+
     @Ignore
     @Test
     public void startupContainer() throws DockerException, InterruptedException {
@@ -29,10 +38,9 @@ public class DockerTests {
     @Ignore
     @Test
     public void initializeTopology() throws DockerException, InterruptedException {
-        pcm.initializeTopology();
+        pcm.initializeTopology("http://128.130.172.224:2375", "http://128.130.172.225");
     }
 
-    @Ignore
     @Test
     public void cleanupImages() throws DockerException, InterruptedException {
         pcm.cleanup();
@@ -40,8 +48,19 @@ public class DockerTests {
 
     @Test
     public void scalingTest() {
-        pcm.scaleup("speed");
+        pcm.scaleup("speed", "http://128.130.172.224:2375", "http://128.130.172.225");
+        for (DockerContainer dc : dcr.findByOperator("speed")) {
+            LOG.info(dc.toString());
+        }
         pcm.scaleDown("speed");
+        for (DockerContainer dc : dcr.findByOperator("speed")) {
+            LOG.info(dc.toString());
+        }
+    }
+
+    @Test
+    public void scaledown() {
+        pcm.scaleDown("monitor");
     }
 
 }
