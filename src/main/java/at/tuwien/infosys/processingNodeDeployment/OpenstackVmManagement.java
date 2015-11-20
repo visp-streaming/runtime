@@ -30,9 +30,6 @@ public class OpenstackVmManagement {
     @Autowired
     private DockerHostRepository dhr;
 
-
-    //TODO implement management for Openstack images
-
     public void setup() {
         OPENSTACK_AUTH_URL = System.getenv("OS_AUTH_URL");
         OPENSTACK_USERNAME = System.getenv("OS_USERNAME");
@@ -71,6 +68,8 @@ public class OpenstackVmManagement {
         Server server = os.compute().servers().bootAndWaitActive(sc, 120000);
 
         LOG.info("Server with id: " + server.getId() + " was started.");
+
+
 
         DockerHost dh = new DockerHost();
         //TODO set actual cores and ram

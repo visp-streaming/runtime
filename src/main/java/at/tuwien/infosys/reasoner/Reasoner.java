@@ -41,6 +41,7 @@ public class Reasoner {
         //omgmt.startVM("dockerHost", "m2.medium", "e351847d-1ffc-4566-a16b-17fa80105459");
 
         //TODO start infrastructureHost
+        //TODO configure infrastructure host
         //omgmt.startVM("infrastructureHost", "m2.medium", "TODO");
 
         pcm.initializeTopology(dockerHost, infrastructureHost);
@@ -52,31 +53,32 @@ public class Reasoner {
 
     public void updateResourceconfiguration() {
 
+        LOG.info("Start Reasoner");
+
         //TODO consider host scaling also in here
         //TODO implement a host configuration (always maximize the deployment of operators on one host)
         //TODO implement a migraiton mechanism (spawn a new one and scale down the old one)
         //TODO monitor the resource usage of a host
 
         for (String operator : topologyMgmt.getOperatorsAsList()) {
-            ScalingAction action = monitor.analyze(operator);
+            ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
             if (action.equals(ScalingAction.SCALEDOWN)) {
                 pcm.scaleDown(operator);
-                return;
+                LOG.info("Scale down " + operator);
             }
 
             if (action.equals(ScalingAction.SCALEUP)) {
                 pcm.scaleup(operator, dockerHost, infrastructureHost);
-                return;
+                LOG.info("Scale up " + operator);
             }
 
             if (action.equals(ScalingAction.SCALEUPDOUBLE)) {
                 pcm.scaleup(operator, dockerHost, infrastructureHost);
                 pcm.scaleup(operator, dockerHost, infrastructureHost);
-                return;
+                LOG.info("Double scale up " + operator);
             }
         }
-        //TODO log activities in a mysql database on the infrastructure host
     }
 
 }

@@ -3,7 +3,9 @@ package at.tuwien.infosys.processingNodeDeployment;
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.ScalingActivity;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.spotify.docker.client.*;
 import com.spotify.docker.client.messages.Container;
@@ -31,6 +33,10 @@ public class DockerContainerManagement {
 
     @Autowired
     private DockerContainerRepository dcr;
+
+    @Autowired
+    private ScalingActivityRepository sar;
+
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
@@ -86,8 +92,10 @@ public class DockerContainerManagement {
                 .cpuShares(cpuShares)
                 .memory(memory)
                 .env(environmentVariables)
-                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar")
+                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:///dev/urandom switch")
                 .build();
+
+        //switch from dev/random to dev/urandom to mitigate stops due to low entropy levels
 
         final ContainerCreation creation = docker.createContainer(containerConfig);
         final String id = creation.id();
@@ -101,6 +109,8 @@ public class DockerContainerManagement {
         dc.setOperator(operator);
 
         dcr.save(dc);
+
+        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), operator, "scaleup", dockerHost));
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
@@ -108,6 +118,7 @@ public class DockerContainerManagement {
         docker.killContainer(dc.getContainerid());
         docker.removeContainer(dc.getContainerid());
         dcr.delete(dc);
+        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {

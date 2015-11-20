@@ -1,10 +1,14 @@
 package at.tuwien.infosys.monitoring;
 
+import at.tuwien.infosys.datasources.QueueMonitorRepository;
+import at.tuwien.infosys.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
 import at.tuwien.infosys.processingNodeDeployment.OpenstackVmManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -21,16 +25,20 @@ public class Monitor {
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackVmManagement.class);
 
     @Autowired
+    private QueueMonitorRepository qmr;
+
+
+    @Autowired
     private TopologyManagement topologyMgmt;
 
-    public ScalingAction analyze(String operator) {
+    public ScalingAction analyze(String operator, String infrastructureHost) {
         List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
 
         Integer max = 0;
         Integer min = 0;
 
         for (String queue : queues) {
-            Integer queueCount = getQueueCount(queue);
+            Integer queueCount = getQueueCount(queue, infrastructureHost);
             if (queueCount<min) {
                 min = queueCount;
             }
@@ -38,9 +46,9 @@ public class Monitor {
             if (queueCount>max) {
                 max = queueCount;
             }
-        }
 
-        //TODO log data to a mysql database on the host
+            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
+        }
 
         if (max<1) {
             return ScalingAction.SCALEDOWN;
@@ -57,9 +65,9 @@ public class Monitor {
         }
     }
 
-    private Integer getQueueCount(final String name) {
+    private Integer getQueueCount(final String name, String infrastructureHost) {
 
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory("localhost");
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(infrastructureHost);
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
 
         AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(new ChannelCallback<AMQP.Queue.DeclareOk>() {
