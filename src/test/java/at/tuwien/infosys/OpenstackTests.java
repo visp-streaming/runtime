@@ -2,7 +2,6 @@ package at.tuwien.infosys;
 
 
 import at.tuwien.infosys.processingNodeDeployment.OpenstackVmManagement;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,12 +22,12 @@ public class OpenstackTests {
 
     @Test
     public void startnewVM() {
-        String server = openstackVmManagement.startVM("testCaseVM", "m1.tiny", "e351847d-1ffc-4566-a16b-17fa80105459");
+        String server = openstackVmManagement.startVM("testCaseVM");
         Assert.assertNotNull(server);
     }
 
 
-    @After
+//    @After
     public void cleanup() {
         OSClient os = openstackVmManagement.getOs();
         for (Server server : os.compute().servers().list()) {

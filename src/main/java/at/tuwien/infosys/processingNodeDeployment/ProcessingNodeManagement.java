@@ -11,6 +11,7 @@ import com.spotify.docker.client.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,7 +27,8 @@ public class ProcessingNodeManagement {
     @Autowired
     private Topology topology;
 
-    private Integer graceperiod = 2;
+    @Value("${visp.shutdown.graceperiod}")
+    private Integer graceperiod;
 
     @Autowired
     private DockerContainerRepository dcr;
@@ -34,8 +36,7 @@ public class ProcessingNodeManagement {
     @Autowired
     private DockerHostRepository dhr;
 
-
-    private void housekeeping() {
+    public void housekeeping() {
         for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod))) {
@@ -72,10 +73,8 @@ public class ProcessingNodeManagement {
             hostString.add(dh.getHostid());
         }
 
-
         try {
             dcm.updateDeployedContainer(hostString);
-
             for (DockerContainer dc : dcr.findAll()) {
                 dcm.removeContainer(dc);
             }
@@ -103,7 +102,13 @@ public class ProcessingNodeManagement {
     public void scaleDown(String operator) {
         housekeeping();
 
-        for (DockerContainer dc : dcr.findByOperator(operator)) {
+        List<DockerContainer> operators = dcr.findByOperator(operator);
+
+        if (operators.size()<2) {
+            return;
+        }
+
+        for (DockerContainer dc : operators) {
                 try {
                     dcm.executeCommand(dc, "cd ~ ; touch killme");
                 } catch (DockerException e) {

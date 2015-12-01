@@ -7,6 +7,7 @@ import com.spotify.docker.client.DockerException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -15,8 +16,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 public class SetupCleanupTests {
 
-    private String dockerHost = "http://128.130.172.224:2375";
-    private String infrastructureHost = "128.130.172.225";
+    @Value("${visp.dockerhost}")
+    private String dockerHost;
+
+    @Value("${visp.infrastructurehost}")
+    private String infrastructureHost;
 
     @Autowired
     private Reasoner reasoner;

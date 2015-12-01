@@ -79,20 +79,21 @@ public class DockerContainerManagement {
 
 
         //TODO make this flexible in terms of core and memory
+       /*
         Double vmCores = 4.0;
         Double containerCores = 1.0;
         Double containerRam = 100.0;
 
         long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
         long memory = (long) (containerRam * 1024 * 1024);
-
+        */
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .image(operatorConfiguration.getImage(operator))
-                .cpuShares(cpuShares)
-                .memory(memory)
+                //.cpuShares(cpuShares)
+                //.memory(memory)
                 .env(environmentVariables)
-                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:///dev/urandom switch")
+                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .build();
 
         //switch from dev/random to dev/urandom to mitigate stops due to low entropy levels
@@ -111,6 +112,8 @@ public class DockerContainerManagement {
         dcr.save(dc);
 
         sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), operator, "scaleup", dockerHost));
+
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + operator + " on the host: " + dockerHost);
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
@@ -119,6 +122,8 @@ public class DockerContainerManagement {
         docker.removeContainer(dc.getContainerid());
         dcr.delete(dc);
         sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
+
+        LOG.info("VISP - A the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost());
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
@@ -128,7 +133,7 @@ public class DockerContainerManagement {
         final String execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecParameter.STDOUT, DockerClient.ExecParameter.STDERR);
         final LogStream output = docker.execStart(execId);
         String result = output.readFully();
-        LOG.info(result);
+        LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + "with the result: " + result);
         return result;
     }
 
