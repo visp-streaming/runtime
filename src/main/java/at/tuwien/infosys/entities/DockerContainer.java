@@ -18,6 +18,9 @@ public class DockerContainer {
     private String operator;
     private String status;
     private String terminationTime;
+    private Double cpuCores;
+    private Integer ram;
+    private Integer storage;
 
     public String getContainerid() {
         return containerid;
@@ -67,6 +70,30 @@ public class DockerContainer {
         this.terminationTime = terminationTime;
     }
 
+    public Double getCpuCores() {
+        return cpuCores;
+    }
+
+    public void setCpuCores(Double cpuCores) {
+        this.cpuCores = cpuCores;
+    }
+
+    public Integer getRam() {
+        return ram;
+    }
+
+    public void setRam(Integer ram) {
+        this.ram = ram;
+    }
+
+    public Integer getStorage() {
+        return storage;
+    }
+
+    public void setStorage(Integer storage) {
+        this.storage = storage;
+    }
+
     public DockerContainer() {
     }
 
@@ -87,6 +114,10 @@ public class DockerContainer {
                 ", image='" + image + '\'' +
                 ", operator='" + operator + '\'' +
                 ", status='" + status + '\'' +
+                ", terminationTime='" + terminationTime + '\'' +
+                ", cpuCores=" + cpuCores +
+                ", ram=" + ram +
+                ", storage=" + storage +
                 '}';
     }
 }

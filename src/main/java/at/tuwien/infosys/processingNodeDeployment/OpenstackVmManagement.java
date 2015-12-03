@@ -91,10 +91,11 @@ public class OpenstackVmManagement {
         Server server = os.compute().servers().bootAndWaitActive(sc, 120000);
 
         DockerHost dh = new DockerHost();
-        dh.setCores(flavor.getVcpus());
+        dh.setCores(flavor.getVcpus() + 0.0);
         dh.setRam(flavor.getRam());
         dh.setUrl(server.getAccessIPv4());
         dh.setHostid(server.getId());
+        dh.setStorage(flavor.getDisk());
 
         dhr.save(dh);
 

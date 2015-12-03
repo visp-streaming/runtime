@@ -109,6 +109,11 @@ public class DockerContainerManagement {
         dc.setHost(dockerHost);
         dc.setOperator(operator);
 
+        //TODO make this flexible in terms of core and memory
+        dc.setStorage(100);
+        dc.setRam(100);
+        dc.setCpuCores(1.0);
+
         dcr.save(dc);
 
         sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), operator, "scaleup", dockerHost));
