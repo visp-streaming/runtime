@@ -36,7 +36,7 @@ public class Reasoner {
     @Autowired
     Monitor monitor;
 
-    @Value("${visp.dockerhost.image}")
+    @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
     @Value("${visp.dockerhost}")
@@ -63,10 +63,43 @@ public class Reasoner {
 
         LOG.info("VISP - Start Reasoner");
 
+        List<ResourceAvailability> freeResources = calculateFreeResources();
+        Collections.sort(freeResources, ResourceComparator.AMOUNTOFCONTAINERASC);
+
+        //binpacking strategy
+        //kill only those hosts with no containers
+
+
+        //average strategy
+        //TODO come up with a decision approach when to scale down, e.g. 30 % of the resources are not used
+        //migrate containers
+        //kill the hosts
+
+
         //TODO consider host scaling also in here
         //TODO implement a host configuration (always maximize the deployment of operators on one host)
         //TODO implement a migration mechanism (spawn a new one and scale down the old one)
         //TODO monitor the resource usage of a host
+
+
+        //TODO implement cleanup and migration functionality for docker hosts
+
+        //host scaledown:
+        // select the host with least containers:         Collections.sort(raList, ResourceComparator.AMOUNTOFCONTAINERASC);
+
+
+        //migration:
+        // mark the host to be shutdown
+        // start containes on new host
+        // kill container on old host
+        // mark host to be shutdown
+        //kill host after 2 * graceperiod
+
+        //TODO implement shutdownproperty for dockerhost
+
+
+
+
 
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
@@ -94,22 +127,7 @@ public class Reasoner {
     }
 
     public String selectSuitableDockerHost(DockerContainer dc) {
-        //TODO implement cleanup and migration functionanlity for docker hosts
-
-        //host scaledown:
-        // select the host with least containers:         Collections.sort(raList, ResourceComparator.AMOUNTOFCONTAINERASC);
-
-
-        //migration:
-        // mark the host to be shutdown
-        // start containes on new host
-        // kill container on old host
-        // mark host to be shutdown
-        //kill host after 2 * graceperiod
-
-        //TODO implement shutdownproperty for dockerhost
         List<ResourceAvailability> freeResources = calculateFreeResources();
-
 
         String host = null;
         host = equalDistributionStrategy(dc, freeResources);
@@ -122,8 +140,6 @@ public class Reasoner {
         } else {
             return host;
         }
-
-
 
         //TODO set dockercontainer cpu, ram and storage when they are spawned
     }
