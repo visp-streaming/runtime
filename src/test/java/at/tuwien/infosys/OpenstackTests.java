@@ -6,18 +6,32 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openstack4j.api.OSClient;
+import org.openstack4j.model.compute.FloatingIP;
 import org.openstack4j.model.compute.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = VispApplication.class)
+@TestPropertySource(locations="classpath:test.properties")
 public class OpenstackTests {
 
     @Autowired
     private OpenstackVmManagement openstackVmManagement;
 
+
+    @Test
+    public void showFloatingIPs() {
+        OSClient os = openstackVmManagement.getOs();
+        List<FloatingIP> ips = (List<FloatingIP>) os.compute().floatingIps().list();
+        for (FloatingIP ip : ips) {
+            System.out.println(ip.getFixedIpAddress() + " - " + ip.getFloatingIpAddress() + " - " + ip.getInstanceId());
+        }
+    }
 
 
     @Test

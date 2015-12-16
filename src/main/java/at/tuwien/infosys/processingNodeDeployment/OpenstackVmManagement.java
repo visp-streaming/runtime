@@ -3,6 +3,12 @@ package at.tuwien.infosys.processingNodeDeployment;
 
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerHost;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.*;
@@ -14,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -62,6 +69,7 @@ public class OpenstackVmManagement {
         LOG.info("VISP - Successfully connected to " + OPENSTACK_AUTH_URL + " on tenant " + OPENSTACK_TENANT_NAME + " with user " + OPENSTACK_USERNAME);
     }
 
+
     public String startVM(String name)  {
         setup();
         List<? extends Flavor> flavors = os.compute().flavors().list();
@@ -93,15 +101,66 @@ public class OpenstackVmManagement {
         DockerHost dh = new DockerHost();
         dh.setCores(flavor.getVcpus() + 0.0);
         dh.setRam(flavor.getRam());
-        dh.setUrl(server.getAccessIPv4());
         dh.setHostid(server.getId());
         dh.setStorage(flavor.getDisk());
+        dh.setScheduledForShutdown(false);
+
+        String floatingIP = assignFloatingIP(server);
+        String hostUrl = "http://" + floatingIP + ":2375";
+        dh.setUrl(hostUrl);
 
         dhr.save(dh);
 
-        LOG.info("VISP - Server with id: " + server.getId() + " was started.");
+        LOG.info("VISP - Server with id: " + server.getId() + " and IP " + floatingIP + " was started.");
 
-        return server.getId();
+        try {
+            Thread.sleep(60000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        startupEntropyContainer(hostUrl);
+
+        return hostUrl;
+    }
+
+    private void startupEntropyContainer(String dockerHost) {
+        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).connectTimeoutMillis(3000000).build();
+
+        try {
+            docker.pull("harbur/haveged:1.7c-1");
+
+            final HostConfig expected = HostConfig.builder()
+                    .privileged(true)
+                    .build();
+
+
+            final ContainerConfig containerConfig = ContainerConfig.builder()
+                .image("harbur/haveged:1.7c-1")
+                    .hostConfig(expected)
+                    .build();
+
+        final ContainerCreation creation = docker.createContainer(containerConfig);
+        final String id = creation.id();
+
+        docker.startContainer(id);
+
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String assignFloatingIP(Server server) {
+        List<FloatingIP> ips = (List<FloatingIP>) os.compute().floatingIps().list();
+        for (FloatingIP ip : ips) {
+            if (ip.getInstanceId() == null) {
+                ActionResponse r = os.compute().floatingIps().addFloatingIP(server, ip.getFloatingIpAddress());
+                return ip.getFloatingIpAddress();
+            }
+        }
+        return null;
     }
 
     public void stopVM(String serverId) {

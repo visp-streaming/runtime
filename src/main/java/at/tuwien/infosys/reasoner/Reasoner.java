@@ -39,9 +39,6 @@ public class Reasoner {
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
-    @Value("${visp.dockerhost}")
-    private String dockerHost;
-
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -50,9 +47,16 @@ public class Reasoner {
     public void setup() {
 
         topologyMgmt.createMapping(infrastructureHost);
-        omgmt.startVM("dockerHost");
+        String host = omgmt.startVM("dockerHost");
 
-        pcm.initializeTopology(dockerHost, infrastructureHost);
+        try {
+            Thread.sleep(60000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        //TODO fixme
+        pcm.initializeTopology(host, infrastructureHost);
 
 
         //TODO implement host management in reasoner
@@ -106,6 +110,10 @@ public class Reasoner {
 
             //TODO consider specs of container for scaling up/down - store them for the operator
             DockerContainer dc = new DockerContainer();
+            dc.setCpuCores(0.5);
+            dc.setStorage(300);
+            dc.setRam(1);
+
 
             if (action.equals(ScalingAction.SCALEDOWN)) {
                 pcm.scaleDown(operator);
@@ -117,11 +125,6 @@ public class Reasoner {
                 LOG.info("VISP - Scale UP " + operator);
             }
 
-            if (action.equals(ScalingAction.SCALEUPDOUBLE)) {
-                pcm.scaleup(operator, selectSuitableDockerHost(dc), infrastructureHost);
-                pcm.scaleup(operator, selectSuitableDockerHost(dc), infrastructureHost);
-                LOG.info("VISP - Double scale UP " + operator);
-            }
         }
         LOG.info("VISP - Finished Reasoner");
     }
@@ -130,9 +133,8 @@ public class Reasoner {
         List<ResourceAvailability> freeResources = calculateFreeResources();
 
         String host = null;
-        host = equalDistributionStrategy(dc, freeResources);
-        //host = binPackingStrategy(dc, freeResources);
-
+        //host = equalDistributionStrategy(dc, freeResources);
+        host = binPackingStrategy(dc, freeResources);
 
         if (host == null) {
             //Scale up docker hosts
@@ -169,7 +171,7 @@ public class Reasoner {
             if (ra.getStorage() < dc.getStorage()) {
                 continue;
             }
-            return ra.getHostId();
+            return ra.getUrl();
         }
         return null;
     }
@@ -178,28 +180,29 @@ public class Reasoner {
         Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
         List<ResourceAvailability> freeResources = new ArrayList<>();
 
+        for (DockerHost dh : dhr.findAll()) {
+            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 1, 0.0, 0, 0, "dockercontainer");
+            hostResourceUsage.put(dh.getUrl(), rc);
+        }
+
         //collect current usage of cloud resources
         for (DockerContainer dc : dcr.findAll()) {
-            if (hostResourceUsage.containsKey(dc.getHost())) {
                 ResourceAvailability rc = hostResourceUsage.get(dc.getHost());
                 rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
                 rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
                 rc.setRam(rc.getRam() + rc.getRam());
                 rc.setStorage(rc.getStorage() + rc.getStorage());
+                rc.setUrl(rc.getUrl());
                 hostResourceUsage.put(dc.getHost(), rc);
-            } else {
-                ResourceAvailability rc = new ResourceAvailability(dc.getHost(), 1, dc.getCpuCores(), dc.getRam(), dc.getStorage());
-                hostResourceUsage.put(dc.getHost(), rc);
-            }
         }
 
         //calculate how much resources are left on a specific host
 
 
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
-            String hostId = entry.getKey();
+            String url = entry.getKey();
             ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findByHostid(hostId).get(0);
+            DockerHost dh = dhr.findByUrl(url).get(0);
 
             //omit all dockerhosts which are scheduled for shutdown
             if (dh.getScheduledForShutdown()) {

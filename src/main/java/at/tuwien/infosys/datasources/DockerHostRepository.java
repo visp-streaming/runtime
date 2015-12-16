@@ -9,5 +9,6 @@ import java.util.List;
 public interface DockerHostRepository extends CrudRepository<DockerHost, Long> {
 
     List<DockerHost> findByHostid(String hostid);
+    List<DockerHost> findByUrl(String url);
 
 }

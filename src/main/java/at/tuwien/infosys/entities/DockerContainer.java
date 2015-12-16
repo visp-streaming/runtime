@@ -103,6 +103,11 @@ public class DockerContainer {
         this.image = image;
         this.operator = operator;
         this.status = "running";
+        this.cpuCores = 0.5;
+        this.ram = 100;
+        this.storage = 10;
+//TODO update theses values - make them dynamic
+
     }
 
     @Override

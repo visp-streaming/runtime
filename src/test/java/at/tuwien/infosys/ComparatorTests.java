@@ -12,16 +12,16 @@ import java.util.List;
 public class ComparatorTests {
 
     //assumption all hosts are the same with 10 cores, 1000 ram and 1000 storage
-    ResourceAvailability ra1 = new ResourceAvailability("host1", 1, 1.0, 900, 800);
-    ResourceAvailability ra2 = new ResourceAvailability("host2", 2, 2.0, 800, 800);
-    ResourceAvailability ra3 = new ResourceAvailability("host3", 3, 3.0, 700, 900);
-    ResourceAvailability ra4 = new ResourceAvailability("host4", 4, 4.0, 600, 900);
-    ResourceAvailability ra5 = new ResourceAvailability("host5", 5, 5.0, 500, 400);
-    ResourceAvailability ra6 = new ResourceAvailability("host6", 6, 6.0, 400, 400);
-    ResourceAvailability ra7 = new ResourceAvailability("host7", 7, 7.0, 300, 500);
-    ResourceAvailability ra8 = new ResourceAvailability("host8", 8, 8.0, 200, 600);
-    ResourceAvailability ra9 = new ResourceAvailability("host9", 9, 9.0, 100, 200);
-    ResourceAvailability ra10 = new ResourceAvailability("host10", 10, 10.0, 50, 100);
+    ResourceAvailability ra1 = new ResourceAvailability("host1", 1, 1.0, 900, 800, "");
+    ResourceAvailability ra2 = new ResourceAvailability("host2", 2, 2.0, 800, 800, "");
+    ResourceAvailability ra3 = new ResourceAvailability("host3", 3, 3.0, 700, 900, "");
+    ResourceAvailability ra4 = new ResourceAvailability("host4", 4, 4.0, 600, 900, "");
+    ResourceAvailability ra5 = new ResourceAvailability("host5", 5, 5.0, 500, 400, "");
+    ResourceAvailability ra6 = new ResourceAvailability("host6", 6, 6.0, 400, 400, "");
+    ResourceAvailability ra7 = new ResourceAvailability("host7", 7, 7.0, 300, 500, "");
+    ResourceAvailability ra8 = new ResourceAvailability("host8", 8, 8.0, 200, 600, "");
+    ResourceAvailability ra9 = new ResourceAvailability("host9", 9, 9.0, 100, 200, "");
+    ResourceAvailability ra10 = new ResourceAvailability("host10", 10, 10.0, 50, 100, "");
 
     List<ResourceAvailability> raList = new ArrayList<>();
 

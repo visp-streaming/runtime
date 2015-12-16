@@ -65,7 +65,7 @@ public class DockerContainerManagement {
     }
 
     public void startContainer(String dockerHost, String operator, String infrastructureHost) throws DockerException, InterruptedException {
-        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).build();
+        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).connectTimeoutMillis(60000).build();
 
         docker.pull(operatorConfiguration.getImage(operator));
 
