@@ -1,13 +1,26 @@
 package at.tuwien.infosys.entities;
 
 
+import org.springframework.beans.factory.annotation.Value;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+
+
 @Entity
 public class DockerContainer {
+
+    @Value("${visp.operator.cpu}")
+    private Double operatorCPU;
+
+    @Value("${visp.operator.ram}")
+    private Integer operatorRAM;
+
+    @Value("${visp.operator.storage}")
+    private Integer operatorStorage;
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -97,18 +110,18 @@ public class DockerContainer {
     public DockerContainer() {
     }
 
-    public DockerContainer(String containerid, String host, String image, String operator) {
+    public DockerContainer(String containerid, String host, String image, String operator, Double cpuCores, Integer ram, Integer storage) {
         this.containerid = containerid;
         this.host = host;
         this.image = image;
         this.operator = operator;
+        this.cpuCores = cpuCores;
+        this.ram = ram;
+        this.storage = storage;
         this.status = "running";
-        this.cpuCores = 0.5;
-        this.ram = 100;
-        this.storage = 10;
-//TODO update theses values - make them dynamic
-
     }
+
+
 
     @Override
     public String toString() {

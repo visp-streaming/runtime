@@ -16,6 +16,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -36,6 +37,15 @@ public class DockerContainerManagement {
 
     @Autowired
     private ScalingActivityRepository sar;
+
+    @Value("${visp.operator.cpu}")
+    private Double operatorCPU;
+
+    @Value("${visp.operator.ram}")
+    private Integer operatorRAM;
+
+    @Value("${visp.operator.storage}")
+    private Integer operatorStorage;
 
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
@@ -78,7 +88,7 @@ public class DockerContainerManagement {
         environmentVariables.add("ROLE=" + operator);
 
 
-        //TODO make this flexible in terms of core and memory
+        //TODO make this flexible in terms of core and memory - checkout viepep
        /*
         Double vmCores = 4.0;
         Double containerCores = 1.0;
@@ -109,10 +119,9 @@ public class DockerContainerManagement {
         dc.setHost(dockerHost);
         dc.setOperator(operator);
 
-        //TODO make this flexible in terms of core and memory
-        dc.setStorage(100);
-        dc.setRam(100);
-        dc.setCpuCores(1.0);
+        dc.setStorage(operatorStorage);
+        dc.setRam(operatorRAM);
+        dc.setCpuCores(operatorCPU);
 
         dcr.save(dc);
 

@@ -42,6 +42,15 @@ public class Reasoner {
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
+    @Value("${visp.operator.cpu}")
+    private Double operatorCPU;
+
+    @Value("${visp.operator.ram}")
+    private Integer operatorRAM;
+
+    @Value("${visp.operator.storage}")
+    private Integer operatorStorage;
+
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackVmManagement.class);
 
     public void setup() {
@@ -86,7 +95,7 @@ public class Reasoner {
         //TODO monitor the resource usage of a host
 
 
-        //TODO implement cleanup and migration functionality for docker hosts
+        //TODO implement cleanup and migration functionality for docker hosts --> start new container on other host
 
         //host scaledown:
         // select the host with least containers:         Collections.sort(raList, ResourceComparator.AMOUNTOFCONTAINERASC);
@@ -104,16 +113,13 @@ public class Reasoner {
 
 
 
-
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
-            //TODO consider specs of container for scaling up/down - store them for the operator
             DockerContainer dc = new DockerContainer();
-            dc.setCpuCores(0.5);
-            dc.setStorage(300);
-            dc.setRam(1);
-
+            dc.setCpuCores(operatorCPU);
+            dc.setStorage(operatorStorage);
+            dc.setRam(operatorRAM);
 
             if (action.equals(ScalingAction.SCALEDOWN)) {
                 pcm.scaleDown(operator);
@@ -129,7 +135,7 @@ public class Reasoner {
         LOG.info("VISP - Finished Reasoner");
     }
 
-    public String selectSuitableDockerHost(DockerContainer dc) {
+    public synchronized String selectSuitableDockerHost(DockerContainer dc) {
         List<ResourceAvailability> freeResources = calculateFreeResources();
 
         String host = null;
@@ -142,8 +148,6 @@ public class Reasoner {
         } else {
             return host;
         }
-
-        //TODO set dockercontainer cpu, ram and storage when they are spawned
     }
 
     private String equalDistributionStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
@@ -161,18 +165,24 @@ public class Reasoner {
     }
 
     private String selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
+        LOG.info("###### select suitable container for: ######");
+        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getRam() + " - Storage: " + dc.getStorage());
         for (ResourceAvailability ra : freeResources) {
-            if (ra.getCpuCores() < dc.getCpuCores()) {
+            if (ra.getCpuCores() <= dc.getCpuCores()) {
                 continue;
             }
-            if (ra.getRam() < dc.getRam()) {
+            if (ra.getRam() <= dc.getRam()) {
                 continue;
             }
-            if (ra.getStorage() < dc.getStorage()) {
+            if (ra.getStorage() <= dc.getStorage()) {
                 continue;
             }
+            LOG.info("Host found: " + ra.getUrl());
+            LOG.info("###### select suitable container for ######");
             return ra.getUrl();
         }
+        LOG.info("No suitable host found.");
+        LOG.info("###### select suitable container for ######");
         return null;
     }
 
@@ -181,7 +191,7 @@ public class Reasoner {
         List<ResourceAvailability> freeResources = new ArrayList<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 1, 0.0, 0, 0, "dockercontainer");
+            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 0, 0.0, 0, 0, "dockercontainer");
             hostResourceUsage.put(dh.getUrl(), rc);
         }
 
@@ -206,16 +216,27 @@ public class Reasoner {
 
             //omit all dockerhosts which are scheduled for shutdown
             if (dh.getScheduledForShutdown()) {
+                LOG.info("omitted host: " + dh.getUrl() + "for scheduling, since it is scheduled to shut down.");
                 continue;
             }
 
             ResourceAvailability availability = new ResourceAvailability();
+            availability.setHostId(dh.getHostid());
+            availability.setUrl(dh.getUrl());
             availability.setAmountOfContainer(usage.getAmountOfContainer());
             availability.setCpuCores(dh.getCores()-usage.getCpuCores());
             availability.setRam(dh.getRam()-usage.getRam());
             availability.setStorage(dh.getStorage()-usage.getStorage());
             freeResources.add(availability);
+
         }
+
+        LOG.info("###### free resources ######");
+        for (ResourceAvailability ra : freeResources) {
+            LOG.info(ra.getHostId() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getRam() + " - Storage: " + ra.getStorage());
+        }
+        LOG.info("###### free resources ######");
+
         return freeResources;
     }
 }
