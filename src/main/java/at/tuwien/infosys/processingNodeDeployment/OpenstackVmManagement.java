@@ -52,7 +52,7 @@ public class OpenstackVmManagement {
         try {
             prop.load(getClass().getClassLoader().getResourceAsStream("credential.properties"));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Could not load properties.", e);
         }
 
         OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
@@ -116,7 +116,7 @@ public class OpenstackVmManagement {
         try {
             Thread.sleep(60000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not start VM", e);
         }
 
         startupEntropyContainer(hostUrl);
@@ -146,9 +146,9 @@ public class OpenstackVmManagement {
         docker.startContainer(id);
 
         } catch (DockerException e) {
-            e.printStackTrace();
+            LOG.error("Could not start container", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not start container", e);
         }
     }
 

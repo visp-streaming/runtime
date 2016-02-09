@@ -6,6 +6,8 @@ import at.tuwien.infosys.entities.Operator;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,8 @@ public class TopologyManagement {
 
     @Autowired
     private Topology topology;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TopologyManagement.class);
 
     public void createMapping(String infrastructureHost) {
         try {
@@ -46,9 +50,9 @@ public class TopologyManagement {
             connection.close();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Could not cleanup topology.", e);
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            LOG.error("Could not cleanup topology.", e);
         }
     }
 
@@ -74,9 +78,9 @@ public class TopologyManagement {
             connection.close();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Could not create mapping.", e);
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            LOG.error("Could not create mapping.", e);
         }
 
     }

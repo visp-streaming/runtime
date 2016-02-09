@@ -10,6 +10,8 @@ import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,16 +38,20 @@ public class ProcessingNodeManagement {
     @Autowired
     private DockerHostRepository dhr;
 
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
+
+
     public void housekeeping() {
         for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            if (now.isAfter(new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod))) {
+            LOG.info("housekeeping shuptdown: current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
+            if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
                 try {
                     dcm.removeContainer(dc);
                 } catch (DockerException e) {
-                    e.printStackTrace();
+                    LOG.error("Cloud not remove docker Container while houskeeping.", e);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOG.error("Cloud not remove docker Container while houskeeping.", e);
                 }
             }
         }
@@ -60,9 +66,9 @@ public class ProcessingNodeManagement {
                 dcm.startContainer(dockerHost, op.getName(), infrastructureHost);
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not initialize topology.", e);
         } catch (DockerException e) {
-            e.printStackTrace();
+            LOG.error("Could not initialize topology.", e);
         }
     }
 
@@ -80,11 +86,11 @@ public class ProcessingNodeManagement {
             }
 
         } catch (DockerCertificateException e) {
-            e.printStackTrace();
+            LOG.error("Could not remove Docker Container.", e);
         } catch (DockerException e) {
-            e.printStackTrace();
+            LOG.error("Could not remove Docker Container.", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not remove Docker Container.", e);
         }
     }
 
@@ -93,9 +99,9 @@ public class ProcessingNodeManagement {
         try {
             dcm.startContainer(dockerHost, operator, infrastructureHost);
         } catch (DockerException e) {
-            e.printStackTrace();
+            LOG.error("Could not start a docker container.", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not start a docker container.", e);
         }
     }
 
@@ -109,12 +115,20 @@ public class ProcessingNodeManagement {
         }
 
         for (DockerContainer dc : operators) {
+            if (dc.getStatus() == null) {
+                dc.setStatus("running");
+            }
+
+            if (dc.getStatus().equals("stopping")) {
+                continue;
+            }
+
                 try {
                     dcm.executeCommand(dc, "cd ~ ; touch killme");
                 } catch (DockerException e) {
-                    e.printStackTrace();
+                    LOG.error("Could not trigger scaledown operation.", e);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOG.error("Could not trigger scaledown operation.", e);
                 }
 
                 dcm.removeDeployedContainerFromList(dc);

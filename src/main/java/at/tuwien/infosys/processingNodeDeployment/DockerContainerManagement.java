@@ -106,8 +106,6 @@ public class DockerContainerManagement {
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .build();
 
-        //switch from dev/random to dev/urandom to mitigate stops due to low entropy levels
-
         final ContainerCreation creation = docker.createContainer(containerConfig);
         final String id = creation.id();
 
@@ -137,14 +135,14 @@ public class DockerContainerManagement {
         dcr.delete(dc);
         sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
 
-        LOG.info("VISP - A the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost());
+        LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
         final String[] command = {"bash", "-c", cmd};
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
 
-        final String execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecParameter.STDOUT, DockerClient.ExecParameter.STDERR);
+        final String execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
         final LogStream output = docker.execStart(execId);
         String result = output.readFully();
         LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + "with the result: " + result);

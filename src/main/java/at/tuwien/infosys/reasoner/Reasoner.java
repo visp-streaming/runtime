@@ -51,7 +51,7 @@ public class Reasoner {
     @Value("${visp.operator.storage}")
     private Integer operatorStorage;
 
-    private static final Logger LOG = LoggerFactory.getLogger(OpenstackVmManagement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
     public void setup() {
 
@@ -61,7 +61,7 @@ public class Reasoner {
         try {
             Thread.sleep(60000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Could not startup initial Host.", e);
         }
 
         //TODO fixme
