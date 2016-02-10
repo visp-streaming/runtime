@@ -9,6 +9,8 @@ import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.compute.*;
@@ -33,6 +35,9 @@ public class OpenstackVmManagement {
 
     @Value("${visp.dockerhost.flavor}")
     private String dockerhostFlavor;
+
+    @Value("${visp.shutdown.graceperiod}")
+    private Integer graceperiod;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -193,4 +198,22 @@ public class OpenstackVmManagement {
         setup();
         return os.compute().servers().diagnostics(serverId);
     }
+
+    public void markHostForRemoval(String hostId) {
+        DockerHost dh = dhr.findByHostid(hostId).get(0);
+        dh.setScheduledForShutdown(true);
+        dh.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dhr.save(dh);
+    }
+
+    public void housekeeping() {
+        for (DockerHost dh : dhr.findAll()) {
+            DateTime now = new DateTime(DateTimeZone.UTC);
+            LOG.info("housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusMinutes(graceperiod * 2));
+            if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
+                    stopVM(dh.getHostid());
+            }
+        }
+    }
+
 }

@@ -51,6 +51,16 @@ public class Reasoner {
     @Value("${visp.operator.storage}")
     private Integer operatorStorage;
 
+
+    @Value("${visp.host.cpu}")
+    private Double hostCPU;
+
+    @Value("${visp.host.ram}")
+    private Integer hostRAM;
+
+    @Value("${visp.host.storage}")
+    private Integer hostStorage;
+
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
     public void setup() {
@@ -64,54 +74,16 @@ public class Reasoner {
             LOG.error("Could not startup initial Host.", e);
         }
 
-        //TODO fixme
         pcm.initializeTopology(host, infrastructureHost);
-
-
-        //TODO implement host management in reasoner
     }
 
-    public void updateResourceconfiguration() {
+    public synchronized void updateResourceconfiguration() {
         pcm.housekeeping();
+        omgmt.housekeeping();
 
         LOG.info("VISP - Start Reasoner");
 
-        List<ResourceAvailability> freeResources = calculateFreeResources();
-        Collections.sort(freeResources, ResourceComparator.AMOUNTOFCONTAINERASC);
-
-        //binpacking strategy
-        //kill only those hosts with no containers
-
-
-        //average strategy
-        //TODO come up with a decision approach when to scale down, e.g. 30 % of the resources are not used
-        //migrate containers
-        //kill the hosts
-
-
-        //TODO consider host scaling also in here
-        //TODO implement a host configuration (always maximize the deployment of operators on one host)
-        //TODO implement a migration mechanism (spawn a new one and scale down the old one)
-        //TODO monitor the resource usage of a host
-
-
-        //TODO implement cleanup and migration functionality for docker hosts --> start new container on other host
-
-        //host scaledown:
-        // select the host with least containers:         Collections.sort(raList, ResourceComparator.AMOUNTOFCONTAINERASC);
-
-
-        //migration:
-        // mark the host to be shutdown
-        // start containes on new host
-        // kill container on old host
-        // mark host to be shutdown
-        //kill host after 2 * graceperiod
-
-        //TODO implement shutdownproperty for dockerhost
-
-
-
+        LOG.info("VISP - Start container scaling");
 
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
@@ -130,13 +102,45 @@ public class Reasoner {
                 pcm.scaleup(operator, selectSuitableDockerHost(dc), infrastructureHost);
                 LOG.info("VISP - Scale UP " + operator);
             }
-
         }
+        LOG.info("VISP - Finished container scaling");
+
+        List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
+
+        ResourceAvailability aggregatedFreeResources = calculateFreeresources(freeResources);
+
+        //TODO may be adopted
+        //only scale down if there are 2 hosts availabe in general
+
+        if ((aggregatedFreeResources.getCpuCores() > (hostCPU * 2) && (aggregatedFreeResources.getRam() > (hostRAM * 2)) && (aggregatedFreeResources.getStorage() > (hostStorage * 2)))) {
+            Collections.sort(freeResources, ResourceComparator.AMOUNTOFCONTAINERASC);
+
+            //select host with the least running container
+            String hostToKill = freeResources.get(0).getHostId();
+
+            omgmt.markHostForRemoval(hostToKill);
+
+            List<DockerContainer> containerToMigrate = dcr.findByHost(hostToKill);
+
+            //migrate Container
+            for (DockerContainer dc : containerToMigrate) {
+                if (dc.getStatus() == null) {
+                    dc.setStatus("running");
+                }
+
+                if (dc.getStatus().equals("stopping")) {
+                    continue;
+                }
+                pcm.triggerShutdown(dc);
+                pcm.scaleup(dc.getOperator(), selectSuitableDockerHost(dc), infrastructureHost);
+            }
+        }
+
         LOG.info("VISP - Finished Reasoner");
     }
 
     public synchronized String selectSuitableDockerHost(DockerContainer dc) {
-        List<ResourceAvailability> freeResources = calculateFreeResources();
+        List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
 
         String host = null;
         //host = equalDistributionStrategy(dc, freeResources);
@@ -186,7 +190,7 @@ public class Reasoner {
         return null;
     }
 
-    private List<ResourceAvailability> calculateFreeResources() {
+    private List<ResourceAvailability> calculateFreeResourcesforHosts() {
         Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
         List<ResourceAvailability> freeResources = new ArrayList<>();
 
@@ -231,12 +235,30 @@ public class Reasoner {
 
         }
 
+        return freeResources;
+    }
+
+    public ResourceAvailability calculateFreeresources(List<ResourceAvailability> resources) {
+        ResourceAvailability all = new ResourceAvailability();
+        all.setAmountOfContainer(0);
+        all.setCpuCores(0.0);
+        all.setRam(0);
+        all.setStorage(0);
+
+
         LOG.info("###### free resources ######");
-        for (ResourceAvailability ra : freeResources) {
+        for (ResourceAvailability ra : resources) {
+            all.setAmountOfContainer(all.getAmountOfContainer() + ra.getAmountOfContainer());
+            all.setCpuCores(all.getCpuCores() + ra.getCpuCores());
+            all.setRam(all.getRam() + ra.getRam());
+            all.setStorage(all.getStorage() + ra.getStorage());
+
             LOG.info(ra.getHostId() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getRam() + " - Storage: " + ra.getStorage());
         }
         LOG.info("###### free resources ######");
 
-        return freeResources;
+        return all;
     }
+
+
 }

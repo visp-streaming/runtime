@@ -149,7 +149,7 @@ public class DockerContainerManagement {
         return result;
     }
 
-    public void removeDeployedContainerFromList(DockerContainer dc) {
+    public void markContainerForRemoval(DockerContainer dc) {
         dc.setStatus("stopping");
         dc.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
         dcr.save(dc);

@@ -44,7 +44,7 @@ public class ProcessingNodeManagement {
     public void housekeeping() {
         for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.info("housekeeping shuptdown: current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
+            LOG.info("housekeeping shuptdown container (" + dc.getOperator() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
                 try {
                     dcm.removeContainer(dc);
@@ -123,16 +123,20 @@ public class ProcessingNodeManagement {
                 continue;
             }
 
-                try {
-                    dcm.executeCommand(dc, "cd ~ ; touch killme");
-                } catch (DockerException e) {
-                    LOG.error("Could not trigger scaledown operation.", e);
-                } catch (InterruptedException e) {
-                    LOG.error("Could not trigger scaledown operation.", e);
-                }
-
-                dcm.removeDeployedContainerFromList(dc);
+            triggerShutdown(dc);
                 break;
         }
+    }
+
+    public void triggerShutdown(DockerContainer dc) {
+        try {
+            dcm.executeCommand(dc, "cd ~ ; touch killme");
+        } catch (DockerException e) {
+            LOG.error("Could not trigger scaledown operation.", e);
+        } catch (InterruptedException e) {
+            LOG.error("Could not trigger scaledown operation.", e);
+        }
+
+        dcm.markContainerForRemoval(dc);
     }
 }

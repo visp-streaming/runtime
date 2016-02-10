@@ -18,6 +18,8 @@ public class DockerHost {
     private Integer ram;
     private Integer storage;
     private Boolean scheduledForShutdown;
+    private String terminationTime;
+
 
     public DockerHost() {
     }
@@ -87,6 +89,14 @@ public class DockerHost {
         this.scheduledForShutdown = scheduledForShutdown;
     }
 
+    public String getTerminationTime() {
+        return terminationTime;
+    }
+
+    public void setTerminationTime(String terminationTime) {
+        this.terminationTime = terminationTime;
+    }
+
     @Override
     public String toString() {
         return "DockerHost{" +
@@ -97,6 +107,7 @@ public class DockerHost {
                 ", ram=" + ram +
                 ", storage=" + storage +
                 ", scheduledForShutdown=" + scheduledForShutdown +
+                ", terminationTime='" + terminationTime + '\'' +
                 '}';
     }
 }
