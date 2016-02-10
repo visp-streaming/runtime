@@ -33,6 +33,12 @@ public class TopologyManagement {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
+            //declare error message channel
+            channel.exchangeDeclare("error", "fanout", true);
+            channel.queueDeclare("error", true, false, false, null);
+            channel.queueBind("error", "error", "error");
+
+
             for (Operator n : topology.getTopologyAsList()) {
                 String exchangeName = n.getName();
                 channel.exchangeDeclare(exchangeName, "fanout", true);

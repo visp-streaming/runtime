@@ -81,6 +81,12 @@
             <artifactId>spring-context-support</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>ac.at.tuwien.infosys</groupId>
+            <artifactId>vispCommonData</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
 	</dependencies>
 	
 	<build>
