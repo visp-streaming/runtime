@@ -4,6 +4,7 @@ import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.processingNodeDeployment.DockerContainerManagement;
 import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
+import at.tuwien.infosys.utility.Utilities;
 import com.spotify.docker.client.DockerException;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -27,6 +28,9 @@ public class DockerTests {
     @Autowired
     private DockerContainerRepository dcr;
 
+    @Autowired
+    private Utilities utility;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerTests.class);
 
     @Ignore
@@ -38,12 +42,12 @@ public class DockerTests {
     @Ignore
     @Test
     public void initializeTopology() throws DockerException, InterruptedException {
-        pcm.initializeTopology("http://128.130.172.224:2375", "http://128.130.172.225");
+        utility.initializeTopology("http://128.130.172.224:2375", "http://128.130.172.225");
     }
 
     @Test
     public void cleanupImages() throws DockerException, InterruptedException {
-        pcm.cleanup();
+        utility.cleanupContainer();
     }
 
     @Test
@@ -58,6 +62,7 @@ public class DockerTests {
         }
     }
 
+    //TODO test actual scaledown with wait until the container is really gone
     @Test
     public void scaledown() {
         pcm.scaleDown("monitor");

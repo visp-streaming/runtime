@@ -3,6 +3,7 @@ package at.tuwien.infosys;
 import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
 import at.tuwien.infosys.reasoner.Reasoner;
 import at.tuwien.infosys.topology.TopologyManagement;
+import at.tuwien.infosys.utility.Utilities;
 import com.spotify.docker.client.DockerException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,16 +15,19 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = VispApplication.class)
-@TestPropertySource(locations="classpath:test.properties")
+@TestPropertySource(locations="classpath:setup.properties")
 
 
-public class SetupCleanupTests {
+public class SetupCleanup {
 
     @Value("${visp.dockerhost}")
     private String dockerHost;
 
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
+
+    @Autowired
+    private Utilities utility;
 
     @Autowired
     private Reasoner reasoner;
@@ -46,12 +50,13 @@ public class SetupCleanupTests {
 
     @Test
     public void initializeEvaluation() {
-        reasoner.setup();
+        tmgmt.cleanup(infrastructureHost);
+        utility.createInitialStatus();
     }
 
     @Test
     public void cleanupDockerContainer() throws DockerException, InterruptedException {
-        pcm.cleanup();
+        utility.cleanupContainer();
     }
 
 

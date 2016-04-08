@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 @Service
-public class OpenstackVmManagement {
+public class OpenstackConnector {
 
     @Value("${visp.dockerhost.image}")
     private String dockerhostImage;
@@ -39,10 +39,13 @@ public class OpenstackVmManagement {
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
+    @Value("${visp.entropyContainerName}")
+    private String entropyContainerName;
+
     @Autowired
     private DockerHostRepository dhr;
 
-    private static final Logger LOG = LoggerFactory.getLogger(OpenstackVmManagement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
     private String OPENSTACK_AUTH_URL;
     private String OPENSTACK_USERNAME;
@@ -101,7 +104,9 @@ public class OpenstackVmManagement {
                 .image(image)
                 .keypairName(OPENSTACK_USERNAME)
                 .build();
-        Server server = os.compute().servers().bootAndWaitActive(sc, 120000);
+        Server server = os.compute()
+                .servers()
+                .bootAndWaitActive(sc, 120000);
 
         DockerHost dh = new DockerHost();
         dh.setCores(flavor.getVcpus() + 0.0);
@@ -130,18 +135,20 @@ public class OpenstackVmManagement {
     }
 
     private void startupEntropyContainer(String dockerHost) {
-        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).connectTimeoutMillis(3000000).build();
+        final DockerClient docker = DefaultDockerClient.builder().
+                uri(URI.create(dockerHost)).
+                connectTimeoutMillis(3000000).
+                build();
 
         try {
-            docker.pull("harbur/haveged:1.7c-1");
+            docker.pull(entropyContainerName);
 
             final HostConfig expected = HostConfig.builder()
                     .privileged(true)
                     .build();
 
-
             final ContainerConfig containerConfig = ContainerConfig.builder()
-                .image("harbur/haveged:1.7c-1")
+                    .image(entropyContainerName)
                     .hostConfig(expected)
                     .build();
 
@@ -193,12 +200,6 @@ public class OpenstackVmManagement {
         return os;
     }
 
-    //TODO use in monitor
-    public Map<String, ? extends Number> getDiagnostics(String serverId) {
-        setup();
-        return os.compute().servers().diagnostics(serverId);
-    }
-
     public void markHostForRemoval(String hostId) {
         DockerHost dh = dhr.findByHostid(hostId).get(0);
         dh.setScheduledForShutdown(true);
@@ -206,14 +207,13 @@ public class OpenstackVmManagement {
         dhr.save(dh);
     }
 
-    public void housekeeping() {
+    public void removeHostsWhichAreFlaggedToShutdown() {
         for (DockerHost dh : dhr.findAll()) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.info("housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusMinutes(graceperiod * 2));
+            LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusMinutes(graceperiod * 2));
             if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
                     stopVM(dh.getHostid());
             }
         }
     }
-
 }

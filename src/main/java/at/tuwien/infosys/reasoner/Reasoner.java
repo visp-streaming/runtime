@@ -3,8 +3,9 @@ package at.tuwien.infosys.reasoner;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.*;
+import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
-import at.tuwien.infosys.processingNodeDeployment.OpenstackVmManagement;
+import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
 import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class Reasoner {
     TopologyManagement topologyMgmt;
 
     @Autowired
-    OpenstackVmManagement omgmt;
+    OpenstackConnector openstackConnector;
 
     @Autowired
     ProcessingNodeManagement pcm;
@@ -34,7 +35,10 @@ public class Reasoner {
     private DockerContainerRepository dcr;
 
     @Autowired
-    Monitor monitor;
+    private AvailabilityWatchdog availabilityWatchdog;
+
+    @Autowired
+    private Monitor monitor;
 
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
@@ -43,14 +47,13 @@ public class Reasoner {
     private String infrastructureHost;
 
     @Value("${visp.operator.cpu}")
-    private Double operatorCPU;
+    private Double defaultContainerCPU;
 
     @Value("${visp.operator.ram}")
-    private Integer operatorRAM;
+    private Integer defaultContainerRAM;
 
     @Value("${visp.operator.storage}")
-    private Integer operatorStorage;
-
+    private Integer defaultContainerStorage;
 
     @Value("${visp.host.cpu}")
     private Double hostCPU;
@@ -63,23 +66,11 @@ public class Reasoner {
 
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
-    public void setup() {
-
-        topologyMgmt.createMapping(infrastructureHost);
-        String host = omgmt.startVM("dockerHost");
-
-        try {
-            Thread.sleep(60000);
-        } catch (InterruptedException e) {
-            LOG.error("Could not startup initial Host.", e);
-        }
-
-        pcm.initializeTopology(host, infrastructureHost);
-    }
-
     public synchronized void updateResourceconfiguration() {
-        pcm.housekeeping();
-        omgmt.housekeeping();
+        availabilityWatchdog.checkAvailablitiyOfContainer();
+
+        pcm.removeContainerWhichAreFlaggedToShutdown();
+        openstackConnector.removeHostsWhichAreFlaggedToShutdown();
 
         LOG.info("VISP - Start Reasoner");
 
@@ -89,18 +80,16 @@ public class Reasoner {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
             DockerContainer dc = new DockerContainer();
-            dc.setCpuCores(operatorCPU);
-            dc.setStorage(operatorStorage);
-            dc.setRam(operatorRAM);
+            dc.setCpuCores(defaultContainerCPU);
+            dc.setStorage(defaultContainerStorage);
+            dc.setRam(defaultContainerRAM);
 
             if (action.equals(ScalingAction.SCALEDOWN)) {
                 pcm.scaleDown(operator);
-                LOG.info("VISP - Scale DOWN " + operator);
             }
 
             if (action.equals(ScalingAction.SCALEUP)) {
                 pcm.scaleup(operator, selectSuitableDockerHost(dc), infrastructureHost);
-                LOG.info("VISP - Scale UP " + operator);
             }
         }
         LOG.info("VISP - Finished container scaling");
@@ -118,7 +107,7 @@ public class Reasoner {
             //select host with the least running container
             String hostToKill = freeResources.get(0).getHostId();
 
-            omgmt.markHostForRemoval(hostToKill);
+            openstackConnector.markHostForRemoval(hostToKill);
 
             List<DockerContainer> containerToMigrate = dcr.findByHost(hostToKill);
 
@@ -142,13 +131,11 @@ public class Reasoner {
     public synchronized String selectSuitableDockerHost(DockerContainer dc) {
         List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
 
-        String host = null;
-        //host = equalDistributionStrategy(dc, freeResources);
-        host = binPackingStrategy(dc, freeResources);
+        String host = binPackingStrategy(dc, freeResources);
+        //String host = equalDistributionStrategy(dc, freeResources);
 
         if (host == null) {
-            //Scale up docker hosts
-            return omgmt.startVM("dockerhost");
+            return openstackConnector.startVM("dockerhost");             //Scale up docker hosts
         } else {
             return host;
         }
@@ -212,7 +199,6 @@ public class Reasoner {
 
         //calculate how much resources are left on a specific host
 
-
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
             String url = entry.getKey();
             ResourceAvailability usage = entry.getValue();
@@ -259,6 +245,4 @@ public class Reasoner {
 
         return all;
     }
-
-
 }

@@ -3,7 +3,7 @@ package at.tuwien.infosys.monitoring;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
-import at.tuwien.infosys.processingNodeDeployment.OpenstackVmManagement;
+import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -22,11 +22,10 @@ import java.util.List;
 @Service
 public class Monitor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OpenstackVmManagement.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
     @Autowired
     private QueueMonitorRepository qmr;
-
 
     @Autowired
     private TopologyManagement topologyMgmt;

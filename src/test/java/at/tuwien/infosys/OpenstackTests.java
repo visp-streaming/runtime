@@ -1,7 +1,7 @@
 package at.tuwien.infosys;
 
 
-import at.tuwien.infosys.processingNodeDeployment.OpenstackVmManagement;
+import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,12 +21,12 @@ import java.util.List;
 public class OpenstackTests {
 
     @Autowired
-    private OpenstackVmManagement openstackVmManagement;
+    private OpenstackConnector openstackConnector;
 
 
     @Test
     public void showFloatingIPs() {
-        OSClient os = openstackVmManagement.getOs();
+        OSClient os = openstackConnector.getOs();
         List<FloatingIP> ips = (List<FloatingIP>) os.compute().floatingIps().list();
         for (FloatingIP ip : ips) {
             System.out.println(ip.getFixedIpAddress() + " - " + ip.getFloatingIpAddress() + " - " + ip.getInstanceId());
@@ -36,14 +36,14 @@ public class OpenstackTests {
 
     @Test
     public void startnewVM() {
-        String server = openstackVmManagement.startVM("testCaseVM");
+        String server = openstackConnector.startVM("testCaseVM");
         Assert.assertNotNull(server);
     }
 
 
 //    @After
     public void cleanup() {
-        OSClient os = openstackVmManagement.getOs();
+        OSClient os = openstackConnector.getOs();
         for (Server server : os.compute().servers().list()) {
             if (server.getName().equals("testCaseVM")) {
                 os.compute().servers().delete(server.getId());

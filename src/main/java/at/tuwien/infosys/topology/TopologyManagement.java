@@ -127,4 +127,8 @@ public class TopologyManagement {
         return operators;
     }
 
+    public List<Operator> getTopologyAsList() {
+        return topology.getTopologyAsList();
+    }
+
 }

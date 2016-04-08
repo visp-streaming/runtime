@@ -1,6 +1,7 @@
 package at.tuwien.infosys.configuration;
 
 import at.tuwien.infosys.entities.Operator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,6 +13,8 @@ public class Topology {
     private List<Operator> topology = new ArrayList<>();
     private String imageID = "chochreiner/vispprocessingnodes";
 
+    @Value("${visp.infrastructurehost}")
+    private String infrastructureHost;
 
     public Topology() {
 
@@ -22,25 +25,28 @@ public class Topology {
         List<Operator> speedList = new ArrayList<>();
         speedList.add(source);
         speed.setSources(speedList);
+        speed.setMessageBrokerHost(infrastructureHost);
 
         //AVG - Speed
         Operator avgSpeed = new Operator("avgSpeed");
         List<Operator> avgSpeedList = new ArrayList<>();
         avgSpeedList.add(speed);
         avgSpeed.setSources(avgSpeedList);
-
+        avgSpeed.setMessageBrokerHost(infrastructureHost);
 
         //Aggregation
         Operator aggregation = new Operator("aggregation");
         List<Operator> aggregationList = new ArrayList<>();
         aggregationList.add(source);
         aggregation.setSources(aggregationList);
+        aggregation.setMessageBrokerHost(infrastructureHost);
 
         //Distance
         Operator distance = new Operator("distance");
         List<Operator> distanceList = new ArrayList<>();
         distanceList.add(aggregation);
         distance.setSources(distanceList);
+        distance.setMessageBrokerHost(infrastructureHost);
 
         //Analysis
         Operator analysis = new Operator("analysis");
@@ -48,6 +54,7 @@ public class Topology {
         analysisList.add(avgSpeed);
         analysisList.add(distance);
         analysis.setSources(analysisList);
+        analysis.setMessageBrokerHost(infrastructureHost);
 
         //Monitor
         Operator monitor = new Operator("monitor");
@@ -55,6 +62,8 @@ public class Topology {
         monitorList.add(source);
         monitorList.add(analysis);
         monitor.setSources(monitorList);
+        monitor.setMessageBrokerHost(infrastructureHost);
+
 
 
         topology.add(source);
