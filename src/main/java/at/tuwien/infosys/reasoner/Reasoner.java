@@ -5,8 +5,8 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.*;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
-import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
-import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.OpenstackConnector;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,7 +135,10 @@ public class Reasoner {
         //String host = equalDistributionStrategy(dc, freeResources);
 
         if (host == null) {
-            return openstackConnector.startVM("dockerhost");             //Scale up docker hosts
+            DockerHost dh = new DockerHost("additionaldockerhost");
+            dh.setFlavour("m2.medium");
+            //TODO return dockerhost object
+            return openstackConnector.startVM(dh).getUrl();             //Scale up docker hosts
         } else {
             return host;
         }
@@ -182,7 +185,7 @@ public class Reasoner {
         List<ResourceAvailability> freeResources = new ArrayList<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 0, 0.0, 0, 0, "dockercontainer");
+            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 0, 0.0, 0, 0.0F, "dockercontainer");
             hostResourceUsage.put(dh.getUrl(), rc);
         }
 
@@ -211,7 +214,7 @@ public class Reasoner {
             }
 
             ResourceAvailability availability = new ResourceAvailability();
-            availability.setHostId(dh.getHostid());
+            availability.setHostId(dh.getName());
             availability.setUrl(dh.getUrl());
             availability.setAmountOfContainer(usage.getAmountOfContainer());
             availability.setCpuCores(dh.getCores()-usage.getCpuCores());
@@ -229,7 +232,7 @@ public class Reasoner {
         all.setAmountOfContainer(0);
         all.setCpuCores(0.0);
         all.setRam(0);
-        all.setStorage(0);
+        all.setStorage(0.0F);
 
 
         LOG.info("###### free resources ######");

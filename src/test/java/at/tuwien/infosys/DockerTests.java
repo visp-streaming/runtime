@@ -2,8 +2,8 @@ package at.tuwien.infosys;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.processingNodeDeployment.DockerContainerManagement;
-import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.utility.Utilities;
 import com.spotify.docker.client.DockerException;
 import org.junit.Ignore;

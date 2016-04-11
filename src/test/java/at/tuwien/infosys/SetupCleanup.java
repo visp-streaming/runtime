@@ -1,6 +1,6 @@
 package at.tuwien.infosys;
 
-import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.reasoner.Reasoner;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.utility.Utilities;

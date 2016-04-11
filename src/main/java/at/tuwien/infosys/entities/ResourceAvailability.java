@@ -6,13 +6,13 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     private Integer amountOfContainer;
     private Double cpuCores;
     private Integer ram;
-    private Integer storage;
+    private Float storage;
     private String url;
 
     public ResourceAvailability() {
     }
 
-    public ResourceAvailability(String hostId, Integer amountOfContainer, Double cpuCores, Integer ram, Integer storage, String url) {
+    public ResourceAvailability(String hostId, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage, String url) {
         this.hostId = hostId;
         this.amountOfContainer = amountOfContainer;
         this.cpuCores = cpuCores;
@@ -53,11 +53,11 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
         this.ram = ram;
     }
 
-    public Integer getStorage() {
+    public Float getStorage() {
         return storage;
     }
 
-    public void setStorage(Integer storage) {
+    public void setStorage(Float storage) {
         this.storage = storage;
     }
 

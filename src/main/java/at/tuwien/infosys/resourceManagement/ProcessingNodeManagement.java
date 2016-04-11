@@ -1,4 +1,4 @@
-package at.tuwien.infosys.processingNodeDeployment;
+package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;

@@ -5,8 +5,8 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.Operator;
-import at.tuwien.infosys.processingNodeDeployment.DockerContainerManagement;
-import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
+import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
+import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerException;
@@ -61,7 +61,9 @@ public class Utilities {
         dhr.deleteAll();
         dcr.deleteAll();
         topologyMgmt.createMapping(infrastructureHost);
-        String host = openstackConnector.startVM("dockerHost");
+        DockerHost dh = new DockerHost("initialHost");
+        dh.setFlavour("m2.medium");
+        dh = openstackConnector.startVM(dh);
 
         try {
             Thread.sleep(60000);
@@ -69,14 +71,15 @@ public class Utilities {
             LOG.error("Could not startup initial Host.", e);
         }
 
-        initializeTopology(host, infrastructureHost);
+        //TODO user dockerhost object instead of plain strings
+        initializeTopology(dh.getUrl(), infrastructureHost);
     }
 
     public void cleanupContainer() {
         List<String> hostString = new ArrayList<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            hostString.add(dh.getHostid());
+            hostString.add(dh.getName());
         }
 
         try {

@@ -3,7 +3,7 @@ package at.tuwien.infosys.monitoring;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
-import at.tuwien.infosys.processingNodeDeployment.OpenstackConnector;
+import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;

@@ -8,7 +8,8 @@ import java.util.List;
 
 public interface DockerHostRepository extends CrudRepository<DockerHost, Long> {
 
-    List<DockerHost> findByHostid(String hostid);
+    List<DockerHost> findByName(String name);
     List<DockerHost> findByUrl(String url);
 
+    //TODO implement unique names for scaling
 }

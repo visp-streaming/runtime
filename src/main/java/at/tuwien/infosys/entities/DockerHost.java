@@ -12,25 +12,21 @@ public class DockerHost {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
-    private String hostid;
+    private String name;
     private String url;
     private Double cores;
     private Integer ram;
-    private Integer storage;
+    private Float storage;
     private Boolean scheduledForShutdown;
     private String terminationTime;
+    private String flavour;
 
 
     public DockerHost() {
     }
 
-    public DockerHost(String hostid, String url, Double cores, Integer ram, Integer storage) {
-        this.hostid = hostid;
-        this.url = url;
-        this.cores = cores;
-        this.ram = ram;
-        this.storage = storage;
-        this.scheduledForShutdown = false;
+    public DockerHost(String name) {
+        this.name = name;
     }
 
     public long getId() {
@@ -41,12 +37,12 @@ public class DockerHost {
         this.id = id;
     }
 
-    public String getHostid() {
-        return hostid;
+    public String getName() {
+        return name;
     }
 
-    public void setHostid(String hostid) {
-        this.hostid = hostid;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getUrl() {
@@ -73,11 +69,11 @@ public class DockerHost {
         this.ram = ram;
     }
 
-    public Integer getStorage() {
+    public Float getStorage() {
         return storage;
     }
 
-    public void setStorage(Integer storage) {
+    public void setStorage(Float storage) {
         this.storage = storage;
     }
 
@@ -97,17 +93,26 @@ public class DockerHost {
         this.terminationTime = terminationTime;
     }
 
+    public String getFlavour() {
+        return flavour;
+    }
+
+    public void setFlavour(String flavour) {
+        this.flavour = flavour;
+    }
+
     @Override
     public String toString() {
         return "DockerHost{" +
                 "id=" + id +
-                ", hostid='" + hostid + '\'' +
+                ", name='" + name + '\'' +
                 ", url='" + url + '\'' +
                 ", cores=" + cores +
                 ", ram=" + ram +
                 ", storage=" + storage +
                 ", scheduledForShutdown=" + scheduledForShutdown +
                 ", terminationTime='" + terminationTime + '\'' +
+                ", flavour='" + flavour + '\'' +
                 '}';
     }
 }

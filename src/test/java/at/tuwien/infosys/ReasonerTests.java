@@ -4,8 +4,8 @@ import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.processingNodeDeployment.DockerContainerManagement;
-import at.tuwien.infosys.processingNodeDeployment.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.reasoner.Reasoner;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,22 +60,22 @@ public class ReasonerTests {
 
         spaceForThreeContainerHost1.setCores(4.0);
         spaceForThreeContainerHost1.setRam(1000);
-        spaceForThreeContainerHost1.setHostid("bigHost1");
-        spaceForThreeContainerHost1.setStorage(40);
+        spaceForThreeContainerHost1.setName("bigHost1");
+        spaceForThreeContainerHost1.setStorage(40F);
         spaceForThreeContainerHost1.setUrl("bigHostURL1");
         spaceForThreeContainerHost1.setScheduledForShutdown(false);
 
         spaceforOneContainerHost1.setCores(2.0);
         spaceforOneContainerHost1.setRam(1100);
-        spaceforOneContainerHost1.setHostid("smallhost1");
-        spaceforOneContainerHost1.setStorage(10);
+        spaceforOneContainerHost1.setName("smallhost1");
+        spaceforOneContainerHost1.setStorage(10F);
         spaceforOneContainerHost1.setUrl("smallHostURL1");
         spaceforOneContainerHost1.setScheduledForShutdown(false);
 
         spaceforNoContainerHost1.setCores(0.5);
         spaceforNoContainerHost1.setRam(200);
-        spaceforNoContainerHost1.setHostid("fullHost1");
-        spaceforNoContainerHost1.setStorage(10);
+        spaceforNoContainerHost1.setName("fullHost1");
+        spaceforNoContainerHost1.setStorage(10F);
         spaceforNoContainerHost1.setUrl("fullHostURL1");
         spaceforNoContainerHost1.setScheduledForShutdown(false);
 
