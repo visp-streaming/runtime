@@ -2,10 +2,12 @@ package at.tuwien.infosys;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.utility.Utilities;
 import com.spotify.docker.client.DockerException;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +18,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = VispApplication.class)
+@SpringApplicationConfiguration(classes = VISPRuntime.class)
 public class DockerTests {
 
     @Autowired
@@ -31,18 +33,30 @@ public class DockerTests {
     @Autowired
     private Utilities utility;
 
+    private DockerHost dh;
+    private DockerContainer dc;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerTests.class);
+
+    @Before
+    public void setup() {
+        dh = new DockerHost("host");
+        dh.setUrl("128.130.172.206");
+        dc = new DockerContainer("monitor", 0.5, 300, 1);
+    }
+
 
     @Ignore
     @Test
     public void startupContainer() throws DockerException, InterruptedException {
-        dcm.startContainer("http://128.130.172.224:2375", "monitor", "http://128.130.172.225");
+        DockerContainer dc = new DockerContainer("monitor", 0.5, 300, 1);
+        dcm.startContainer(dh, dc, "http://128.130.172.225");
     }
 
     @Ignore
     @Test
     public void initializeTopology() throws DockerException, InterruptedException {
-        utility.initializeTopology("http://128.130.172.224:2375", "http://128.130.172.225");
+        utility.initializeTopology(dh, "http://128.130.172.225");
     }
 
     @Test
@@ -52,7 +66,7 @@ public class DockerTests {
 
     @Test
     public void scalingTest() {
-        pcm.scaleup("speed", "http://128.130.172.224:2375", "http://128.130.172.225");
+        pcm.scaleup(dc, dh, "http://128.130.172.225");
         for (DockerContainer dc : dcr.findByOperator("speed")) {
             LOG.info(dc.toString());
         }

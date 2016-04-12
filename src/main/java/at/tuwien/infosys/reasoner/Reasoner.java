@@ -1,5 +1,6 @@
 package at.tuwien.infosys.reasoner;
 
+import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.*;
@@ -26,6 +27,9 @@ public class Reasoner {
     OpenstackConnector openstackConnector;
 
     @Autowired
+    OperatorConfiguration opConfig;
+
+    @Autowired
     ProcessingNodeManagement pcm;
 
     @Autowired
@@ -46,24 +50,6 @@ public class Reasoner {
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
-    @Value("${visp.operator.cpu}")
-    private Double defaultContainerCPU;
-
-    @Value("${visp.operator.ram}")
-    private Integer defaultContainerRAM;
-
-    @Value("${visp.operator.storage}")
-    private Integer defaultContainerStorage;
-
-    @Value("${visp.host.cpu}")
-    private Double hostCPU;
-
-    @Value("${visp.host.ram}")
-    private Integer hostRAM;
-
-    @Value("${visp.host.storage}")
-    private Integer hostStorage;
-
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
     public synchronized void updateResourceconfiguration() {
@@ -79,17 +65,13 @@ public class Reasoner {
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
-            DockerContainer dc = new DockerContainer();
-            dc.setCpuCores(defaultContainerCPU);
-            dc.setStorage(defaultContainerStorage);
-            dc.setRam(defaultContainerRAM);
-
             if (action.equals(ScalingAction.SCALEDOWN)) {
                 pcm.scaleDown(operator);
             }
 
             if (action.equals(ScalingAction.SCALEUP)) {
-                pcm.scaleup(operator, selectSuitableDockerHost(dc), infrastructureHost);
+                DockerContainer dc = opConfig.createDockerContainerConfiguration(operator);
+                pcm.scaleup(dc, selectSuitableDockerHost(dc), infrastructureHost);
             }
         }
         LOG.info("VISP - Finished container scaling");
@@ -101,7 +83,7 @@ public class Reasoner {
         //TODO may be adopted
         //only scale down if there are 2 hosts availabe in general
 
-        if ((aggregatedFreeResources.getCpuCores() > (hostCPU * 2) && (aggregatedFreeResources.getRam() > (hostRAM * 2)) && (aggregatedFreeResources.getStorage() > (hostStorage * 2)))) {
+        if ((aggregatedFreeResources.getCpuCores() > 5.0 && (aggregatedFreeResources.getRam() > 1000.0) && (aggregatedFreeResources.getStorage() > 5))) {
             Collections.sort(freeResources, ResourceComparator.AMOUNTOFCONTAINERASC);
 
             //select host with the least running container
@@ -121,14 +103,14 @@ public class Reasoner {
                     continue;
                 }
                 pcm.triggerShutdown(dc);
-                pcm.scaleup(dc.getOperator(), selectSuitableDockerHost(dc), infrastructureHost);
+                pcm.scaleup(dc, selectSuitableDockerHost(dc), infrastructureHost);
             }
         }
 
         LOG.info("VISP - Finished Reasoner");
     }
 
-    public synchronized String selectSuitableDockerHost(DockerContainer dc) {
+    public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc) {
         List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
 
         String host = binPackingStrategy(dc, freeResources);
@@ -137,10 +119,9 @@ public class Reasoner {
         if (host == null) {
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
-            //TODO return dockerhost object
-            return openstackConnector.startVM(dh).getUrl();             //Scale up docker hosts
+            return openstackConnector.startVM(dh);
         } else {
-            return host;
+            return dhr.findByName(host).get(0);
         }
     }
 
@@ -171,9 +152,9 @@ public class Reasoner {
             if (ra.getStorage() <= dc.getStorage()) {
                 continue;
             }
-            LOG.info("Host found: " + ra.getUrl());
+            LOG.info("Host found: " + ra.getName());
             LOG.info("###### select suitable container for ######");
-            return ra.getUrl();
+            return ra.getName();
         }
         LOG.info("No suitable host found.");
         LOG.info("###### select suitable container for ######");
@@ -185,8 +166,8 @@ public class Reasoner {
         List<ResourceAvailability> freeResources = new ArrayList<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            ResourceAvailability rc = new ResourceAvailability(dh.getUrl(), 0, 0.0, 0, 0.0F, "dockercontainer");
-            hostResourceUsage.put(dh.getUrl(), rc);
+            ResourceAvailability rc = new ResourceAvailability(dh.getName(), 0, 0.0, 0, 0.0F, "dockercontainer", dh.getName());
+            hostResourceUsage.put(dh.getName(), rc);
         }
 
         //collect current usage of cloud resources
@@ -196,20 +177,20 @@ public class Reasoner {
                 rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
                 rc.setRam(rc.getRam() + rc.getRam());
                 rc.setStorage(rc.getStorage() + rc.getStorage());
-                rc.setUrl(rc.getUrl());
+                rc.setName(dc.getHost());
                 hostResourceUsage.put(dc.getHost(), rc);
         }
 
         //calculate how much resources are left on a specific host
 
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
-            String url = entry.getKey();
+            String name = entry.getKey();
             ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findByUrl(url).get(0);
+            DockerHost dh = dhr.findByName(name).get(0);
 
             //omit all dockerhosts which are scheduled for shutdown
             if (dh.getScheduledForShutdown()) {
-                LOG.info("omitted host: " + dh.getUrl() + "for scheduling, since it is scheduled to shut down.");
+                LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is scheduled to shut down.");
                 continue;
             }
 

@@ -12,6 +12,7 @@ import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import org.apache.commons.io.IOUtils;
 import org.jclouds.ContextBuilder;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
@@ -20,10 +21,12 @@ import org.jclouds.compute.domain.Hardware;
 import org.jclouds.compute.domain.Image;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.Template;
+import org.jclouds.compute.options.TemplateOptions;
 import org.jclouds.domain.Location;
 import org.jclouds.javax.annotation.Nullable;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
+import org.jclouds.openstack.nova.v2_0.compute.options.NovaTemplateOptions;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
 import org.joda.time.DateTime;
@@ -44,11 +47,11 @@ import java.util.Set;
 @Service
 public class OpenstackConnector {
 
+    @Value("${visp.simulation}")
+    private Boolean SIMULATION;
+
     @Value("${visp.dockerhost.image}")
     private String dockerhostImage;
-
-    @Value("${visp.dockerhost.flavor}")
-    private String dockerhostFlavor;
 
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
@@ -65,7 +68,7 @@ public class OpenstackConnector {
     private String OPENSTACK_USERNAME;
     private String OPENSTACK_PASSWORD;
     private String OPENSTACK_TENANT_NAME;
-    private String OPENSTACK_TENANT_ID;
+    private String OPENSTACK_KEYPAIR_NAME;
 
 
     private Map<String, Hardware> hardwareProfiles = new HashMap<>();
@@ -89,7 +92,7 @@ public class OpenstackConnector {
         OPENSTACK_USERNAME = prop.getProperty("os.username");
         OPENSTACK_PASSWORD = prop.getProperty("os.password");
         OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
-        OPENSTACK_TENANT_ID = prop.getProperty("os.tenant.id");
+        OPENSTACK_KEYPAIR_NAME = prop.getProperty("os.keypair.name");
 
         Iterable<Module> modules = ImmutableSet.<Module>of(new SLF4JLoggingModule());
 
@@ -113,19 +116,40 @@ public class OpenstackConnector {
 
 
     public DockerHost startVM(DockerHost dh) {
+        if (SIMULATION) {
+            LOG.info("Simulate Dockerhost Startup");
+            try {
+                Thread.sleep(1000 * 30);
+            } catch (InterruptedException ignore) {
+                LOG.error("Simulate Dockerhost Startup failed");
+            }
+
+            //TODO get actual hardware config
+            dh.setCores(4.0);
+            dh.setRam(5760);
+            dh.setStorage(40.0F);
+            dh.setScheduledForShutdown(false);
+            dh.setUrl("simulatedURL");
+
+            dhr.save(dh);
+
+            return dh;
+        }
+
         setup();
 
+        String cloudInit = "";
+        try {
+            cloudInit = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("docker-config/cloud-init"), "UTF-8");
+        } catch (IOException e) {
+            LOG.error("Could not load cloud init file");
+        }
 
-        //TODO configure options
-        //TODO activate REST api via SSH
 
-
-        /**
-         TemplateOptions options = NovaTemplateOptions.Builder
-         .userData(nodeSpecificCloudInit.getBytes())
-         .keyPairName(cloud_default_key_pair)
-         .securityGroups(cloud_security_group);
-         **/
+        TemplateOptions options = NovaTemplateOptions.Builder
+         .userData(cloudInit.getBytes())
+         .keyPairName(OPENSTACK_KEYPAIR_NAME)
+         .securityGroups("default");
 
         Hardware hardware = hardwareProfiles.get(dh.getFlavour());
 
@@ -133,7 +157,7 @@ public class OpenstackConnector {
 
         Template template = compute.templateBuilder()
                 .locationId("myregion")
-                //.options(options)
+                .options(options)
                 .fromHardware(hardware)
                 .fromImage(imageProfiles.get(dockerhostImage))
                 .build();
@@ -169,7 +193,7 @@ public class OpenstackConnector {
 
         dh.setName(nodeMetadata.getHostname());
         dh.setUrl(publicIP);
-        dh.setCores(hardware.getProcessors().size() + 0.0);
+        dh.setCores(hardware.getProcessors().get(0).getCores() + 0.0);
         dh.setRam(hardware.getRam());
         dh.setStorage(hardware.getVolumes().get(0).getSize());
         dh.setScheduledForShutdown(false);
@@ -178,22 +202,15 @@ public class OpenstackConnector {
 
         LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + publicIP + " was started.");
 
-        //TODO activate REST api via SSH
-
-
-        //TODO create urls in the dedicated methods (d.h. add port info)
-        // TODO startup entropy container
-//        startupEntropyContainer(pub);
-
+        startupEntropyContainer(dh);
         return dh;
     }
 
-    private void startupEntropyContainer(String dockerHost) {
+    private void startupEntropyContainer(DockerHost dh) {
         final DockerClient docker = DefaultDockerClient.builder().
-                uri(URI.create(dockerHost)).
+                uri(URI.create("http://" + dh.getUrl() + ":2375")).
                 connectTimeoutMillis(3000000).
                 build();
-
         try {
             docker.pull(entropyContainerName);
 
@@ -220,6 +237,16 @@ public class OpenstackConnector {
 
 
     public final void stopDockerHost(final DockerHost dh) {
+        if (SIMULATION) {
+            LOG.info("Simulate Dockerhost Schutdown");
+            try {
+                Thread.sleep(1000 * 5);
+            } catch (InterruptedException ignore) {
+                LOG.error("Simulate Dockerhost Schutdown failed");
+            }
+            return;
+        }
+
 
         Set<? extends NodeMetadata> nodeMetadatas = compute.destroyNodesMatching(new Predicate<NodeMetadata>() {
             @Override
@@ -245,13 +272,12 @@ public class OpenstackConnector {
     public void removeHostsWhichAreFlaggedToShutdown() {
         for (DockerHost dh : dhr.findAll()) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusMinutes(graceperiod * 2));
+            LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
             if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
                 stopDockerHost(dh);
             }
         }
     }
-
 
     protected void loadOpenStackData() {
         Set<? extends Hardware> profiles = compute.listHardwareProfiles();
@@ -263,5 +289,4 @@ public class OpenstackConnector {
             imageProfiles.put(image.getProviderId(), image);
         }
     }
-
 }

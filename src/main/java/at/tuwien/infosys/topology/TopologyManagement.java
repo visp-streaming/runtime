@@ -62,6 +62,11 @@ public class TopologyManagement {
         }
     }
 
+    public void reset(String infrastructureHost) {
+        cleanup(infrastructureHost);
+        createMapping(infrastructureHost);
+    }
+
     public void cleanup(String infrastructureHost) {
         try {
             ConnectionFactory factory = new ConnectionFactory();
@@ -88,7 +93,6 @@ public class TopologyManagement {
         } catch (TimeoutException e) {
             LOG.error("Could not create mapping.", e);
         }
-
     }
 
     public String getIncomingQueues(String operator) {

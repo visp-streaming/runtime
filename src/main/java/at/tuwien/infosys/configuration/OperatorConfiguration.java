@@ -1,6 +1,7 @@
 package at.tuwien.infosys.configuration;
 
 
+import at.tuwien.infosys.entities.DockerContainer;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -22,4 +23,10 @@ public class OperatorConfiguration {
     public String getImage(String operator) {
         return configuration.get(operator);
     }
+
+    public DockerContainer createDockerContainerConfiguration(String operator) {
+
+        return new DockerContainer(operator, 0.45, 300, 1);
+    }
+
 }

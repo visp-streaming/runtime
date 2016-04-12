@@ -1,5 +1,6 @@
 package at.tuwien.infosys.utility;
 
+import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
@@ -32,6 +33,9 @@ public class Utilities {
     OpenstackConnector openstackConnector;
 
     @Autowired
+    OperatorConfiguration opConfig;
+
+    @Autowired
     private DockerHostRepository dhr;
 
     @Autowired
@@ -42,13 +46,14 @@ public class Utilities {
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-    public void initializeTopology(String dockerHost, String infrastructureHost) {
+    public void initializeTopology(DockerHost dh, String infrastructureHost) {
         try {
             for (Operator op : topologyMgmt.getTopologyAsList()) {
                 if (op.getName().equals("source")) {
                     continue;
                 }
-                dcm.startContainer(dockerHost, op.getName(), infrastructureHost);
+                DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
+                dcm.startContainer(dh, dc, infrastructureHost);
             }
         } catch (InterruptedException e) {
             LOG.error("Could not initialize topology.", e);
@@ -61,7 +66,7 @@ public class Utilities {
         dhr.deleteAll();
         dcr.deleteAll();
         topologyMgmt.createMapping(infrastructureHost);
-        DockerHost dh = new DockerHost("initialHost");
+        DockerHost dh = new DockerHost("initialhost");
         dh.setFlavour("m2.medium");
         dh = openstackConnector.startVM(dh);
 
@@ -72,7 +77,7 @@ public class Utilities {
         }
 
         //TODO user dockerhost object instead of plain strings
-        initializeTopology(dh.getUrl(), infrastructureHost);
+        initializeTopology(dh, infrastructureHost);
     }
 
     public void cleanupContainer() {

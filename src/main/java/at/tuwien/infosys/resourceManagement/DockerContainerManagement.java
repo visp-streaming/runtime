@@ -5,6 +5,7 @@ import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ScalingActivity;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.spotify.docker.client.*;
@@ -38,15 +39,8 @@ public class DockerContainerManagement {
     @Autowired
     private ScalingActivityRepository sar;
 
-    @Value("${visp.operator.cpu}")
-    private Double operatorCPU;
-
-    @Value("${visp.operator.ram}")
-    private Integer operatorRAM;
-
-    @Value("${visp.operator.storage}")
-    private Integer operatorStorage;
-
+    @Value("${visp.simulation}")
+    private Boolean SIMULATION;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
@@ -76,32 +70,50 @@ public class DockerContainerManagement {
 
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
-    public void startContainer(String dockerHost, String operator, String infrastructureHost) throws DockerException, InterruptedException {
-        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dockerHost)).connectTimeoutMillis(60000).build();
+    public void startContainer(DockerHost dockerHost, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
+        if (SIMULATION) {
+            LOG.info("Simulate DockerContainer Startup");
+            try {
+                //TODO differentiate between cold and warm startup
+                Thread.sleep(1000 * 4);
+            } catch (InterruptedException ignore) {
+                LOG.error("Simulate DockerContainer Startup failed");
+            }
 
-        docker.pull(operatorConfiguration.getImage(operator));
+            container.setImage(operatorConfiguration.getImage(container.getOperator()));
+            container.setHost(dockerHost.getName());
+
+            dcr.save(container);
+
+            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dockerHost.getName()));
+
+            return;
+        }
+
+
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dockerHost.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+
+        docker.pull(operatorConfiguration.getImage(container.getOperator()));
 
         List<String> environmentVariables = new ArrayList<>();
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_REDIS_HOST=" + infrastructureHost);
-        environmentVariables.add("OUTGOINGEXCHANGE=" + operator);
-        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(operator));
-        environmentVariables.add("ROLE=" + operator);
+        environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperator());
+        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
+        environmentVariables.add("ROLE=" + container.getOperator());
 
 
-        //TODO make this flexible in terms of core and memory - checkout viepep
-       /*
-        Double vmCores = 4.0;
-        Double containerCores = 1.0;
-        Double containerRam = 100.0;
+        Double vmCores = dockerHost.getCores();
+        Double containerCores = container.getCpuCores();
+        Double containerRam = container.getRam().doubleValue();
 
         long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
         long memory = (long) (containerRam * 1024 * 1024);
-        */
 
+        //TODO implement memory restrictions
         final ContainerConfig containerConfig = ContainerConfig.builder()
-                .image(operatorConfiguration.getImage(operator))
+                .image(operatorConfiguration.getImage(container.getOperator()))
                 //.cpuShares(cpuShares)
                 //.memory(memory)
                 .env(environmentVariables)
@@ -113,24 +125,32 @@ public class DockerContainerManagement {
 
         docker.startContainer(id);
 
-        DockerContainer dc = new DockerContainer();
-        dc.setContainerid(id);
-        dc.setImage(operatorConfiguration.getImage(operator));
-        dc.setHost(dockerHost);
-        dc.setOperator(operator);
+        container.setContainerid(id);
+        container.setImage(operatorConfiguration.getImage(container.getOperator()));
+        container.setHost(dockerHost.getName());
 
-        dc.setStorage(operatorStorage);
-        dc.setRam(operatorRAM);
-        dc.setCpuCores(operatorCPU);
+        dcr.save(container);
 
-        dcr.save(dc);
+        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dockerHost.getName()));
 
-        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), operator, "scaleup", dockerHost));
-
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + operator + " on the host: " + dockerHost);
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dockerHost.getName());
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
+        if (SIMULATION) {
+            LOG.info("Simulate DockerContainer Removal");
+            try {
+                Thread.sleep(1000 * 1);
+            } catch (InterruptedException ignore) {
+                LOG.error("Simulate DockerContainer Removal failed");
+            }
+
+            dcr.delete(dc);
+            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
+
+            return;
+        }
+
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
         docker.killContainer(dc.getContainerid());
         docker.removeContainer(dc.getContainerid());
@@ -141,6 +161,17 @@ public class DockerContainerManagement {
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
+        if (SIMULATION) {
+            LOG.info("Simulate DockerContainer Command execution");
+            try {
+                Thread.sleep(1000 * 2);
+            } catch (InterruptedException ignore) {
+                LOG.error("Simulate DockerContainer Command execution failed");
+            }
+
+            return "The command execution was simulated";
+        }
+
         final String[] command = {"bash", "-c", cmd};
         final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
 

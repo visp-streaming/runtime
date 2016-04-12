@@ -10,7 +10,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = VispApplication.class)
+@SpringApplicationConfiguration(classes = VISPRuntime.class)
 public class RepositoryTests {
 
     @Autowired
@@ -27,7 +27,7 @@ public class RepositoryTests {
 
     @Test
     public void simpleTest() {
-        dcr.save(new DockerContainer("asdf", "host", "image", "operator", operatorCPU, operatorRAM, operatorStorage));
+        dcr.save(new DockerContainer("asdf", operatorCPU, operatorRAM, operatorStorage));
     }
 
 }

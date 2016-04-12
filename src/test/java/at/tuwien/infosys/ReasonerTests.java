@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = VispApplication.class)
+@SpringApplicationConfiguration(classes = VISPRuntime.class)
 @TestPropertySource(locations="classpath:test.properties")
 public class ReasonerTests {
 

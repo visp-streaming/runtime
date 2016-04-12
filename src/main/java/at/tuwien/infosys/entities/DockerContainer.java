@@ -110,10 +110,8 @@ public class DockerContainer {
     public DockerContainer() {
     }
 
-    public DockerContainer(String containerid, String host, String image, String operator, Double cpuCores, Integer ram, Integer storage) {
-        this.containerid = containerid;
-        this.host = host;
-        this.image = image;
+
+    public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
         this.operator = operator;
         this.cpuCores = cpuCores;
         this.ram = ram;

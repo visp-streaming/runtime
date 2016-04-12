@@ -3,6 +3,7 @@ package at.tuwien.infosys.resourceManagement;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
 import com.spotify.docker.client.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -21,6 +22,9 @@ public class ProcessingNodeManagement {
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
+    @Value("${visp.simulation}")
+    private Boolean SIMULATION;
+
     @Autowired
     DockerContainerManagement dcm;
 
@@ -38,6 +42,17 @@ public class ProcessingNodeManagement {
             LOG.info("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperator() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
                 try {
+
+                    if (SIMULATION) {
+                        LOG.info("Simulate DockerContainer Shutdown while housekeeping");
+                        try {
+                            Thread.sleep(1000 * 5);
+                        } catch (InterruptedException ignore) {
+                            LOG.error("Simulate DockerContainer Shutdown while housekeeping failed");
+                        }
+                        return;
+                    }
+
                     dcm.removeContainer(dc);
                 } catch (DockerException e) {
                     LOG.error("Cloud not remove docker Container while houskeeping.", e);
@@ -48,15 +63,15 @@ public class ProcessingNodeManagement {
         }
     }
 
-    public void scaleup(String operator, String dockerHost, String infrastructureHost) {
+    public void scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
         try {
-            dcm.startContainer(dockerHost, operator, infrastructureHost);
+            dcm.startContainer(dh, dc, infrastructureHost);
         } catch (DockerException e) {
             LOG.error("Could not start a docker container.", e);
         } catch (InterruptedException e) {
             LOG.error("Could not start a docker container.", e);
         }
-        LOG.info("VISP - Scale UP " + operator);
+        LOG.info("VISP - Scale UP " + dc.getOperator());
     }
 
     public void scaleDown(String operator) {
@@ -82,14 +97,23 @@ public class ProcessingNodeManagement {
     }
 
     public void triggerShutdown(DockerContainer dc) {
+
         try {
-            dcm.executeCommand(dc, "cd ~ ; touch killme");
             dcm.markContainerForRemoval(dc);
+            if (SIMULATION) {
+                LOG.info("Simulate Trigger Shoutdown");
+                try {
+                    Thread.sleep(1000 * 2);
+                } catch (InterruptedException ignore) {
+                    LOG.error("Simulate Trigger Shoutdown failed");
+                }
+                return;
+            }
+            dcm.executeCommand(dc, "cd ~ ; touch killme");
         } catch (DockerException e) {
             LOG.error("Could not trigger scaledown operation.", e);
         } catch (InterruptedException e) {
             LOG.error("Could not trigger scaledown operation.", e);
         }
-
     }
 }

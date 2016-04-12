@@ -8,17 +8,19 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     private Integer ram;
     private Float storage;
     private String url;
+    private String name;
 
     public ResourceAvailability() {
     }
 
-    public ResourceAvailability(String hostId, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage, String url) {
+    public ResourceAvailability(String hostId, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage, String url, String name) {
         this.hostId = hostId;
         this.amountOfContainer = amountOfContainer;
         this.cpuCores = cpuCores;
         this.ram = ram;
         this.storage = storage;
         this.url = url;
+        this.name = name;
     }
 
     public String getHostId() {
@@ -69,6 +71,14 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
         this.url = url;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
         return "ResourceAvailability{" +
@@ -78,6 +88,7 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
                 ", ram=" + ram +
                 ", storage=" + storage +
                 ", url='" + url + '\'' +
+                ", name='" + name + '\'' +
                 '}';
     }
 
