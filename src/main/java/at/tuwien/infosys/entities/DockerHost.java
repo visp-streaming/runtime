@@ -1,10 +1,9 @@
 package at.tuwien.infosys.entities;
 
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class DockerHost {
@@ -21,12 +20,17 @@ public class DockerHost {
     private String terminationTime;
     private String flavour;
 
+    @ElementCollection
+    private List<String> availableImages;
+
 
     public DockerHost() {
+        this.availableImages = new ArrayList<>();
     }
 
     public DockerHost(String name) {
         this.name = name;
+        this.availableImages = new ArrayList<>();
     }
 
     public long getId() {
@@ -101,6 +105,14 @@ public class DockerHost {
         this.flavour = flavour;
     }
 
+    public List<String> getAvailableImages() {
+        return availableImages;
+    }
+
+    public void setAvailableImages(List<String> availableImages) {
+        this.availableImages = availableImages;
+    }
+
     @Override
     public String toString() {
         return "DockerHost{" +
@@ -113,6 +125,10 @@ public class DockerHost {
                 ", scheduledForShutdown=" + scheduledForShutdown +
                 ", terminationTime='" + terminationTime + '\'' +
                 ", flavour='" + flavour + '\'' +
+                ", availableImages=" + availableImages +
                 '}';
     }
+
+
+
 }

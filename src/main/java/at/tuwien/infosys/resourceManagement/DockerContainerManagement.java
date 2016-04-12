@@ -3,6 +3,7 @@ package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
@@ -35,6 +36,9 @@ public class DockerContainerManagement {
 
     @Autowired
     private DockerContainerRepository dcr;
+
+    @Autowired
+    private DockerHostRepository dhr;
 
     @Autowired
     private ScalingActivityRepository sar;
@@ -70,7 +74,7 @@ public class DockerContainerManagement {
 
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
-    public void startContainer(DockerHost dockerHost, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
+    public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
         if (SIMULATION) {
             LOG.info("Simulate DockerContainer Startup");
             try {
@@ -81,19 +85,26 @@ public class DockerContainerManagement {
             }
 
             container.setImage(operatorConfiguration.getImage(container.getOperator()));
-            container.setHost(dockerHost.getName());
+            container.setHost(dh.getName());
 
             dcr.save(container);
 
-            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dockerHost.getName()));
+            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dh.getName()));
 
             return;
         }
 
 
-        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dockerHost.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
-        docker.pull(operatorConfiguration.getImage(container.getOperator()));
+        if (!dh.getAvailableImages().contains(operatorConfiguration.getImage(container.getOperator()))) {
+            docker.pull(operatorConfiguration.getImage(container.getOperator()));
+            List<String> availableImages = dh.getAvailableImages();
+            availableImages.add(operatorConfiguration.getImage(container.getOperator()));
+            dh.setAvailableImages(availableImages);
+            dhr.save(dh);
+        }
+
 
         List<String> environmentVariables = new ArrayList<>();
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + infrastructureHost);
@@ -104,7 +115,7 @@ public class DockerContainerManagement {
         environmentVariables.add("ROLE=" + container.getOperator());
 
 
-        Double vmCores = dockerHost.getCores();
+        Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
         Double containerRam = container.getRam().doubleValue();
 
@@ -127,13 +138,13 @@ public class DockerContainerManagement {
 
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
-        container.setHost(dockerHost.getName());
+        container.setHost(dh.getName());
 
         dcr.save(container);
 
-        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dockerHost.getName()));
+        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dh.getName()));
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dockerHost.getName());
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName());
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {

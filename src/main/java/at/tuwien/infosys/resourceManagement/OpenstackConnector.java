@@ -22,7 +22,6 @@ import org.jclouds.compute.domain.Image;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.compute.domain.Template;
 import org.jclouds.compute.options.TemplateOptions;
-import org.jclouds.domain.Location;
 import org.jclouds.javax.annotation.Nullable;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
@@ -58,6 +57,9 @@ public class OpenstackConnector {
 
     @Value("${visp.entropyContainerName}")
     private String entropyContainerName;
+
+    @Value("${visp.openstack.publicip}")
+    private Boolean PUBLICIPUSAGE;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -145,15 +147,12 @@ public class OpenstackConnector {
             LOG.error("Could not load cloud init file");
         }
 
-
         TemplateOptions options = NovaTemplateOptions.Builder
-         .userData(cloudInit.getBytes())
-         .keyPairName(OPENSTACK_KEYPAIR_NAME)
-         .securityGroups("default");
+                .userData(cloudInit.getBytes())
+                .keyPairName(OPENSTACK_KEYPAIR_NAME)
+                .securityGroups("default");
 
         Hardware hardware = hardwareProfiles.get(dh.getFlavour());
-
-        Set<? extends Location> locations = compute.listAssignableLocations();
 
         Template template = compute.templateBuilder()
                 .locationId("myregion")
@@ -161,7 +160,6 @@ public class OpenstackConnector {
                 .fromHardware(hardware)
                 .fromImage(imageProfiles.get(dockerhostImage))
                 .build();
-
 
         Set<? extends NodeMetadata> nodes = null;
 
@@ -173,26 +171,29 @@ public class OpenstackConnector {
 
         NodeMetadata nodeMetadata = nodes.iterator().next();
 
-        String privateAddress = nodeMetadata.getPrivateAddresses().iterator().next();
+        String ip = nodeMetadata.getPrivateAddresses().iterator().next();
 
-        FloatingIPApi floatingIPs = novaApi.getFloatingIPApi("myregion").get();
+        if (PUBLICIPUSAGE) {
+            FloatingIPApi floatingIPs = novaApi.getFloatingIPApi("myregion").get();
 
-        String publicIP = null;
-        for (FloatingIP ip : floatingIPs.list()) {
-            if (ip.getInstanceId() == null) {
-                publicIP = ip.getIp();
-                floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
-                break;
+            String publicIP = null;
+            for (FloatingIP floatingIP : floatingIPs.list()) {
+                if (floatingIP.getInstanceId() == null) {
+                    publicIP = floatingIP.getIp();
+                    floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
+                    break;
+                }
             }
-        }
 
-        if (publicIP == null) {
-            publicIP = floatingIPs.allocateFromPool("cloud").getIp();
-            floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
+            if (publicIP == null) {
+                publicIP = floatingIPs.allocateFromPool("cloud").getIp();
+                floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
+            }
+            ip = publicIP;
         }
 
         dh.setName(nodeMetadata.getHostname());
-        dh.setUrl(publicIP);
+        dh.setUrl(ip);
         dh.setCores(hardware.getProcessors().get(0).getCores() + 0.0);
         dh.setRam(hardware.getRam());
         dh.setStorage(hardware.getVolumes().get(0).getSize());
@@ -200,7 +201,26 @@ public class OpenstackConnector {
 
         dhr.save(dh);
 
-        LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + publicIP + " was started.");
+        LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + ip + " was started.");
+
+        //wait until the dockerhost is available
+        Boolean connection = false;
+        while (!connection) {
+            try {
+                Thread.sleep(1000);
+                final DockerClient docker = DefaultDockerClient.builder().
+                        uri(URI.create("http://" + dh.getUrl() + ":2375")).
+                        connectTimeoutMillis(3000000).
+                        build();
+                docker.ping();
+                connection = true;
+            } catch (DockerException ex) {
+                LOG.debug("Dockerhost is not available yet.");
+            } catch (InterruptedException e) {
+                LOG.debug("Dockerhost is not available yet.");
+            }
+
+        }
 
         startupEntropyContainer(dh);
         return dh;
@@ -213,6 +233,7 @@ public class OpenstackConnector {
                 build();
         try {
             docker.pull(entropyContainerName);
+
 
             final HostConfig expected = HostConfig.builder()
                     .privileged(true)

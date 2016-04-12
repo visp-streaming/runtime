@@ -177,7 +177,6 @@ public class Reasoner {
                 rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
                 rc.setRam(rc.getRam() + rc.getRam());
                 rc.setStorage(rc.getStorage() + rc.getStorage());
-                rc.setName(dc.getHost());
                 hostResourceUsage.put(dc.getHost(), rc);
         }
 
@@ -195,7 +194,7 @@ public class Reasoner {
             }
 
             ResourceAvailability availability = new ResourceAvailability();
-            availability.setHostId(dh.getName());
+            availability.setName(dh.getName());
             availability.setUrl(dh.getUrl());
             availability.setAmountOfContainer(usage.getAmountOfContainer());
             availability.setCpuCores(dh.getCores()-usage.getCpuCores());
