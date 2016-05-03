@@ -61,6 +61,10 @@ public class OpenstackConnector {
     @Value("${visp.openstack.publicip}")
     private Boolean PUBLICIPUSAGE;
 
+    @Value("${visp.btu}")
+    private Integer BTU;
+
+
     @Autowired
     private DockerHostRepository dhr;
 
@@ -133,6 +137,10 @@ public class OpenstackConnector {
             dh.setScheduledForShutdown(false);
             dh.setUrl("simulatedURL");
 
+            DateTime btuEnd = new DateTime(DateTimeZone.UTC);
+            btuEnd = btuEnd.plusSeconds(BTU);
+            dh.setBTUend(btuEnd.toString());
+
             dhr.save(dh);
 
             return dh;
@@ -198,6 +206,10 @@ public class OpenstackConnector {
         dh.setRam(hardware.getRam());
         dh.setStorage(hardware.getVolumes().get(0).getSize());
         dh.setScheduledForShutdown(false);
+        DateTime btuEnd = new DateTime(DateTimeZone.UTC);
+        btuEnd = btuEnd.plusSeconds(BTU);
+        dh.setBTUend(btuEnd.toString());
+
 
         dhr.save(dh);
 
@@ -222,7 +234,7 @@ public class OpenstackConnector {
 
         }
 
-        startupEntropyContainer(dh);
+        //startupEntropyContainer(dh);
         return dh;
     }
 

@@ -18,6 +18,12 @@ public class OperatorConfiguration {
         configuration.put("distance", "chochreiner/vispprocessingnodes");
         configuration.put("analysis", "chochreiner/vispprocessingnodes");
         configuration.put("monitor", "chochreiner/vispprocessingnodes");
+        configuration.put("step1", "chochreiner/vispprocessingnodes");
+        configuration.put("step2", "chochreiner/vispprocessingnodes");
+        configuration.put("step3", "chochreiner/vispprocessingnodes");
+        configuration.put("step4", "chochreiner/vispprocessingnodes");
+        configuration.put("step5", "chochreiner/vispprocessingnodes");
+        configuration.put("log", "chochreiner/vispprocessingnodes");
     }
 
     public String getImage(String operator) {

@@ -6,19 +6,14 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.Operator;
-import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
-import com.spotify.docker.client.DockerCertificateException;
-import com.spotify.docker.client.DockerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class Utilities {
@@ -27,7 +22,7 @@ public class Utilities {
     private TopologyManagement topologyMgmt;
 
     @Autowired
-    DockerContainerManagement dcm;
+    ProcessingNodeManagement processingNodeManagement;
 
     @Autowired
     OpenstackConnector openstackConnector;
@@ -47,19 +42,13 @@ public class Utilities {
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
-        try {
             for (Operator op : topologyMgmt.getTopologyAsList()) {
                 if (op.getName().equals("source")) {
                     continue;
                 }
                 DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
-                dcm.startContainer(dh, dc, infrastructureHost);
+                processingNodeManagement.scaleup(dc, dh, infrastructureHost);
             }
-        } catch (InterruptedException e) {
-            LOG.error("Could not initialize topology.", e);
-        } catch (DockerException e) {
-            LOG.error("Could not initialize topology.", e);
-        }
     }
 
     public void createInitialStatus() {
@@ -76,29 +65,7 @@ public class Utilities {
             LOG.error("Could not startup initial Host.", e);
         }
 
-        //TODO user dockerhost object instead of plain strings
         initializeTopology(dh, infrastructureHost);
     }
 
-    public void cleanupContainer() {
-        List<String> hostString = new ArrayList<>();
-
-        for (DockerHost dh : dhr.findAll()) {
-            hostString.add(dh.getName());
-        }
-
-        try {
-            dcm.updateDeployedContainer(hostString);
-            for (DockerContainer dc : dcr.findAll()) {
-                dcm.removeContainer(dc);
-            }
-
-        } catch (DockerCertificateException e) {
-            LOG.error("Could not remove Docker Container.", e);
-        } catch (DockerException e) {
-            LOG.error("Could not remove Docker Container.", e);
-        } catch (InterruptedException e) {
-            LOG.error("Could not remove Docker Container.", e);
-        }
-    }
 }

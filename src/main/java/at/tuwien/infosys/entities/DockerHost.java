@@ -19,8 +19,9 @@ public class DockerHost {
     private Boolean scheduledForShutdown;
     private String terminationTime;
     private String flavour;
+    private String BTUend;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> availableImages;
 
 
@@ -113,6 +114,14 @@ public class DockerHost {
         this.availableImages = availableImages;
     }
 
+    public String getBTUend() {
+        return BTUend;
+    }
+
+    public void setBTUend(String BTUend) {
+        this.BTUend = BTUend;
+    }
+
     @Override
     public String toString() {
         return "DockerHost{" +
@@ -125,10 +134,24 @@ public class DockerHost {
                 ", scheduledForShutdown=" + scheduledForShutdown +
                 ", terminationTime='" + terminationTime + '\'' +
                 ", flavour='" + flavour + '\'' +
+                ", BTUend='" + BTUend + '\'' +
                 ", availableImages=" + availableImages +
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        DockerHost that = (DockerHost) o;
 
+        return name != null ? name.equals(that.name) : that.name == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
 }

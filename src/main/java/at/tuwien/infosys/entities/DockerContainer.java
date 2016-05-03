@@ -1,8 +1,6 @@
 package at.tuwien.infosys.entities;
 
 
-import org.springframework.beans.factory.annotation.Value;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,15 +10,6 @@ import javax.persistence.Id;
 
 @Entity
 public class DockerContainer {
-
-    @Value("${visp.operator.cpu}")
-    private Double operatorCPU;
-
-    @Value("${visp.operator.ram}")
-    private Integer operatorRAM;
-
-    @Value("${visp.operator.storage}")
-    private Integer operatorStorage;
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -118,7 +107,6 @@ public class DockerContainer {
         this.storage = storage;
         this.status = "running";
     }
-
 
 
     @Override

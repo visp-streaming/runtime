@@ -1,7 +1,6 @@
 package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import com.spotify.docker.client.DockerException;
@@ -30,9 +29,6 @@ public class ProcessingNodeManagement {
 
     @Autowired
     private DockerContainerRepository dcr;
-
-    @Autowired
-    private DockerHostRepository dhr;
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
 

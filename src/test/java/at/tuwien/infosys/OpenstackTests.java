@@ -22,7 +22,7 @@ public class OpenstackTests {
 
     @Test
     public void startnewVM() {
-        DockerHost dh = new DockerHost("testcasevm");
+        DockerHost dh = new DockerHost("deploydockerhost");
         dh.setFlavour("m2.medium");
 
         dh = openstackConnector.startVM(dh);

@@ -9,6 +9,8 @@ import at.tuwien.infosys.monitoring.Monitor;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +46,14 @@ public class Reasoner {
     @Autowired
     private Monitor monitor;
 
+    @Autowired
+    private ReasonerUtility reasonerUtility;
+
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
+
+    @Value("${visp.btu}")
+    private Integer btu;
 
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
@@ -58,65 +66,123 @@ public class Reasoner {
         pcm.removeContainerWhichAreFlaggedToShutdown();
         openstackConnector.removeHostsWhichAreFlaggedToShutdown();
 
+
+
+
+
+
         LOG.info("VISP - Start Reasoner");
 
+        LOG.info("VISP - Start check if any Hosts need to be shut down");
+
+        /////////////////////
+        // Check whether any hosts reach the end of their BTU (within the last 5 % of their BTU)
+        /////////////////////
+
+
+        for (DockerHost dh : dhr.findAll()) {
+            DateTime btuEnd = new DateTime(dh.getBTUend());
+            DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
+
+            //ensure that the host has enough time to shut down
+            Integer remainingfivepercent = (int) (btu * 0.05);
+            if (remainingfivepercent < graceperiod*2) {
+                remainingfivepercent=graceperiod*2;
+            }
+
+            potentialHostTerminationTime = potentialHostTerminationTime.plusSeconds(remainingfivepercent);
+
+            //BTU would end within 5 %
+            if (btuEnd.isBefore(potentialHostTerminationTime)) {
+
+                List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
+
+                //migrate Container
+                for (DockerContainer dc : containerToMigrate) {
+                    if (dc.getStatus() == null) {
+                        dc.setStatus("running");
+                    }
+
+                    if (dc.getStatus().equals("stopping")) {
+                        continue;
+                    }
+
+                    DockerHost selectedHost = selectSuitableDockerHost(dc, dh);
+                    if (selectedHost.equals(dh)) {
+
+                        Boolean optimization = false;
+
+                        //TODO consider critical path of topology for scaling down and up
+
+
+                        //TODO gather space requirements for the remaining container which need to be migrated
+
+                        //TODO check whether wnough containers can be scaled down to realize the migration
+
+                        //TODO implement optimization appraoch for scaling down
+
+                        if (!optimization) {
+                            //Optimization was not possible and VM needs to leased for another BTU
+
+                            dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
+                            dhr.save(dh);
+
+                            LOG.info("the host: " + dh.getName() + " was leased for another BTU");
+                            break;
+
+                        } else {
+                            pcm.triggerShutdown(dc);
+                            pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
+                        }
+
+                    } else {
+                        pcm.triggerShutdown(dc);
+                        pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
+                    }
+                }
+            }
+
+        }
+
+        ////////////////////
+
+
         LOG.info("VISP - Start container scaling");
+
 
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
-            if (action.equals(ScalingAction.SCALEDOWN)) {
-                pcm.scaleDown(operator);
-            }
+            //scale down is only carried out when it is absolutely necessary
+            //if (action.equals(ScalingAction.SCALEDOWN)) {
+            //    pcm.scaleDown(operator);
+            //}
 
             if (action.equals(ScalingAction.SCALEUP)) {
+                //TODO consider critical path of topology for scaling down and up
                 DockerContainer dc = opConfig.createDockerContainerConfiguration(operator);
-                pcm.scaleup(dc, selectSuitableDockerHost(dc), infrastructureHost);
+                pcm.scaleup(dc, selectSuitableDockerHost(dc, null), infrastructureHost);
             }
         }
         LOG.info("VISP - Finished container scaling");
 
-        List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
+        List<ResourceAvailability> freeResources = reasonerUtility.calculateFreeResourcesforHosts(null);
 
-        ResourceAvailability aggregatedFreeResources = calculateFreeresources(freeResources);
-
-        //TODO may be adopted
-        //only scale down if there are 2 hosts availabe in general
-
-        if ((aggregatedFreeResources.getCpuCores() > 5.0 && (aggregatedFreeResources.getRam() > 1000.0) && (aggregatedFreeResources.getStorage() > 5))) {
-            Collections.sort(freeResources, ResourceComparator.AMOUNTOFCONTAINERASC);
-
-            //select host with the least running container
-            String hostToKill = freeResources.get(0).getHostId();
-
-            openstackConnector.markHostForRemoval(hostToKill);
-
-            List<DockerContainer> containerToMigrate = dcr.findByHost(hostToKill);
-
-            //migrate Container
-            for (DockerContainer dc : containerToMigrate) {
-                if (dc.getStatus() == null) {
-                    dc.setStatus("running");
-                }
-
-                if (dc.getStatus().equals("stopping")) {
-                    continue;
-                }
-                pcm.triggerShutdown(dc);
-                pcm.scaleup(dc, selectSuitableDockerHost(dc), infrastructureHost);
-            }
-        }
+        ResourceAvailability aggregatedFreeResources = reasonerUtility.calculateFreeresources(freeResources);
 
         LOG.info("VISP - Finished Reasoner");
     }
 
-    public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc) {
-        List<ResourceAvailability> freeResources = calculateFreeResourcesforHosts();
+    public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc, DockerHost blackListedHost) {
+        List<ResourceAvailability> freeResources = reasonerUtility.calculateFreeResourcesforHosts(blackListedHost);
 
         String host = binPackingStrategy(dc, freeResources);
         //String host = equalDistributionStrategy(dc, freeResources);
 
         if (host == null) {
+            if (blackListedHost!=null) {
+                return blackListedHost;
+            }
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
             return openstackConnector.startVM(dh);
@@ -161,71 +227,5 @@ public class Reasoner {
         return null;
     }
 
-    private List<ResourceAvailability> calculateFreeResourcesforHosts() {
-        Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
-        List<ResourceAvailability> freeResources = new ArrayList<>();
 
-        for (DockerHost dh : dhr.findAll()) {
-            ResourceAvailability rc = new ResourceAvailability(dh.getName(), 0, 0.0, 0, 0.0F, "dockercontainer", dh.getName());
-            hostResourceUsage.put(dh.getName(), rc);
-        }
-
-        //collect current usage of cloud resources
-        for (DockerContainer dc : dcr.findAll()) {
-                ResourceAvailability rc = hostResourceUsage.get(dc.getHost());
-                rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
-                rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
-                rc.setRam(rc.getRam() + rc.getRam());
-                rc.setStorage(rc.getStorage() + rc.getStorage());
-                hostResourceUsage.put(dc.getHost(), rc);
-        }
-
-        //calculate how much resources are left on a specific host
-
-        for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
-            String name = entry.getKey();
-            ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findByName(name).get(0);
-
-            //omit all dockerhosts which are scheduled for shutdown
-            if (dh.getScheduledForShutdown()) {
-                LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is scheduled to shut down.");
-                continue;
-            }
-
-            ResourceAvailability availability = new ResourceAvailability();
-            availability.setName(dh.getName());
-            availability.setUrl(dh.getUrl());
-            availability.setAmountOfContainer(usage.getAmountOfContainer());
-            availability.setCpuCores(dh.getCores()-usage.getCpuCores());
-            availability.setRam(dh.getRam()-usage.getRam());
-            availability.setStorage(dh.getStorage()-usage.getStorage());
-            freeResources.add(availability);
-
-        }
-
-        return freeResources;
-    }
-
-    public ResourceAvailability calculateFreeresources(List<ResourceAvailability> resources) {
-        ResourceAvailability all = new ResourceAvailability();
-        all.setAmountOfContainer(0);
-        all.setCpuCores(0.0);
-        all.setRam(0);
-        all.setStorage(0.0F);
-
-
-        LOG.info("###### free resources ######");
-        for (ResourceAvailability ra : resources) {
-            all.setAmountOfContainer(all.getAmountOfContainer() + ra.getAmountOfContainer());
-            all.setCpuCores(all.getCpuCores() + ra.getCpuCores());
-            all.setRam(all.getRam() + ra.getRam());
-            all.setStorage(all.getStorage() + ra.getStorage());
-
-            LOG.info(ra.getHostId() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getRam() + " - Storage: " + ra.getStorage());
-        }
-        LOG.info("###### free resources ######");
-
-        return all;
-    }
 }

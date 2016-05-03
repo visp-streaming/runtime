@@ -9,8 +9,10 @@ import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ScalingActivity;
 import at.tuwien.infosys.topology.TopologyManagement;
-import com.spotify.docker.client.*;
-import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import org.joda.time.DateTime;
@@ -48,29 +50,7 @@ public class DockerContainerManagement {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
-    public void updateDeployedContainer(List<String> hosts) throws DockerCertificateException, DockerException, InterruptedException {
-        dcr.deleteAll();
 
-        for (String host : hosts) {
-            final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(host)).build();
-
-            DockerClient.ListContainersParam params = DockerClient.ListContainersParam.allContainers(false);
-            List<Container> containers = docker.listContainers(params);
-
-            if (containers == null) {
-                continue;
-            }
-
-            for (Container container : containers) {
-                DockerContainer dc = new DockerContainer();
-                dc.setContainerid(container.id());
-                dc.setImage(container.image());
-                dc.setHost(host);
-                dc.setStatus("running");
-                dcr.save(dc);
-            }
-        }
-    }
 
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
@@ -128,13 +108,16 @@ public class DockerContainerManagement {
                 //.cpuShares(cpuShares)
                 //.memory(memory)
                 .env(environmentVariables)
-                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .build();
 
         final ContainerCreation creation = docker.createContainer(containerConfig);
         final String id = creation.id();
 
         docker.startContainer(id);
+
+        //TODO make more flexible
+
+
 
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));

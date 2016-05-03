@@ -59,10 +59,6 @@ public class DockerTests {
         utility.initializeTopology(dh, "http://128.130.172.225");
     }
 
-    @Test
-    public void cleanupImages() throws DockerException, InterruptedException {
-        utility.cleanupContainer();
-    }
 
     @Test
     public void scalingTest() {

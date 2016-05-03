@@ -1,10 +1,9 @@
 package at.tuwien.infosys;
 
-import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.reasoner.Reasoner;
+import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.utility.Utilities;
-import com.spotify.docker.client.DockerException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,11 +51,6 @@ public class SetupCleanup {
     public void initializeEvaluation() {
         tmgmt.cleanup(infrastructureHost);
         utility.createInitialStatus();
-    }
-
-    @Test
-    public void cleanupDockerContainer() throws DockerException, InterruptedException {
-        utility.cleanupContainer();
     }
 
 
