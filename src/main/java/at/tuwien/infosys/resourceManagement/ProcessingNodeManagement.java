@@ -1,8 +1,10 @@
 package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.entities.ScalingActivity;
 import com.spotify.docker.client.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -29,6 +31,10 @@ public class ProcessingNodeManagement {
 
     @Autowired
     private DockerContainerRepository dcr;
+
+    @Autowired
+    private ScalingActivityRepository sar;
+
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
 
@@ -62,6 +68,7 @@ public class ProcessingNodeManagement {
     public void scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
         try {
             dcm.startContainer(dh, dc, infrastructureHost);
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaleup", dh.getName()));
         } catch (DockerException e) {
             LOG.error("Could not start a docker container.", e);
         } catch (InterruptedException e) {
@@ -88,6 +95,7 @@ public class ProcessingNodeManagement {
             }
 
             triggerShutdown(dc);
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
                 break;
         }
     }

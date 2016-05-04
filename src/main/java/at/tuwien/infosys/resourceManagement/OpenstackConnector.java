@@ -2,7 +2,9 @@ package at.tuwien.infosys.resourceManagement;
 
 
 import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.entities.ScalingActivity;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
@@ -64,6 +66,8 @@ public class OpenstackConnector {
     @Value("${visp.btu}")
     private Integer BTU;
 
+    @Autowired
+    private ScalingActivityRepository sar;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -142,6 +146,7 @@ public class OpenstackConnector {
             dh.setBTUend(btuEnd.toString());
 
             dhr.save(dh);
+            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
 
             return dh;
         }
@@ -234,6 +239,10 @@ public class OpenstackConnector {
 
         }
 
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
+
+        //TODO add monitor container
+        //TODO maybe enable in the future
         //startupEntropyContainer(dh);
         return dh;
     }
@@ -292,6 +301,8 @@ public class OpenstackConnector {
         for (NodeMetadata nodeMetadata : nodeMetadatas) {
             LOG.info("DockerHost terminated " + nodeMetadata.getName());
         }
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
+
     }
 
 

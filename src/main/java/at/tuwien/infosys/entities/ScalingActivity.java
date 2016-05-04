@@ -12,6 +12,7 @@ public class ScalingActivity {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
 
+    private String type;
     private String time;
     private String operator;
     private String scalingActivity;
@@ -20,7 +21,8 @@ public class ScalingActivity {
     public ScalingActivity() {
     }
 
-    public ScalingActivity(String time, String operator, String scalingActivity, String host) {
+    public ScalingActivity(String type, String time, String operator, String scalingActivity, String host) {
+        this.type = type;
         this.time = time;
         this.operator = operator;
         this.scalingActivity = scalingActivity;
@@ -31,11 +33,20 @@ public class ScalingActivity {
     public String toString() {
         return "ScalingActivity{" +
                 "id=" + id +
+                ", type='" + type + '\'' +
                 ", time='" + time + '\'' +
                 ", operator='" + operator + '\'' +
                 ", scalingActivity='" + scalingActivity + '\'' +
                 ", host='" + host + '\'' +
                 '}';
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getTime() {

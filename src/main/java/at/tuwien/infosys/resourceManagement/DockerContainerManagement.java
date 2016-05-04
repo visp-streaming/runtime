@@ -4,10 +4,8 @@ package at.tuwien.infosys.resourceManagement;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ScalingActivity;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -41,15 +39,10 @@ public class DockerContainerManagement {
     @Autowired
     private DockerHostRepository dhr;
 
-    @Autowired
-    private ScalingActivityRepository sar;
-
     @Value("${visp.simulation}")
     private Boolean SIMULATION;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
-
-
 
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
@@ -67,8 +60,6 @@ public class DockerContainerManagement {
             container.setHost(dh.getName());
 
             dcr.save(container);
-
-            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dh.getName()));
 
             return;
         }
@@ -119,15 +110,11 @@ public class DockerContainerManagement {
 
         //TODO make more flexible
 
-
-
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
         container.setHost(dh.getName());
 
         dcr.save(container);
-
-        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), "scaleup", dh.getName()));
 
         LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName());
     }
@@ -142,7 +129,6 @@ public class DockerContainerManagement {
             }
 
             dcr.delete(dc);
-            sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
 
             return;
         }
@@ -153,7 +139,6 @@ public class DockerContainerManagement {
         docker.killContainer(dc.getContainerid());
         docker.removeContainer(dc.getContainerid());
         dcr.delete(dc);
-        sar.save(new ScalingActivity(new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
 
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");
     }
