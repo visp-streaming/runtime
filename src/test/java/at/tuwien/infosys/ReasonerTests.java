@@ -94,7 +94,7 @@ public class ReasonerTests {
     public void szenario1() {
         dhr.save(spaceForThreeContainerHost1);
 
-        assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1));
+        assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1, null));
     }
 
 
@@ -104,7 +104,7 @@ public class ReasonerTests {
         dhr.save(spaceforOneContainerHost1);
 
         //for binpacking Strategy
-        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1));
+        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1, null));
 
         //for equaldistribution Strategy
         //assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1));
@@ -117,7 +117,7 @@ public class ReasonerTests {
         dhr.save(spaceforOneContainerHost1);
 
         //for binpacking Strategy
-        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1));
+        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1, null));
 
         //for equaldistribution Strategy
         //assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1));
@@ -133,27 +133,9 @@ public class ReasonerTests {
 
     }
 
-    /**
-     * 1 leerer Host
-     * 1 halbvoller Host
-     * 1 host soll gelöscht weden
-     *
-     */
-    @Test
-    public void szenario5() {
 
-    }
 
-    /**
-     * 2 fast leerer Host
-     * consolidate hosts
-     * 1 host soll gelöscht weden
-     *
-     */
-    @Test
-    public void szenario6() {
 
-    }
 
     //TODO consider already shutting down hosts
 }

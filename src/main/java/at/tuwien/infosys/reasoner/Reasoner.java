@@ -67,10 +67,6 @@ public class Reasoner {
         openstackConnector.removeHostsWhichAreFlaggedToShutdown();
 
 
-
-
-
-
         LOG.info("VISP - Start Reasoner");
 
         LOG.info("VISP - Start check if any Hosts need to be shut down");
@@ -153,11 +149,6 @@ public class Reasoner {
         for (String operator : topologyMgmt.getOperatorsAsList()) {
             ScalingAction action = monitor.analyze(operator, infrastructureHost);
 
-            //scale down is only carried out when it is absolutely necessary
-            //if (action.equals(ScalingAction.SCALEDOWN)) {
-            //    pcm.scaleDown(operator);
-            //}
-
             if (action.equals(ScalingAction.SCALEUP)) {
                 //TODO consider critical path of topology for scaling down and up
                 DockerContainer dc = opConfig.createDockerContainerConfiguration(operator);
@@ -176,8 +167,8 @@ public class Reasoner {
     public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc, DockerHost blackListedHost) {
         List<ResourceAvailability> freeResources = reasonerUtility.calculateFreeResourcesforHosts(blackListedHost);
 
-        String host = binPackingStrategy(dc, freeResources);
-        //String host = equalDistributionStrategy(dc, freeResources);
+        //String host = binPackingStrategy(dc, freeResources);
+        String host = equalDistributionStrategy(dc, freeResources);
 
         if (host == null) {
             if (blackListedHost!=null) {

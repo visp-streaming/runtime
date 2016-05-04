@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,14 +98,17 @@ public class DockerContainerManagement {
         Double containerCores = container.getCpuCores();
         Double containerRam = container.getRam().doubleValue();
 
-        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
-        long memory = (long) (containerRam * 1024 * 1024);
+
+
+//        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
+//        long memory = (long) (containerRam * 1024 * 1024);
 
         //TODO implement memory restrictions
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .image(operatorConfiguration.getImage(container.getOperator()))
                 //.cpuShares(cpuShares)
                 //.memory(memory)
+                //.cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
                 .build();
 
@@ -145,7 +147,9 @@ public class DockerContainerManagement {
             return;
         }
 
-        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
+        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+
         docker.killContainer(dc.getContainerid());
         docker.removeContainer(dc.getContainerid());
         dcr.delete(dc);
@@ -167,7 +171,8 @@ public class DockerContainerManagement {
         }
 
         final String[] command = {"bash", "-c", cmd};
-        final DockerClient docker = DefaultDockerClient.builder().uri(URI.create(dc.getHost())).build();
+        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         final String execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
         final LogStream output = docker.execStart(execId);

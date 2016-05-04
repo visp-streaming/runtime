@@ -106,6 +106,11 @@ public class ProcessingNodeManagement {
                 return;
             }
             dcm.executeCommand(dc, "cd ~ ; touch killme");
+
+            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)).toString());
+
+
+
         } catch (DockerException e) {
             LOG.error("Could not trigger scaledown operation.", e);
         } catch (InterruptedException e) {
