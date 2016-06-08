@@ -1,12 +1,15 @@
 package at.tuwien.infosys.monitoring;
 
+import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
+import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -23,6 +26,9 @@ import java.util.List;
 public class Monitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
+
+    @Autowired
+    private ProcessingDurationRepository pcr;
 
     @Autowired
     private QueueMonitorRepository qmr;
@@ -49,6 +55,26 @@ public class Monitor {
             qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
         }
 
+
+        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
+
+        Integer count = 4;
+        double[][] data = new double[5][2];
+        for (ProcessingDuration pd : pds) {
+            data[count][0] = count;
+            data[count][1] = pd.getDuration();
+            count--;
+        }
+
+        SimpleRegression regression = new SimpleRegression(false);
+        regression.addData(data);
+
+        Double expectedDurationValue = regression.predict(6);
+        //TODO implement logic to handle this
+
+
+
+
         if (max<1) {
             return ScalingAction.SCALEDOWN;
         } else {
@@ -69,13 +95,18 @@ public class Monitor {
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(infrastructureHost);
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
 
-        AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(new ChannelCallback<AMQP.Queue.DeclareOk>() {
-            public AMQP.Queue.DeclareOk doInRabbit(Channel channel) throws Exception {
-                return channel.queueDeclarePassive(name);
-            }
-        });
-        Integer queueLoad = declareOk.getMessageCount();
-        LOG.info("Current load for queue: " + name + " is " + queueLoad);
+        Integer queueLoad = 0;
+        try {
+            AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(new ChannelCallback<AMQP.Queue.DeclareOk>() {
+                public AMQP.Queue.DeclareOk doInRabbit(Channel channel) throws Exception {
+                    return channel.queueDeclarePassive(name);
+                }
+            });
+            queueLoad = declareOk.getMessageCount();
+            LOG.info("Current load for queue: " + name + " is " + queueLoad);
+        } catch (Exception e) {
+            LOG.warn("Queue \"" + name + "\" is not yet available.");
+        }
 
         connectionFactory.destroy();
 

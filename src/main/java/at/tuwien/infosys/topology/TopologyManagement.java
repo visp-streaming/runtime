@@ -38,6 +38,9 @@ public class TopologyManagement {
             channel.queueDeclare("error", true, false, false, null);
             channel.queueBind("error", "error", "error");
 
+            channel.exchangeDeclare("processingduration", "fanout", true);
+            channel.queueDeclare("processingduration", true, false, false, null);
+            channel.queueBind("processingduration", "processingduration", "processingduration");
 
             for (Operator n : topology.getTopologyAsList()) {
                 String exchangeName = n.getName();

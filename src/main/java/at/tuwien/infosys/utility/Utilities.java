@@ -3,6 +3,8 @@ package at.tuwien.infosys.utility;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.datasources.ProcessingDurationRepository;
+import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.Operator;
@@ -36,8 +38,17 @@ public class Utilities {
     @Autowired
     private DockerContainerRepository dcr;
 
+    @Autowired
+    private QueueMonitorRepository qmr;
+
+    @Autowired
+    private ProcessingDurationRepository pcr;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
+
+    @Value("${visp.simulation}")
+    private Boolean SIMULATION;
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
@@ -54,18 +65,27 @@ public class Utilities {
     public void createInitialStatus() {
         dhr.deleteAll();
         dcr.deleteAll();
+        qmr.deleteAll();
+        pcr.deleteAll();
+
+        topologyMgmt.cleanup(infrastructureHost);
         topologyMgmt.createMapping(infrastructureHost);
-        DockerHost dh = new DockerHost("initialhost");
-        dh.setFlavour("m2.medium");
-        dh = openstackConnector.startVM(dh);
 
-        try {
-            Thread.sleep(60000);
-        } catch (InterruptedException e) {
-            LOG.error("Could not startup initial Host.", e);
+        if (!SIMULATION) {
+
+            DockerHost dh = new DockerHost("initialhost");
+            dh.setFlavour("m2.medium");
+            dh = openstackConnector.startVM(dh);
+
+            try {
+                Thread.sleep(60000);
+            } catch (InterruptedException e) {
+                LOG.error("Could not startup initial Host.", e);
+            }
+
+
+            initializeTopology(dh, infrastructureHost);
         }
-
-        initializeTopology(dh, infrastructureHost);
     }
 
 }

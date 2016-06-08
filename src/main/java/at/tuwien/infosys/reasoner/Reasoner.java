@@ -113,9 +113,8 @@ public class Reasoner {
 
                         //TODO gather space requirements for the remaining container which need to be migrated
 
-                        //TODO check whether wnough containers can be scaled down to realize the migration
+                        //TODO check whether enough containers can be scaled down to realize the migration
 
-                        //TODO implement optimization appraoch for scaling down
 
                         if (!optimization) {
                             //Optimization was not possible and VM needs to leased for another BTU
@@ -137,7 +136,6 @@ public class Reasoner {
                     }
                 }
             }
-
         }
 
         ////////////////////

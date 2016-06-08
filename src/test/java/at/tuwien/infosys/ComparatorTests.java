@@ -1,15 +1,32 @@
 package at.tuwien.infosys;
 
+import at.tuwien.infosys.datasources.ProcessingDurationRepository;
+import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.entities.ResourceComparator;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = VISPRuntime.class)
+@TestPropertySource(locations="classpath:application.properties")
 public class ComparatorTests {
+
+    @Autowired
+    private ProcessingDurationRepository pcr;
+
 
     //assumption all hosts are the same with 10 cores, 1000 ram and 1000 storage
     ResourceAvailability ra1 = new ResourceAvailability("host1", 1, 1.0, 900, 800F, "", "");
@@ -47,4 +64,39 @@ public class ComparatorTests {
         }
     }
 
+
+
+    @Test
+    public void testRegression() {
+        double[][] data = { { 1, 3 }, {2, 5 }, {3, 7 }, {4, 14 }, {5, 11 }};
+        SimpleRegression regression = new SimpleRegression(false);
+        regression.addData(data);
+        System.out.println(regression.predict(6));
+
+    }
+
+    @Test
+    public void testQuery() {
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 1.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -2.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 3.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -4.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "bbb", 1.0));
+
+        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
+
+        Integer count = 4;
+        double[][] data = new double[5][2];
+        for (ProcessingDuration pd : pds) {
+            data[count][0] = count;
+            data[count][1] = pd.getDuration();
+            count--;
+        }
+
+        SimpleRegression regression = new SimpleRegression(false);
+        regression.addData(data);
+        System.out.println(regression.predict(6));
+
+
+    }
 }

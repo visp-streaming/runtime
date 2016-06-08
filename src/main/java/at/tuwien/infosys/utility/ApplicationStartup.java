@@ -18,10 +18,8 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
 
     @Autowired
     private TopologyManagement tmgmt;
-
     @Override
     public void onApplicationEvent(final ContextRefreshedEvent event) {
-        tmgmt.cleanup(infrastructureHost);
-        utility.createInitialStatus();
+            utility.createInitialStatus();
     }
 }

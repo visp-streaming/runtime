@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class DockerContainerManagement {
@@ -51,7 +52,7 @@ public class DockerContainerManagement {
             LOG.info("Simulate DockerContainer Startup");
             try {
                 //TODO differentiate between cold and warm startup
-                Thread.sleep(1000 * 4);
+                TimeUnit.SECONDS.sleep(4);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate DockerContainer Startup failed");
             }
@@ -123,7 +124,7 @@ public class DockerContainerManagement {
         if (SIMULATION) {
             LOG.info("Simulate DockerContainer Removal");
             try {
-                Thread.sleep(1000 * 1);
+                TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate DockerContainer Removal failed");
             }
@@ -147,7 +148,7 @@ public class DockerContainerManagement {
         if (SIMULATION) {
             LOG.info("Simulate DockerContainer Command execution");
             try {
-                Thread.sleep(1000 * 2);
+                TimeUnit.SECONDS.sleep(2);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate DockerContainer Command execution failed");
             }

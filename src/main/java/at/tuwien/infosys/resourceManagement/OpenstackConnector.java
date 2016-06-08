@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OpenstackConnector {
@@ -129,7 +130,7 @@ public class OpenstackConnector {
         if (SIMULATION) {
             LOG.info("Simulate Dockerhost Startup");
             try {
-                Thread.sleep(1000 * 30);
+                TimeUnit.SECONDS.sleep(30);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate Dockerhost Startup failed");
             }
@@ -224,7 +225,7 @@ public class OpenstackConnector {
         Boolean connection = false;
         while (!connection) {
             try {
-                Thread.sleep(1000);
+                TimeUnit.SECONDS.sleep(1);
                 final DockerClient docker = DefaultDockerClient.builder().
                         uri(URI.create("http://" + dh.getUrl() + ":2375")).
                         connectTimeoutMillis(3000000).
@@ -282,7 +283,7 @@ public class OpenstackConnector {
         if (SIMULATION) {
             LOG.info("Simulate Dockerhost Schutdown");
             try {
-                Thread.sleep(1000 * 5);
+                TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate Dockerhost Schutdown failed");
             }
