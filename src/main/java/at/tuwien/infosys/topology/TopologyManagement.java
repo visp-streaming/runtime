@@ -1,8 +1,7 @@
 package at.tuwien.infosys.topology;
 
 
-import at.tuwien.infosys.configuration.Topology;
-import at.tuwien.infosys.entities.Operator;
+import at.tuwien.infosys.entities.operators.Operator;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeoutException;
 public class TopologyManagement {
 
     @Autowired
-    private Topology topology;
+    private TopologyParser parser;
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyManagement.class);
 
@@ -42,7 +41,7 @@ public class TopologyManagement {
             channel.queueDeclare("processingduration", true, false, false, null);
             channel.queueBind("processingduration", "processingduration", "processingduration");
 
-            for (Operator n : topology.getTopologyAsList()) {
+            for (Operator n : parser.getTopology().values()) {
                 String exchangeName = n.getName();
                 channel.exchangeDeclare(exchangeName, "fanout", true);
 
@@ -78,12 +77,12 @@ public class TopologyManagement {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
-            for (Operator n : topology.getTopologyAsList()) {
+            for (Operator n : parser.getTopology().values()) {
                 channel.exchangeDelete(n.getName());
 
                 if (n.getSources()!=null) {
                     for (Operator source : n.getSources()) {
-                        channel.queueDelete(n.getName() + source.getName());
+                            channel.queueDelete(n.getName() + source.getName());
                     }
                 }
             }
@@ -100,7 +99,7 @@ public class TopologyManagement {
 
     public String getIncomingQueues(String operator) {
         StringBuilder incomingQueues = new StringBuilder();
-        for (Operator op : topology.getTopologyAsList()) {
+        for (Operator op : parser.getTopology().values()) {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
@@ -114,7 +113,7 @@ public class TopologyManagement {
 
     public List<String> getIncomingQueuesAsList(String operator) {
         List<String> incomingQueues = new ArrayList<>();
-        for (Operator op : topology.getTopologyAsList()) {
+        for (Operator op : parser.getTopology().values()) {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
@@ -128,14 +127,10 @@ public class TopologyManagement {
 
     public List<String> getOperatorsAsList() {
         List<String> operators = new ArrayList<>();
-        for (Operator op : topology.getTopologyAsList()) {
+        for (Operator op : parser.getTopology().values()) {
             operators.add(op.getName());
         }
         return operators;
-    }
-
-    public List<Operator> getTopologyAsList() {
-        return topology.getTopologyAsList();
     }
 
 }

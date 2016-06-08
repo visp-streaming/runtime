@@ -7,10 +7,11 @@ import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.Operator;
+import at.tuwien.infosys.entities.operators.Operator;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.topology.TopologyManagement;
+import at.tuwien.infosys.topology.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class Utilities {
 
     @Autowired
     ProcessingNodeManagement processingNodeManagement;
+
+    @Autowired
+    TopologyParser parser;
 
     @Autowired
     OpenstackConnector openstackConnector;
@@ -47,13 +51,16 @@ public class Utilities {
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
+    @Value("${visp.topology}")
+    private String topology;
+
     @Value("${visp.simulation}")
     private Boolean SIMULATION;
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
-            for (Operator op : topologyMgmt.getTopologyAsList()) {
+            for (Operator op : parser.getTopology().values()) {
                 if (op.getName().equals("source")) {
                     continue;
                 }
@@ -63,6 +70,7 @@ public class Utilities {
     }
 
     public void createInitialStatus() {
+        parser.loadTopology("topologyConfiguration/" + topology + ".conf");
         dhr.deleteAll();
         dcr.deleteAll();
         qmr.deleteAll();
