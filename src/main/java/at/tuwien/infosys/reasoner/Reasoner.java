@@ -77,6 +77,9 @@ public class Reasoner {
 
 
         for (DockerHost dh : dhr.findAll()) {
+            if (dh.getScheduledForShutdown()){
+                continue;
+            }
             DateTime btuEnd = new DateTime(dh.getBTUend());
             DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
 
@@ -172,6 +175,9 @@ public class Reasoner {
             if (blackListedHost!=null) {
                 return blackListedHost;
             }
+
+            //TODO implement scaledown
+
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
             return openstackConnector.startVM(dh);

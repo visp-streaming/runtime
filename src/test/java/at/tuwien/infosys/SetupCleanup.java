@@ -18,9 +18,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 public class SetupCleanup {
-
-    @Value("${visp.dockerhost}")
-    private String dockerHost;
+    
 
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;

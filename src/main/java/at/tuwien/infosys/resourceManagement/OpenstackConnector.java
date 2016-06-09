@@ -316,10 +316,12 @@ public class OpenstackConnector {
 
     public void removeHostsWhichAreFlaggedToShutdown() {
         for (DockerHost dh : dhr.findAll()) {
-            DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-            if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
-                stopDockerHost(dh);
+            if (dh.getScheduledForShutdown()) {
+                DateTime now = new DateTime(DateTimeZone.UTC);
+                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
+                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
+                    stopDockerHost(dh);
+                }
             }
         }
     }
