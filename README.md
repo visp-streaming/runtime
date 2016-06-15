@@ -4,6 +4,9 @@
 Setup a RabbitMQ instance and set the URL from the RabbitMQ instance to *visp.infrastructurehost*  *spring.rabbitmq.host* in application.properties.
 Further create a user with the name *visp* and the password *visp*.
 
+## Shared Storage
+Setup a Redis instance on the same host as the Message Infrastructure.
+
 ## Data Backend
 Setup a Mysql database with username: *root*, password: *password* and a database: *visp* on the same machine as the VISP runtime
 
