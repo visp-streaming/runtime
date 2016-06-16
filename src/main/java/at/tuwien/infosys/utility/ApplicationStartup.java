@@ -1,6 +1,5 @@
 package at.tuwien.infosys.utility;
 
-import at.tuwien.infosys.topology.TopologyManagement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
@@ -16,8 +15,7 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
     @Autowired
     private Utilities utility;
 
-    @Autowired
-    private TopologyManagement tmgmt;
+
     @Override
     public void onApplicationEvent(final ContextRefreshedEvent event) {
             utility.createInitialStatus();

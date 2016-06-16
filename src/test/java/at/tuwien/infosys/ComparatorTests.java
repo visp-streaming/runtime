@@ -1,6 +1,8 @@
 package at.tuwien.infosys;
 
+import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
+import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.entities.ResourceComparator;
@@ -27,18 +29,22 @@ public class ComparatorTests {
     @Autowired
     private ProcessingDurationRepository pcr;
 
+    @Autowired
+    private DockerContainerRepository dcr;
+
+    DockerHost dh = new DockerHost();
 
     //assumption all hosts are the same with 10 cores, 1000 ram and 1000 storage
-    ResourceAvailability ra1 = new ResourceAvailability("host1", 1, 1.0, 900, 800F, "", "");
-    ResourceAvailability ra2 = new ResourceAvailability("host2", 2, 2.0, 800, 800F, "", "");
-    ResourceAvailability ra3 = new ResourceAvailability("host3", 3, 3.0, 700, 900F, "", "");
-    ResourceAvailability ra4 = new ResourceAvailability("host4", 4, 4.0, 600, 900F, "", "");
-    ResourceAvailability ra5 = new ResourceAvailability("host5", 5, 5.0, 500, 400F, "", "");
-    ResourceAvailability ra6 = new ResourceAvailability("host6", 6, 6.0, 400, 400F, "", "");
-    ResourceAvailability ra7 = new ResourceAvailability("host7", 7, 7.0, 300, 500F, "", "");
-    ResourceAvailability ra8 = new ResourceAvailability("host8", 8, 8.0, 200, 600F, "", "");
-    ResourceAvailability ra9 = new ResourceAvailability("host9", 9, 9.0, 100, 200F, "", "");
-    ResourceAvailability ra10 = new ResourceAvailability("host10", 10, 10.0, 50, 100F, "", "");
+    ResourceAvailability ra1 = new ResourceAvailability(dh, 1, 1.0, 900, 800F);
+    ResourceAvailability ra2 = new ResourceAvailability(dh, 2, 2.0, 800, 800F);
+    ResourceAvailability ra3 = new ResourceAvailability(dh, 3, 3.0, 700, 900F);
+    ResourceAvailability ra4 = new ResourceAvailability(dh, 4, 4.0, 600, 900F);
+    ResourceAvailability ra5 = new ResourceAvailability(dh, 5, 5.0, 500, 400F);
+    ResourceAvailability ra6 = new ResourceAvailability(dh, 6, 6.0, 400, 400F);
+    ResourceAvailability ra7 = new ResourceAvailability(dh, 7, 7.0, 300, 500F);
+    ResourceAvailability ra8 = new ResourceAvailability(dh, 8, 8.0, 200, 600F);
+    ResourceAvailability ra9 = new ResourceAvailability(dh, 9, 9.0, 100, 200F);
+    ResourceAvailability ra10 = new ResourceAvailability(dh, 10, 10.0, 50, 100F);
 
     List<ResourceAvailability> raList = new ArrayList<>();
 
@@ -59,9 +65,7 @@ public class ComparatorTests {
     @Test
     public void testComparator() {
         Collections.sort(raList, ResourceComparator.AMOUNTOFCONTAINERASC);
-        for(ResourceAvailability ra : raList) {
-            System.out.println(ra);
-        }
+        raList.forEach(System.out::println);
     }
 
 
@@ -99,4 +103,6 @@ public class ComparatorTests {
 
 
     }
+
+
 }

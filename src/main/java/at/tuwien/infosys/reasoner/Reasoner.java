@@ -15,9 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class Reasoner {
@@ -60,6 +62,7 @@ public class Reasoner {
 
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
+    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
@@ -168,39 +171,48 @@ public class Reasoner {
     public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc, DockerHost blackListedHost) {
         List<ResourceAvailability> freeResources = reasonerUtility.calculateFreeResourcesforHosts(blackListedHost);
 
-        //String host = binPackingStrategy(dc, freeResources);
-        String host = equalDistributionStrategy(dc, freeResources);
+        DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
         if (host == null) {
+
+            String scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
+            while (scaledownoperator!=null) {
+                pcm.scaleDown(scaledownoperator);
+                scaledownoperator = null;
+                host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
+                if (host != null) {
+                    break;
+                }
+                scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
+            }
+
             if (blackListedHost!=null) {
                 return blackListedHost;
             }
-
-            //TODO implement scaledown
 
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
             return openstackConnector.startVM(dh);
         } else {
-            return dhr.findByName(host).get(0);
+            return host;
         }
     }
 
-    private String equalDistributionStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
+    private DockerHost equalDistributionStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
         //use all hosts equally
         //select the host with most free CPU resources
         Collections.sort(freeResources, ResourceComparator.FREECPUCORESASC);
         return selectFirstFitForResources(dc, freeResources);
     }
 
-    private String binPackingStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
+    private DockerHost binPackingStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
         //minimize the hosts
         //select the host with least free CPU resources
         Collections.sort(freeResources, ResourceComparator.FREECPUCORESDESC);
         return selectFirstFitForResources(dc, freeResources);
     }
 
-    private String selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
+    private DockerHost selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
         LOG.info("###### select suitable container for: ######");
         LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getRam() + " - Storage: " + dc.getStorage());
         for (ResourceAvailability ra : freeResources) {
@@ -213,9 +225,9 @@ public class Reasoner {
             if (ra.getStorage() <= dc.getStorage()) {
                 continue;
             }
-            LOG.info("Host found: " + ra.getName());
+            LOG.info("Host found: " + ra.getHost().getName());
             LOG.info("###### select suitable container for ######");
-            return ra.getName();
+            return ra.getHost();
         }
         LOG.info("No suitable host found.");
         LOG.info("###### select suitable container for ######");

@@ -217,8 +217,6 @@ public class OpenstackConnector {
         dh.setBTUend(btuEnd.toString());
 
 
-        dhr.save(dh);
-
         LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + ip + " was started.");
 
         //wait until the dockerhost is available
@@ -240,6 +238,7 @@ public class OpenstackConnector {
 
         }
 
+        dhr.save(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
 
         //TODO add monitor container

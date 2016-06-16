@@ -2,33 +2,29 @@ package at.tuwien.infosys.entities;
 
 public class ResourceAvailability implements Comparable<ResourceAvailability>{
 
-    private String hostId;
+    private DockerHost host;
     private Integer amountOfContainer;
     private Double cpuCores;
     private Integer ram;
     private Float storage;
-    private String url;
-    private String name;
 
     public ResourceAvailability() {
     }
 
-    public ResourceAvailability(String hostId, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage, String url, String name) {
-        this.hostId = hostId;
+    public ResourceAvailability(DockerHost host, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage) {
+        this.host = host;
         this.amountOfContainer = amountOfContainer;
         this.cpuCores = cpuCores;
         this.ram = ram;
         this.storage = storage;
-        this.url = url;
-        this.name = name;
     }
 
-    public String getHostId() {
-        return hostId;
+    public DockerHost getHost() {
+        return host;
     }
 
-    public void setHostId(String hostId) {
-        this.hostId = hostId;
+    public void setHost(DockerHost host) {
+        this.host = host;
     }
 
     public Integer getAmountOfContainer() {
@@ -63,32 +59,14 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
         this.storage = storage;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     @Override
     public String toString() {
         return "ResourceAvailability{" +
-                "hostId='" + hostId + '\'' +
+                "host=" + host.getName() +
                 ", amountOfContainer=" + amountOfContainer +
                 ", cpuCores=" + cpuCores +
                 ", ram=" + ram +
                 ", storage=" + storage +
-                ", url='" + url + '\'' +
-                ", name='" + name + '\'' +
                 '}';
     }
 

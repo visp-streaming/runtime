@@ -1,5 +1,6 @@
 package at.tuwien.infosys.monitoring;
 
+import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.ProcessingDuration;
@@ -18,6 +19,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,11 +29,17 @@ public class Monitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
+    @Value("${visp.relaxationfactor}")
+    private Double relaxationfactor;
+
     @Autowired
     private ProcessingDurationRepository pcr;
 
     @Autowired
     private QueueMonitorRepository qmr;
+
+    @Autowired
+    private OperatorConfiguration opConf;
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -55,8 +63,22 @@ public class Monitor {
             qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
         }
 
+        return upscalingDuration(operator);
 
-        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
+    }
+
+
+    private ScalingAction upscalingDuration(String operator) {
+
+        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
+
+        if (pds.isEmpty()) {
+            return ScalingAction.DONOTHING;
+        }
+
+        if (pds.get(0).getDuration() * relaxationfactor > opConf.getDurationSLA(operator)) {
+            return ScalingAction.SCALEUP;
+        }
 
         Integer count = 4;
         double[][] data = new double[5][2];
@@ -70,24 +92,39 @@ public class Monitor {
         regression.addData(data);
 
         Double expectedDurationValue = regression.predict(6);
-        //TODO implement logic to handle this
 
-
-
-
-        if (max<1) {
-            return ScalingAction.SCALEDOWN;
-        } else {
-            if (max<100) {
-                return ScalingAction.DONOTHING;
-            } else {
-                if (min>250) {
-                    return ScalingAction.SCALEUPDOUBLE;
-                } else {
-                    return ScalingAction.SCALEUP;
-                }
-            }
+        if (expectedDurationValue * relaxationfactor > opConf.getDurationSLA(operator)) {
+            return ScalingAction.SCALEUP;
         }
+
+        return ScalingAction.DONOTHING;
+    }
+
+    private ScalingAction upscalingQueue(String operator, Integer max) {
+        if (max > opConf.getQueueSLA(operator)) {
+            return ScalingAction.SCALEUP;
+        }
+
+        List<QueueMonitor> qms = qmr.findFirst5ByOperatorOrderByIdDesc(operator);
+
+        Integer count = 4;
+        double[][] data = new double[5][2];
+        for (QueueMonitor qm : qms) {
+            data[count][0] = count;
+            data[count][1] = qm.getAmount();
+            count--;
+        }
+
+        SimpleRegression regression = new SimpleRegression(false);
+        regression.addData(data);
+
+        Double expectedDurationValue = regression.predict(6);
+
+        if (expectedDurationValue>opConf.getQueueSLA(operator)) {
+            return ScalingAction.SCALEUP;
+        }
+
+        return ScalingAction.DONOTHING;
     }
 
     private Integer getQueueCount(final String name, String infrastructureHost) {
