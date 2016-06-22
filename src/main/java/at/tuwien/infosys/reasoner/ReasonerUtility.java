@@ -180,7 +180,7 @@ public class ReasonerUtility {
             }
         }
 
-        if (maxInstances < 1) {
+        if (maxInstances < 2) {
             return null;
         }
 

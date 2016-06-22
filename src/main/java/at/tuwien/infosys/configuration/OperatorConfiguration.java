@@ -48,21 +48,19 @@ public class OperatorConfiguration {
         queueSLA.put("source", 100);
 
 
-        durationSLA.put("speed", 0.5);
-        durationSLA.put("avgSpeed", 0.5);
-        durationSLA.put("aggregation", 0.5);
-        durationSLA.put("distance", 0.5);
-        durationSLA.put("analysis", 0.5);
-        durationSLA.put("monitor", 0.5);
-        durationSLA.put("step1", 1.0);
-        durationSLA.put("step2", 2.0);
-        durationSLA.put("step3", 3.0);
-        durationSLA.put("step4", 4.0);
-        durationSLA.put("step5", 5.0);
-        durationSLA.put("log", 0.5);
-        durationSLA.put("source", 0.5);
-
-
+        durationSLA.put("speed", 1000.0);
+        durationSLA.put("avgSpeed", 1000.0);
+        durationSLA.put("aggregation", 1000.0);
+        durationSLA.put("distance", 1000.0);
+        durationSLA.put("analysis", 1000.0);
+        durationSLA.put("monitor", 1000.0);
+        durationSLA.put("step1", 1000.0);
+        durationSLA.put("step2", 1500.0);
+        durationSLA.put("step3", 2000.0);
+        durationSLA.put("step4", 2500.0);
+        durationSLA.put("step5", 3000.0);
+        durationSLA.put("log", 1000.0);
+        durationSLA.put("source", 1000.0);
     }
 
     public String getImage(String operator) {
