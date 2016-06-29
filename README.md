@@ -1,3 +1,15 @@
+# Publications
+```
+VISP: An Ecosystem for Elastic Data Stream Processing for the Internet of Things
+Christoph Hochreiner, Michael Vögler, Philipp Waibel and Schahram Dustdar
+20th Int. Enterprise Distributed Object Computing Conf. (EDOC), 2016
+```
+```
+Elastic Stream Processing for the Internet of Things
+Christoph Hochreiner, Michael Vögler, Stefan Schulte and Schahram Dustdar
+9th Int. Conf. on Cloud Computing (CLOUD), 2016
+```
+
 # Setup Requirements
 
 ## Message Infrastructure
