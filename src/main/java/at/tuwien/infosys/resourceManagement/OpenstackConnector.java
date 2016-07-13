@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
@@ -230,10 +230,10 @@ public class OpenstackConnector {
                         build();
                 docker.ping();
                 connection = true;
-            } catch (DockerException ex) {
+            }  catch (InterruptedException e) {
                 LOG.debug("Dockerhost is not available yet.");
-            } catch (InterruptedException e) {
-                LOG.debug("Dockerhost is not available yet.");
+            } catch (DockerException e) {
+                LOG.debug(e.getMessage());
             }
 
         }

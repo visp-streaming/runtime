@@ -9,7 +9,7 @@ import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.utility.Utilities;
-import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

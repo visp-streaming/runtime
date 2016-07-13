@@ -5,7 +5,7 @@ import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ScalingActivity;
-import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -56,9 +56,9 @@ public class ProcessingNodeManagement {
                     }
 
                     dcm.removeContainer(dc);
-                } catch (DockerException e) {
+                }  catch (InterruptedException e) {
                     LOG.error("Cloud not remove docker Container while houskeeping.", e);
-                } catch (InterruptedException e) {
+                } catch (DockerException e) {
                     LOG.error("Cloud not remove docker Container while houskeeping.", e);
                 }
             }
@@ -69,9 +69,9 @@ public class ProcessingNodeManagement {
         try {
             dcm.startContainer(dh, dc, infrastructureHost);
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaleup", dh.getName()));
-        } catch (DockerException e) {
+        }  catch (InterruptedException e) {
             LOG.error("Could not start a docker container.", e);
-        } catch (InterruptedException e) {
+        } catch (DockerException e) {
             LOG.error("Could not start a docker container.", e);
         }
         LOG.info("VISP - Scale UP " + dc.getOperator());
@@ -95,7 +95,6 @@ public class ProcessingNodeManagement {
             }
 
             triggerShutdown(dc);
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
                 break;
         }
     }
@@ -116,12 +115,13 @@ public class ProcessingNodeManagement {
             dcm.executeCommand(dc, "cd ~ ; touch killme");
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)).toString());
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
 
 
 
-        } catch (DockerException e) {
-            LOG.error("Could not trigger scaledown operation.", e);
         } catch (InterruptedException e) {
+            LOG.error("Could not trigger scaledown operation.", e);
+        } catch (DockerException e) {
             LOG.error("Could not trigger scaledown operation.", e);
         }
     }

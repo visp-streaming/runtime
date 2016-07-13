@@ -32,6 +32,9 @@ public class Monitor {
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
 
+    @Value("${visp.minimalqueueloadforupscaling}")
+    private Integer queueUpscalingThreshold;
+
     @Autowired
     private ProcessingDurationRepository pcr;
 
@@ -52,23 +55,23 @@ public class Monitor {
 
         for (String queue : queues) {
             Integer queueCount = getQueueCount(queue, infrastructureHost);
-            if (queueCount<min) {
+            if (queueCount < min) {
                 min = queueCount;
             }
 
-            if (queueCount>max) {
+            if (queueCount > max) {
                 max = queueCount;
             }
 
             qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
         }
 
-        return upscalingDuration(operator);
+        return upscalingDuration(operator, max);
 
     }
 
 
-    private ScalingAction upscalingDuration(String operator) {
+    private ScalingAction upscalingDuration(String operator, Integer maxQueue) {
 
         List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
@@ -77,7 +80,10 @@ public class Monitor {
         }
 
         if (pds.get(0).getDuration() * relaxationfactor > opConf.getDurationSLA(operator)) {
-            return ScalingAction.SCALEUP;
+            if (maxQueue > queueUpscalingThreshold) {
+                return ScalingAction.SCALEUP;
+            }
+
         }
 
         Integer count = 4;
@@ -94,7 +100,9 @@ public class Monitor {
         Double expectedDurationValue = regression.predict(6);
 
         if (expectedDurationValue * relaxationfactor > opConf.getDurationSLA(operator)) {
-            return ScalingAction.SCALEUP;
+            if (maxQueue > queueUpscalingThreshold) {
+                return ScalingAction.SCALEUP;
+            }
         }
 
         return ScalingAction.DONOTHING;

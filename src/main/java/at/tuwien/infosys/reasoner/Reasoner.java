@@ -79,70 +79,74 @@ public class Reasoner {
         /////////////////////
 
 
-        for (DockerHost dh : dhr.findAll()) {
-            if (dh.getScheduledForShutdown()){
-                continue;
-            }
-            DateTime btuEnd = new DateTime(dh.getBTUend());
-            DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
+        if (dhr.count() > 1) {
 
-            //ensure that the host has enough time to shut down
-            Integer remainingfivepercent = (int) (btu * 0.05);
-            if (remainingfivepercent < graceperiod*2) {
-                remainingfivepercent=graceperiod*2;
-            }
+            for (DockerHost dh : dhr.findAll()) {
+                if (dh.getScheduledForShutdown()) {
+                    continue;
+                }
+                DateTime btuEnd = new DateTime(dh.getBTUend());
+                DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
 
-            potentialHostTerminationTime = potentialHostTerminationTime.plusSeconds(remainingfivepercent);
+                //ensure that the host has enough time to shut down
+                Integer remainingfivepercent = (int) (btu * 0.05);
+                if (remainingfivepercent < graceperiod * 2) {
+                    remainingfivepercent = graceperiod * 2;
+                }
 
-            //BTU would end within 5 %
-            if (btuEnd.isBefore(potentialHostTerminationTime)) {
+                potentialHostTerminationTime = potentialHostTerminationTime.plusSeconds(remainingfivepercent);
 
-                List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
+                //BTU would end within 5 %
+                if (btuEnd.isBefore(potentialHostTerminationTime)) {
 
-                //migrate Container
-                for (DockerContainer dc : containerToMigrate) {
-                    if (dc.getStatus() == null) {
-                        dc.setStatus("running");
-                    }
+                    List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
 
-                    if (dc.getStatus().equals("stopping")) {
-                        continue;
-                    }
+                    //migrate Container
+                    for (DockerContainer dc : containerToMigrate) {
+                        if (dc.getStatus() == null) {
+                            dc.setStatus("running");
+                        }
 
-                    DockerHost selectedHost = selectSuitableDockerHost(dc, dh);
-                    if (selectedHost.equals(dh)) {
+                        if (dc.getStatus().equals("stopping")) {
+                            continue;
+                        }
 
-                        Boolean optimization = false;
+                        DockerHost selectedHost = selectSuitableDockerHost(dc, dh);
+                        if (selectedHost.equals(dh)) {
 
-                        //TODO consider critical path of topology for scaling down and up
+                            Boolean optimization = false;
 
-
-                        //TODO gather space requirements for the remaining container which need to be migrated
-
-                        //TODO check whether enough containers can be scaled down to realize the migration
+                            //TODO consider critical path of topology for scaling down and up
 
 
-                        if (!optimization) {
-                            //Optimization was not possible and VM needs to leased for another BTU
+                            //TODO gather space requirements for the remaining container which need to be migrated
 
-                            dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
-                            dhr.save(dh);
+                            //TODO check whether enough containers can be scaled down to realize the migration
 
-                            LOG.info("the host: " + dh.getName() + " was leased for another BTU");
-                            break;
+
+                            if (!optimization) {
+                                //Optimization was not possible and VM needs to leased for another BTU
+
+                                dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
+                                dhr.save(dh);
+
+                                LOG.info("the host: " + dh.getName() + " was leased for another BTU");
+                                break;
+
+                            } else {
+                                pcm.triggerShutdown(dc);
+                                pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
+                            }
 
                         } else {
                             pcm.triggerShutdown(dc);
                             pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                         }
-
-                    } else {
-                        pcm.triggerShutdown(dc);
-                        pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                     }
                 }
             }
         }
+
 
         ////////////////////
 
@@ -176,7 +180,7 @@ public class Reasoner {
         if (host == null) {
 
             String scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
-            while (scaledownoperator!=null) {
+            while (scaledownoperator != null) {
                 pcm.scaleDown(scaledownoperator);
                 scaledownoperator = null;
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
@@ -186,7 +190,7 @@ public class Reasoner {
                 scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
             }
 
-            if (blackListedHost!=null) {
+            if (blackListedHost != null) {
                 return blackListedHost;
             }
 
