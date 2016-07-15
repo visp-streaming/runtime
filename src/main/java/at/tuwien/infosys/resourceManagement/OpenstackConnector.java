@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class OpenstackConnector {
+public class OpenstackConnector implements ResourceConnector {
 
     @Value("${visp.simulation}")
     private Boolean SIMULATION;
@@ -126,6 +126,7 @@ public class OpenstackConnector {
     }
 
 
+    @Override
     public DockerHost startVM(DockerHost dh) {
         if (SIMULATION) {
             LOG.info("Simulate Dockerhost Startup");
@@ -278,6 +279,7 @@ public class OpenstackConnector {
     }
 
 
+    @Override
     public final void stopDockerHost(final DockerHost dh) {
         if (SIMULATION) {
             LOG.info("Simulate Dockerhost Schutdown");
@@ -286,6 +288,7 @@ public class OpenstackConnector {
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate Dockerhost Schutdown failed");
             }
+            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
             return;
         }
 
@@ -301,11 +304,13 @@ public class OpenstackConnector {
         for (NodeMetadata nodeMetadata : nodeMetadatas) {
             LOG.info("DockerHost terminated " + nodeMetadata.getName());
         }
+        dhr.delete(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
 
     }
 
 
+    @Override
     public void markHostForRemoval(String hostId) {
         DockerHost dh = dhr.findByName(hostId).get(0);
         dh.setScheduledForShutdown(true);
@@ -313,6 +318,7 @@ public class OpenstackConnector {
         dhr.save(dh);
     }
 
+    @Override
     public void removeHostsWhichAreFlaggedToShutdown() {
         for (DockerHost dh : dhr.findAll()) {
             if (dh.getScheduledForShutdown()) {

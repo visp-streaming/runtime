@@ -6,8 +6,8 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
-import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.ResourceConnector;
 import at.tuwien.infosys.utility.Utilities;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.Before;
@@ -41,7 +41,7 @@ public class DockerTests {
     private DockerHostRepository dhr;
 
     @Autowired
-    private OpenstackConnector opm;
+    private ResourceConnector opm;
 
     @Autowired
     private OperatorConfiguration opConf;

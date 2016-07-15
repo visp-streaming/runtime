@@ -6,8 +6,8 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.*;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
-import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -28,7 +28,7 @@ public class Reasoner {
     TopologyManagement topologyMgmt;
 
     @Autowired
-    OpenstackConnector openstackConnector;
+    ResourceProvider resourceProvider;
 
     @Autowired
     OperatorConfiguration opConfig;
@@ -67,8 +67,7 @@ public class Reasoner {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
-        openstackConnector.removeHostsWhichAreFlaggedToShutdown();
-
+        resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
 
         LOG.info("VISP - Start Reasoner");
 
@@ -118,7 +117,6 @@ public class Reasoner {
 
                             //TODO consider critical path of topology for scaling down and up
 
-
                             //TODO gather space requirements for the remaining container which need to be migrated
 
                             //TODO check whether enough containers can be scaled down to realize the migration
@@ -131,7 +129,7 @@ public class Reasoner {
                                 dhr.save(dh);
 
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");
-                                break;
+                                return;
 
                             } else {
                                 pcm.triggerShutdown(dc);
@@ -143,6 +141,7 @@ public class Reasoner {
                             pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                         }
                     }
+                    resourceProvider.get().markHostForRemoval(dh.getName());
                 }
             }
         }
@@ -196,7 +195,7 @@ public class Reasoner {
 
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
-            return openstackConnector.startVM(dh);
+            return resourceProvider.get().startVM(dh);
         } else {
             return host;
         }

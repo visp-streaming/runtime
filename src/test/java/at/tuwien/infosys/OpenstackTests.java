@@ -2,7 +2,7 @@ package at.tuwien.infosys;
 
 
 import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.resourceManagement.OpenstackConnector;
+import at.tuwien.infosys.resourceManagement.ResourceConnector;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +17,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class OpenstackTests {
 
     @Autowired
-    private OpenstackConnector openstackConnector;
+    private ResourceConnector openstackConnector;
 
 
     @Test

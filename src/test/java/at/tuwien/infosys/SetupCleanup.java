@@ -2,6 +2,7 @@ package at.tuwien.infosys;
 
 import at.tuwien.infosys.reasoner.Reasoner;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.utility.Utilities;
 import org.junit.Test;
@@ -14,7 +15,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = VISPRuntime.class)
-@TestPropertySource(locations="classpath:setup.properties")
+@TestPropertySource(locations="classpath:application.properties")
 
 
 public class SetupCleanup {
@@ -28,6 +29,9 @@ public class SetupCleanup {
 
     @Autowired
     private Reasoner reasoner;
+
+    @Autowired
+    private ResourcePoolConnector rpc;
 
     @Autowired
     private TopologyManagement tmgmt;
@@ -50,6 +54,14 @@ public class SetupCleanup {
         tmgmt.cleanup(infrastructureHost);
         utility.createInitialStatus();
     }
+
+    @Test
+    public void startVMs() {
+
+        //TODO comment/uncomment the initialize procedure for the vispruntime
+        rpc.initializeVMs(3);
+    }
+
 
 
 }
