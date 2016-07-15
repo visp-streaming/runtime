@@ -8,7 +8,7 @@ public interface ResourceConnector {
 
     void stopDockerHost(DockerHost dh);
 
-    void markHostForRemoval(String hostId);
+    void markHostForRemoval(DockerHost dh);
 
     void removeHostsWhichAreFlaggedToShutdown();
 }

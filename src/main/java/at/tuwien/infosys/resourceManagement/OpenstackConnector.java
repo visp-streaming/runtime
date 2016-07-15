@@ -311,8 +311,7 @@ public class OpenstackConnector implements ResourceConnector {
 
 
     @Override
-    public void markHostForRemoval(String hostId) {
-        DockerHost dh = dhr.findByName(hostId).get(0);
+    public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
         dh.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
         dhr.save(dh);

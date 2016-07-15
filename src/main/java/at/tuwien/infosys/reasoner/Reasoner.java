@@ -141,7 +141,7 @@ public class Reasoner {
                             pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                         }
                     }
-                    resourceProvider.get().markHostForRemoval(dh.getName());
+                    resourceProvider.get().markHostForRemoval(dh);
                 }
             }
         }
