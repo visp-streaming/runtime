@@ -1,19 +1,31 @@
+# What is VISP?
+VISP represents a set of different prototypes, which are designed to create an ecosystem for elastic stream processing applications, which consist of individual building blocks to ease the creation of new applications. Therefore, these prototypes cover all relevant lifecycle phases, ranging from the inventarization of the building blocks and the design of the application, over the deployment up to the usage monitoring and provisioning of computational resources to ensure a high level of quality of service.
+
 # Publications
 ```
 VISP: An Ecosystem for Elastic Data Stream Processing for the Internet of Things
 Christoph Hochreiner, Michael Vögler, Philipp Waibel and Schahram Dustdar
 20th Int. Enterprise Distributed Object Computing Conf. (EDOC), 2016
 ```
+[Paper](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/EDOC2016.pdf) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2016edoc.bib) 
+
+
 ```
 Elastic Stream Processing for the Internet of Things
 Christoph Hochreiner, Michael Vögler, Stefan Schulte and Schahram Dustdar
 9th Int. Conf. on Cloud Computing (CLOUD), 2016
 ```
+[Paper](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/IEEECloud2016.pdf) | 
+[Presentation](https://speakerdeck.com/chochreiner/elastic-stream-processing-for-the-internet-of-things) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2016cloud.bib) 
+
+
 ```
 Elastic Stream Processing for Distributed Environments
 Christoph Hochreiner, Stefan Schulte, Schahram Dustdar and Freddy Lecue
 IEEE Internet Computing, Volume 19, Number 6, pages 54-59, 2015
 ```
+[Paper](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=7307896) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2015ic.bib) 
+
 
 # Setup Requirements
 
