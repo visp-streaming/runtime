@@ -65,7 +65,7 @@ public class DockerTests {
 
     @Test
     public void startupContainer() throws DockerException, InterruptedException {
-        dcm.startContainer(dh, dc, "128.130.172.225");
+        dcm.startContainer(dh, dc, "128.130.172.218");
     }
 
     @Test

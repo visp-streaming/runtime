@@ -13,6 +13,8 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.HostConfig;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -88,32 +90,35 @@ public class DockerContainerManagement {
 
         Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
-        Double containerRam = container.getRam().doubleValue();
 
+        long containerRam = (long) container.getRam().doubleValue() * 1024 * 1024;
+        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
 
+        final HostConfig hostConfig = HostConfig.builder()
+                .memory(containerRam)
+                .cpuShares(cpuShares)
+                .build();
 
-//        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
-//        long memory = (long) (containerRam * 1024 * 1024);
-
-        //TODO implement memory restrictions
         final ContainerConfig containerConfig = ContainerConfig.builder()
+                .hostConfig(hostConfig)
                 .image(operatorConfiguration.getImage(container.getOperator()))
-                //.cpuShares(cpuShares)
-                //.memory(memory)
-                //.cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
+                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
                 .build();
+
+
 
         final ContainerCreation creation = docker.createContainer(containerConfig);
         final String id = creation.id();
 
         docker.startContainer(id);
 
-        //TODO make more flexible
-
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
         container.setHost(dh.getName());
+
+
+        ContainerInfo config = docker.inspectContainer(id);
 
         dcr.save(container);
 
