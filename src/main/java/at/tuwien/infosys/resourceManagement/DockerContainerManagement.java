@@ -95,8 +95,8 @@ public class DockerContainerManagement {
         long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
 
         final HostConfig hostConfig = HostConfig.builder()
-                .memory(containerRam)
                 .cpuShares(cpuShares)
+                .memoryReservation(containerRam)
                 .build();
 
         final ContainerConfig containerConfig = ContainerConfig.builder()

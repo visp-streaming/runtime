@@ -67,7 +67,6 @@ public class Monitor {
         }
 
         return upscalingDuration(operator, max);
-
     }
 
 

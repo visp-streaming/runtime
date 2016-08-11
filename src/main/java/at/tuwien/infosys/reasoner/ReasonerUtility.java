@@ -133,23 +133,32 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        Double value = Double.MAX_VALUE;
+        Double value = 0.0;
         DockerHost selectedHost = null;
 
         for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost)) {
-            Double currentValue = Math.min(ra.getCpuCores()/dc.getCpuCores(), ra.getRam()/dc.getRam());
+            Double feasibilityThreshold = Math.min(ra.getCpuCores()/dc.getCpuCores(), ra.getRam()/dc.getRam());
 
-            if (currentValue < 1) {
+            if (feasibilityThreshold < 1) {
                 continue;
             }
 
+            Integer remainingMemory = ra.getRam() - dc.getRam();
+            Double remainingCpuCores = ra.getCpuCores() - dc.getCpuCores();
+
+            Double difference = Math.abs((remainingMemory / ra.getHost().getRam()) - (remainingCpuCores / ra.getHost().getCores()));
+
+            Double suitablility = difference / feasibilityThreshold;
+
+
+
             if (!ra.getHost().getAvailableImages().contains(dc.getImage())) {
-                value = value * 100;
+                suitablility = suitablility / 100;
             }
 
-            if (currentValue < value) {
+            if (suitablility < value) {
                 if (value > 0) {
-                    value = currentValue;
+                    value = suitablility;
                     selectedHost = ra.getHost();
                 }
             }
@@ -232,7 +241,6 @@ public class ReasonerUtility {
                 value = selectionValue;
                 selectedOperator = op;
             }
-
         }
 
             return selectedOperator;

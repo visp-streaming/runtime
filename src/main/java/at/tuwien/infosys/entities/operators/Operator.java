@@ -8,6 +8,7 @@ public abstract class Operator {
     protected String name;
     protected String type;
     protected List<Operator> sources = new ArrayList<>();
+    protected List<Operator> affectedInstances = new ArrayList<>();
     protected List<String> sourcesText = new ArrayList<>();
     protected String allowedLocations;
     protected String inputFormat;
@@ -79,6 +80,16 @@ public abstract class Operator {
     public void setSourcesText(List<String> sourcesText) {
         this.sourcesText = sourcesText;
     }
+
+    public List<Operator> getAffectedInstances() {
+        return affectedInstances;
+    }
+
+    public void setAffectedInstances(List<Operator> affectedInstances) {
+        this.affectedInstances = affectedInstances;
+    }
+
+    //TODO parse affected Instances from topology description
 
     @Override
     public String toString() {

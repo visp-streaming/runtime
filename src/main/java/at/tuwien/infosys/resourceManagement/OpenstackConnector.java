@@ -136,7 +136,6 @@ public class OpenstackConnector implements ResourceConnector {
                 LOG.error("Simulate Dockerhost Startup failed");
             }
 
-            //TODO get actual hardware config
             dh.setCores(4.0);
             dh.setRam(5760);
             dh.setStorage(40.0F);
@@ -242,8 +241,6 @@ public class OpenstackConnector implements ResourceConnector {
         dhr.save(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
 
-        //TODO add monitor container
-        //TODO maybe enable in the future
         //startupEntropyContainer(dh);
         return dh;
     }

@@ -23,7 +23,7 @@
 		<java.version>1.8</java.version>
         <jclouds.version>1.9.2</jclouds.version>
         <joda.version>2.9.4</joda.version>
-        <spotify.docker.version>5.0.2</spotify.docker.version>
+        <spotify.docker.version>5.0.4-SNAPSHOT</spotify.docker.version>
         <quartz.version>2.2.3</quartz.version>
         <apache.commons.lang.version>3.4</apache.commons.lang.version>
         <apache.commons.io.version>2.5</apache.commons.io.version>
