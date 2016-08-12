@@ -29,6 +29,12 @@ public class Monitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
+    @Value("${spring.rabbitmq.username}")
+    private String rabbitmqUsername;
+
+    @Value("${spring.rabbitmq.password}")
+    private String rabbitmqPassword;
+
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
 
@@ -137,7 +143,11 @@ public class Monitor {
     private Integer getQueueCount(final String name, String infrastructureHost) {
 
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(infrastructureHost);
+        connectionFactory.setUsername(rabbitmqUsername);
+        connectionFactory.setPassword(rabbitmqPassword);
+
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+
 
         Integer queueLoad = 0;
         try {

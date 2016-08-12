@@ -8,6 +8,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,6 +18,12 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 public class TopologyManagement {
+
+    @Value("${spring.rabbitmq.username}")
+    private String rabbitmqUsername;
+
+    @Value("${spring.rabbitmq.password}")
+    private String rabbitmqPassword;
 
     @Autowired
     private TopologyParser parser;
@@ -28,9 +35,12 @@ public class TopologyManagement {
 
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(infrastructureHost);
+            factory.setUsername(rabbitmqUsername);
+            factory.setPassword(rabbitmqPassword);
             Connection connection = null;
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
+
 
             //declare error message channel
             channel.exchangeDeclare("error", "fanout", true);
@@ -73,6 +83,8 @@ public class TopologyManagement {
         try {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(infrastructureHost);
+            factory.setUsername(rabbitmqUsername);
+            factory.setPassword(rabbitmqPassword);
             Connection connection = null;
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
