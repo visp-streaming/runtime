@@ -142,8 +142,12 @@ public class DockerContainerManagement {
         DockerHost dh = dhr.findByName(dc.getHost()).get(0);
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
-        docker.killContainer(dc.getContainerid());
-        docker.removeContainer(dc.getContainerid());
+        try {
+            docker.killContainer(dc.getContainerid());
+            docker.removeContainer(dc.getContainerid());
+        } catch (Exception e) {
+            LOG.error("Could not kill the container", e);
+        }
         dcr.delete(dc);
 
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");

@@ -90,7 +90,6 @@ public class ProcessingNodeManagement {
             }
 
             if (dc.getStatus().equals("stopping")) {
-                LOG.info("VISP - Scale DOWN " + operator + "-" + dc.getContainerid());
                 continue;
             }
 
@@ -116,6 +115,7 @@ public class ProcessingNodeManagement {
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)).toString());
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
+            LOG.info("VISP - Scale DOWN " + dc.getOperator() + "-" + dc.getContainerid());
 
 
 

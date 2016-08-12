@@ -133,11 +133,12 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        Double value = 0.0;
+        LOG.info("##### select suitable host for Container initialized. ####");
+        Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
         for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost)) {
-            Double feasibilityThreshold = Math.min(ra.getCpuCores()/dc.getCpuCores(), ra.getRam()/dc.getRam());
+            Double feasibilityThreshold = Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getRam() / dc.getRam());
 
             if (feasibilityThreshold < 1) {
                 continue;
@@ -149,7 +150,6 @@ public class ReasonerUtility {
             Double difference = Math.abs((remainingMemory / ra.getHost().getRam()) - (remainingCpuCores / ra.getHost().getCores()));
 
             Double suitablility = difference / feasibilityThreshold;
-
 
 
             if (!ra.getHost().getAvailableImages().contains(dc.getImage())) {
@@ -168,8 +168,8 @@ public class ReasonerUtility {
     }
 
 
-
-    public String selectServiceTobeScaledDown() {
+    public String selectOperatorTobeScaledDown() {
+        LOG.info("##### select operator to be scaled down initialized. ####");
         Double value = Double.MIN_VALUE;
         String selectedOperator = null;
 
@@ -178,13 +178,13 @@ public class ReasonerUtility {
         Integer minInstances = 0;
         Map<String, Integer> operatorAmount = new HashMap<>();
 
-        for(String operator: tmgmt.getOperatorsAsList()) {
+        for (String operator : tmgmt.getOperatorsAsList()) {
             Integer amount = dcr.findByOperator(operator).size();
             operatorAmount.put(operator, dcr.findByOperator(operator).size());
-            if (amount>maxInstances) {
+            if (amount > maxInstances) {
                 maxInstances = amount;
             }
-            if ((amount<minInstances) && (amount>0)) {
+            if ((amount < minInstances) && (amount > 0)) {
                 minInstances = amount;
             }
         }
@@ -196,7 +196,7 @@ public class ReasonerUtility {
         Map<String, Integer> instancesValue = new HashMap<>();
 
         for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
-            instancesValue.put(entry.getKey(), ((entry.getValue()-minInstances) / (maxInstances-minInstances)));
+            instancesValue.put(entry.getKey(), ((entry.getValue() - minInstances) / (maxInstances - minInstances)));
         }
 
         //TODO implemented affected instances
@@ -204,34 +204,35 @@ public class ReasonerUtility {
 
         Map<String, Double> delayValues = new HashMap<>();
 
-        for(String operator: tmgmt.getOperatorsAsList()) {
-            List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
+        for (String operator : tmgmt.getOperatorsAsList()) {
+            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
             Double avgDuration = 0.0;
             for (ProcessingDuration pd : pds) {
-                avgDuration+=pd.getDuration();
+                avgDuration += pd.getDuration();
             }
 
-            avgDuration = avgDuration/5;
+            avgDuration = avgDuration / 5;
 
-            delayValues.put(operator, (avgDuration/(opConf.getDurationSLA(operator) * relaxationfactor) * ( 1 + penaltycosts)));
+            delayValues.put(operator, (avgDuration / (opConf.getDurationSLA(operator) * relaxationfactor) * (1 + penaltycosts)));
         }
 
 
         Long totalScalingActions = scr.count();
         Map<String, Long> scalingActions = new HashMap<>();
-        for(String operator: tmgmt.getOperatorsAsList()) {
-            scalingActions.put(operator, scr.countByOperator(operator)/totalScalingActions);
+        for (String operator : tmgmt.getOperatorsAsList()) {
+            scalingActions.put(operator, scr.countByOperator(operator) / totalScalingActions);
         }
 
         Double selectionValue = 0.0;
         for (Map.Entry<String, Integer> entry : instancesValue.entrySet()) {
             String op = entry.getKey();
-            if (operatorAmount.get(op)<2) {
+            if (operatorAmount.get(op) < 2) {
                 continue;
             }
 
             value = instancesValue.get(op) * 3 - delayValues.get(op) - scalingActions.get(op) * 0.5;
+            LOG.info("Operator: " + op + " has the suitability value of: " + value);
 
             if (value < 0) {
                 continue;
@@ -243,10 +244,10 @@ public class ReasonerUtility {
             }
         }
 
-            return selectedOperator;
+        LOG.info("##### select operator to be scaled down initialized. ####");
+        return selectedOperator;
 
     }
-
 
 
 }

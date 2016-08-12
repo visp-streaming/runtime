@@ -3,6 +3,7 @@ package at.tuwien.infosys.reasoner;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.*;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
@@ -60,6 +61,9 @@ public class Reasoner {
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
+    @Autowired
+    private ScalingActivityRepository sar;
+
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
@@ -97,8 +101,10 @@ public class Reasoner {
 
                 //BTU would end within 5 %
                 if (btuEnd.isBefore(potentialHostTerminationTime)) {
+                    LOG.info(dh.getName() + " arrives at the end of its BTU - initializing check scaledown procedure");
 
                     List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
+                    LOG.info(dh.getName() + " has " + containerToMigrate.size() + " containers which need to be migrated.");
 
                     //migrate Container
                     for (DockerContainer dc : containerToMigrate) {
@@ -115,14 +121,13 @@ public class Reasoner {
 
                             Boolean optimization = false;
 
-                            //TODO consider critical path of topology for scaling down and up
+                            //TODO implement optional additional optimization measures
 
-                            //TODO gather space requirements for the remaining container which need to be migrated
-
-                            //TODO check whether enough containers can be scaled down to realize the migration
+                            //TODO asses affected instances
 
 
                             if (!optimization) {
+                                LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 //Optimization was not possible and VM needs to leased for another BTU
 
                                 dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
@@ -133,6 +138,7 @@ public class Reasoner {
 
                             } else {
                                 pcm.triggerShutdown(dc);
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "migration", dc.getHost()));
                                 pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                             }
 
@@ -178,15 +184,14 @@ public class Reasoner {
 
         if (host == null) {
 
-            String scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
+            String scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
             while (scaledownoperator != null) {
                 pcm.scaleDown(scaledownoperator);
-                scaledownoperator = null;
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
                 if (host != null) {
                     break;
                 }
-                scaledownoperator = reasonerUtility.selectServiceTobeScaledDown();
+                scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
             }
 
             if (blackListedHost != null) {
