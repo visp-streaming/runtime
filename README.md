@@ -7,8 +7,8 @@ VISP: An Ecosystem for Elastic Data Stream Processing for the Internet of Things
 Christoph Hochreiner, Michael Vögler, Philipp Waibel and Schahram Dustdar
 20th Int. Enterprise Distributed Object Computing Conf. (EDOC), 2016
 ```
-[Paper](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/EDOC2016.pdf) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2016edoc.bib) 
-
+[Paper](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/EDOC2016.pdf) |
+[Presentation](https://speakerdeck.com/chochreiner/visp-an-ecosystem-for-elastic-data-stream-processing-for-the-internet-of-things) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2016edoc.bib) 
 
 ```
 Elastic Stream Processing for the Internet of Things
@@ -17,7 +17,6 @@ Christoph Hochreiner, Michael Vögler, Stefan Schulte and Schahram Dustdar
 ```
 [Paper](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/IEEECloud2016.pdf) | 
 [Presentation](https://speakerdeck.com/chochreiner/elastic-stream-processing-for-the-internet-of-things) | [Bibtex](http://www.infosys.tuwien.ac.at/staff/hochreiner/publications/bibtex/hochreiner2016cloud.bib) 
-
 
 ```
 Elastic Stream Processing for Distributed Environments
