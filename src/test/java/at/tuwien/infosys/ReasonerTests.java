@@ -4,16 +4,15 @@ import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.reasoner.Reasoner;
 import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
-import at.tuwien.infosys.reasoner.Reasoner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -21,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = VISPRuntime.class)
 @TestPropertySource(locations="classpath:test.properties")
 public class ReasonerTests {
 
