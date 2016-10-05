@@ -16,6 +16,8 @@ public class VISPRuntime {
 
     @PreDestroy
     public void exportData() {
+
+
         //TODO implement Dataexport functionality and generate graphics
 
 

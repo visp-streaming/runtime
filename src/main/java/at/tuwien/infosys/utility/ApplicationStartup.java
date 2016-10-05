@@ -1,5 +1,7 @@
 package at.tuwien.infosys.utility;
 
+import at.tuwien.infosys.datasources.PooledVMRepository;
+import at.tuwien.infosys.entities.PooledVM;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
@@ -15,11 +17,26 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
     @Autowired
     private Utilities utility;
 
+    @Autowired
+    private PooledVMRepository pvmr;
+
 
     @Override
     public void onApplicationEvent(final ContextRefreshedEvent event) {
 
 
-        utility.createInitialStatus();
+        //utility.createInitialStatus();
+
+        resetPooledVMs();
+
+    }
+
+
+    private void resetPooledVMs() {
+        for(PooledVM vm : pvmr.findAll()) {
+
+            vm.setLinkedhost(null);
+            pvmr.save(vm);
+        }
     }
 }

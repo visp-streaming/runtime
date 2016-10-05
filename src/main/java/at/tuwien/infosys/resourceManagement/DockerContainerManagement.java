@@ -50,7 +50,6 @@ public class DockerContainerManagement {
         if (SIMULATION) {
             LOG.info("Simulate DockerContainer Startup");
             try {
-                //TODO differentiate between cold and warm startup
                 TimeUnit.SECONDS.sleep(4);
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate DockerContainer Startup failed");

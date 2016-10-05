@@ -11,6 +11,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.messages.Image;
 import jdk.management.resource.ResourceRequestDeniedException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -38,6 +39,9 @@ public class ResourcePoolConnector implements ResourceConnector {
 
     @Value("${visp.btu}")
     private Integer BTU;
+
+    @Value("${visp.computational.resources.cleanuppool}")
+    private Boolean cleanupPool;
 
     @Autowired
     private OpenstackConnector opc;
@@ -109,20 +113,19 @@ public class ResourcePoolConnector implements ResourceConnector {
          }
 
 
-        /**
+        if (!cleanupPool) {
 
-        //TODO this docker images cleanup may be commented for testing purposes
-        try {
-            List<Image> availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
-            for (Image img : availableImages) {
-                docker.removeImage(img.id());
+            try {
+                List<Image> availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
+                for (Image img : availableImages) {
+                    docker.removeImage(img.id());
+                }
+            } catch (DockerException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                LOG.error("Images could not be cleanedup", e);
             }
-        } catch (DockerException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            LOG.error("Images could not be cleanedup", e);
         }
-         **/
 
         selectedVM.setLinkedhost(null);
 
@@ -150,8 +153,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             }
         }
     }
-
-
 
 
 
