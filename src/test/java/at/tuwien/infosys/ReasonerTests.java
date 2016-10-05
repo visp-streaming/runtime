@@ -8,7 +8,6 @@ import at.tuwien.infosys.reasoner.Reasoner;
 import at.tuwien.infosys.resourceManagement.DockerContainerManagement;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -88,52 +86,4 @@ public class ReasonerTests {
 
     }
 
-    @Test
-    public void szenario1() {
-        dhr.save(spaceForThreeContainerHost1);
-
-        assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1, null));
-    }
-
-
-    @Test
-    public void szenario2() {
-        dhr.save(spaceForThreeContainerHost1);
-        dhr.save(spaceforOneContainerHost1);
-
-        //for binpacking Strategy
-        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1, null));
-
-        //for equaldistribution Strategy
-        //assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1));
-    }
-
-    @Test
-    public void szenario3() {
-        dhr.save(spaceforNoContainerHost1);
-        dhr.save(spaceForThreeContainerHost1);
-        dhr.save(spaceforOneContainerHost1);
-
-        //for binpacking Strategy
-        assertEquals("smallHostURL1",reasoner.selectSuitableDockerHost(container1, null));
-
-        //for equaldistribution Strategy
-        //assertEquals("bigHostURL1",reasoner.selectSuitableDockerHost(container1));
-    }
-
-    /**
-     * 1 voller Host
-     * 1 container soll geloescht werden
-     *
-     */
-    @Test
-    public void szenario4() {
-
-    }
-
-
-
-
-
-    //TODO consider already shutting down hosts
 }
