@@ -9,7 +9,7 @@ import javax.annotation.PreDestroy;
 
 @SpringBootApplication
 @EnableScheduling
-@PropertySource(value = { "classpath:/credential.properties" })
+@PropertySource(value = {"classpath:/credential.properties"})
 public class VISPRuntime {
 
     public static void main(String[] args) {
@@ -18,11 +18,6 @@ public class VISPRuntime {
 
     @PreDestroy
     public void exportData() {
-
-
         //TODO implement Dataexport functionality and generate graphics
-
-
     }
-
 }

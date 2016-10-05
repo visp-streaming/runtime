@@ -205,8 +205,23 @@ public class TopologyParser {
                 case "scalingThreshold":
                     operator.setScalingThreshold(data[1].trim().replace("\"", ""));
                     break;
+                case "expectedDuration":
+                    operator.setExpectedDuration(data[1].trim().replace("\"", ""));
+                    break;
+                case "queueThreshold":
+                    operator.setQueueThreshold(data[1].trim().replace("\"", ""));
+                    break;
             }
         }
+
+        if (operator.getExpectedDuration().isEmpty()) {
+            operator.setExpectedDuration("500");
+        }
+
+        if (operator.getQueueThreshold().isEmpty()) {
+            operator.setQueueThreshold("100");
+        }
+
         throw new RuntimeException("Could not parse topology due to syntaktic error");
     }
 

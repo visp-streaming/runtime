@@ -89,14 +89,13 @@ public abstract class Operator {
         this.affectedInstances = affectedInstances;
     }
 
-    //TODO parse affected Instances from topology description
-
     @Override
     public String toString() {
         return "Operator{" +
                 "name='" + name + '\'' +
                 ", type='" + type + '\'' +
                 ", sources=" + sources +
+                ", affectedInstances=" + affectedInstances +
                 ", sourcesText=" + sourcesText +
                 ", allowedLocations='" + allowedLocations + '\'' +
                 ", inputFormat='" + inputFormat + '\'' +

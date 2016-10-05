@@ -84,7 +84,8 @@ public class Monitor {
             return ScalingAction.DONOTHING;
         }
 
-        if (pds.get(0).getDuration() * relaxationfactor > opConf.getDurationSLA(operator)) {
+
+            if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -104,7 +105,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-        if (expectedDurationValue * relaxationfactor > opConf.getDurationSLA(operator)) {
+        if (expectedDurationValue * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -114,7 +115,7 @@ public class Monitor {
     }
 
     private ScalingAction upscalingQueue(String operator, Integer max) {
-        if (max > opConf.getQueueSLA(operator)) {
+        if (max > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
             return ScalingAction.SCALEUP;
         }
 
@@ -133,7 +134,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-        if (expectedDurationValue>opConf.getQueueSLA(operator)) {
+            if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
             return ScalingAction.SCALEUP;
         }
 

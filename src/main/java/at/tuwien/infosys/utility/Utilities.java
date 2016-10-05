@@ -1,14 +1,13 @@
 package at.tuwien.infosys.utility;
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
-import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.datasources.QueueMonitorRepository;
+import at.tuwien.infosys.datasources.*;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
+import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.topology.TopologyParser;
@@ -57,6 +56,12 @@ public class Utilities {
     @Value("${visp.simulation}")
     private Boolean SIMULATION;
 
+    @Autowired
+    private PooledVMRepository pvmr;
+
+    @Autowired
+    private ResourcePoolConnector rpc;
+
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
@@ -75,6 +80,7 @@ public class Utilities {
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
+        resetPooledVMs();
 
         topologyMgmt.cleanup(infrastructureHost);
         topologyMgmt.createMapping(infrastructureHost);
@@ -86,6 +92,15 @@ public class Utilities {
             dh = resourceprovider.get().startVM(dh);
 
             initializeTopology(dh, infrastructureHost);
+        }
+    }
+
+    private void resetPooledVMs() {
+        for(PooledVM vm : pvmr.findAll()) {
+            rpc.stopDockerHost(dhr.findByName(vm.getLinkedhost()).get(0));
+
+            vm.setLinkedhost(null);
+            pvmr.save(vm);
         }
     }
 

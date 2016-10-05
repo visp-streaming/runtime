@@ -1,6 +1,5 @@
 package at.tuwien.infosys.reasoner;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
@@ -40,7 +39,7 @@ public class ReasonerUtility {
     private ScalingActivityRepository scr;
 
     @Autowired
-    private OperatorConfiguration opConf;
+    private TopologyManagement topologyMgmt;
 
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
@@ -214,7 +213,7 @@ public class ReasonerUtility {
 
             avgDuration = avgDuration / 5;
 
-            delayValues.put(operator, (avgDuration / (opConf.getDurationSLA(operator) * relaxationfactor) * (1 + penaltycosts)));
+            delayValues.put(operator, (avgDuration / (Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration")) * relaxationfactor) * (1 + penaltycosts)));
         }
 
 

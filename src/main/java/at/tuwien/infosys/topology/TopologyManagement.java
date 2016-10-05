@@ -2,6 +2,7 @@ package at.tuwien.infosys.topology;
 
 
 import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.entities.operators.ProcessingOperator;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -143,6 +144,25 @@ public class TopologyManagement {
             operators.add(op.getName());
         }
         return operators;
+    }
+
+    public String getSpecificValueForProcessingOperator(String operator, String key) {
+        for (Operator op : parser.getTopology().values()) {
+            if (op instanceof ProcessingOperator) {
+                if (op.getName().equals(operator)) {
+                    ProcessingOperator pcOp = (ProcessingOperator) op;
+                    switch (key) {
+                        case "expectedDuration":
+                            return pcOp.getExpectedDuration();
+                        case "queueThreshold":
+                            return pcOp.getQueueThreshold();
+                        default:
+                            throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
+                    }
+                }
+            }
+        }
+        throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
     }
 
 }
