@@ -12,7 +12,6 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Container;
 import com.spotify.docker.client.messages.Image;
-import jdk.management.resource.ResourceRequestDeniedException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -62,7 +61,7 @@ public class ResourcePoolConnector implements ResourceConnector {
 
         if (availableVMs.size() == 0) {
             LOG.error("There are too little VMs in the resourcePool.");
-            throw new ResourceRequestDeniedException("There are too little VMs in the resourcePool.");
+            throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
         PooledVM selectedVM = availableVMs.get(0);
