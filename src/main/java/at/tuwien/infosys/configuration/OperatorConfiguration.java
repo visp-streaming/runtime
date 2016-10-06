@@ -13,7 +13,7 @@ public class OperatorConfiguration {
 
     public DockerContainer createDockerContainerConfiguration(String operator) {
 
-        return new DockerContainer(operator, 0.45, 300, 1);
+        return new DockerContainer(operator, 0.33, 200, 1);
     }
 
 }
