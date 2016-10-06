@@ -97,7 +97,9 @@ public class Utilities {
 
     private void resetPooledVMs() {
         for(PooledVM vm : pvmr.findAll()) {
-            rpc.stopDockerHost(dhr.findByName(vm.getLinkedhost()).get(0));
+            if (!dhr.findByName(vm.getLinkedhost()).isEmpty()) {
+                rpc.stopDockerHost(dhr.findByName(vm.getLinkedhost()).get(0));
+            }
 
             vm.setLinkedhost(null);
             pvmr.save(vm);
