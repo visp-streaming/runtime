@@ -19,7 +19,8 @@ public class ApplicationStartup implements ApplicationListener<ContextRefreshedE
 
     @Override
     public void onApplicationEvent(final ContextRefreshedEvent event) {
-        utility.createInitialStatus();
+       
+    	// utility.createInitialStatus();
 
 
     }
