@@ -1,7 +1,19 @@
 package at.tuwien.infosys.utility;
 
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import at.tuwien.infosys.configuration.OperatorConfiguration;
-import at.tuwien.infosys.datasources.*;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.datasources.PooledVMRepository;
+import at.tuwien.infosys.datasources.ProcessingDurationRepository;
+import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.PooledVM;
@@ -11,11 +23,6 @@ import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.topology.TopologyParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 @Service
 public class Utilities {
@@ -64,7 +71,7 @@ public class Utilities {
 
     @Autowired
     private ResourcePoolConnector rpc;
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
@@ -77,7 +84,9 @@ public class Utilities {
         }
     }
 
+    @PostConstruct
     public void createInitialStatus() {
+
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();

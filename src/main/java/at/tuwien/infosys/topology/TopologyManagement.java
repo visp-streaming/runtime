@@ -41,7 +41,7 @@ public class TopologyManagement {
             Connection connection = null;
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
-
+            
 
             //declare error message channel
             channel.exchangeDeclare("error", "fanout", true);
@@ -51,6 +51,12 @@ public class TopologyManagement {
             channel.exchangeDeclare("processingduration", "fanout", true);
             channel.queueDeclare("processingduration", true, false, false, null);
             channel.queueBind("processingduration", "processingduration", "processingduration");
+            
+            /* Declare Management Message Channels */
+            channel.exchangeDeclare("applicationmetrics", "fanout", true);
+            channel.queueDeclare("applicationmetrics", true, false, false, null);
+            channel.queueBind("applicationmetrics", "applicationmetrics", "applicationmetrics");
+            
 
             for (Operator n : parser.getTopology().values()) {
                 String exchangeName = n.getName();
