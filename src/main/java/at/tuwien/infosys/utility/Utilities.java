@@ -81,6 +81,7 @@ public class Utilities {
             }
             DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
             processingNodeManagement.scaleup(dc, dh, infrastructureHost);
+        
         }
     }
 
@@ -108,7 +109,7 @@ public class Utilities {
             initializeTopology(dh, infrastructureHost);
         }
     }
-
+    
     private void resetPooledVMs() {
         for(PooledVM vm : pvmr.findAll()) {
             if (!dhr.findByName(vm.getLinkedhost()).isEmpty()) {

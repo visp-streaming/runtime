@@ -63,7 +63,7 @@ public class ReasonerBasic {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+//     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
         availabilityWatchdog.checkAvailablitiyOfContainer();
         pcm.removeContainerWhichAreFlaggedToShutdown();

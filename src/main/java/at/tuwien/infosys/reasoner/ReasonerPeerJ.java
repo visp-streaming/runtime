@@ -66,7 +66,7 @@ public class ReasonerPeerJ {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+//    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 

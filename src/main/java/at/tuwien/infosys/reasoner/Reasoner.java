@@ -15,7 +15,7 @@ public class Reasoner {
     ReasonerBasic reasoner;
 
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+//    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
         reasoner.updateResourceconfiguration();
