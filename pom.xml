@@ -177,6 +177,12 @@
             <version>${jclouds.version}</version>
         </dependency>
 
+		<!-- External Elasticity Controller -->
+        <dependency>
+			  <groupId>it.uniroma2</groupId>
+			  <artifactId>reled</artifactId>
+			  <version>1.0</version>
+        </dependency>
 
     </dependencies>
 	

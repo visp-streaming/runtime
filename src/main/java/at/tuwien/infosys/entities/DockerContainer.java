@@ -23,7 +23,14 @@ public class DockerContainer {
     private Double cpuCores;
     private Integer ram;
     private Integer storage;
-
+    
+    private String monitoringPort;
+    
+    /* Monitoring Information */
+    private double cpuUsagePercentage;
+    private long previousCpuUsage;
+    private long previousSystemUsage;
+    
     public String getContainerid() {
         return containerid;
     }
@@ -97,15 +104,54 @@ public class DockerContainer {
     }
 
     public DockerContainer() {
+        this.previousCpuUsage = 0;
+        this.previousSystemUsage = 0;
+        this.cpuUsagePercentage = 0.0;
+        this.monitoringPort = "";
     }
 
+    public double getCpuUsagePercentage() {
+		return cpuUsagePercentage;
+	}
 
-    public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
+	public void setCpuUsagePercentage(double cpuUsagePercentage) {
+		this.cpuUsagePercentage = cpuUsagePercentage;
+	}
+
+	public long getPreviousCpuUsage() {
+		return previousCpuUsage;
+	}
+
+	public void setPreviousCpuUsage(long previousCpuUsage) {
+		this.previousCpuUsage = previousCpuUsage;
+	}
+
+	public long getPreviousSystemUsage() {
+		return previousSystemUsage;
+	}
+
+	public void setPreviousSystemUsage(long previousSystemUsage) {
+		this.previousSystemUsage = previousSystemUsage;
+	}
+
+	public String getMonitoringPort() {
+		return monitoringPort;
+	}
+
+	public void setMonitoringPort(String monitoringPort) {
+		this.monitoringPort = monitoringPort;
+	}
+
+	public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
         this.operator = operator;
         this.cpuCores = cpuCores;
         this.ram = ram;
         this.storage = storage;
         this.status = "running";
+        this.previousCpuUsage = 0;
+        this.previousSystemUsage = 0;
+        this.cpuUsagePercentage = 0.0;
+        this.monitoringPort = "";
     }
 
 

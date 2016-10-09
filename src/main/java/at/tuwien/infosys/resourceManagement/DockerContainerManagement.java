@@ -1,17 +1,14 @@
 package at.tuwien.infosys.resourceManagement;
 
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
-import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.topology.TopologyManagement;
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import jersey.repackaged.com.google.common.collect.Lists;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -20,9 +17,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.topology.TopologyManagement;
+
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.ExecCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 
 @Service
 public class DockerContainerManagement {
@@ -41,7 +51,13 @@ public class DockerContainerManagement {
 
     @Value("${visp.simulation}")
     private Boolean SIMULATION;
-
+    
+    @Value("${visp.node.processing.port}")
+    private String processingNodeServerPort;
+    
+    @Value("${visp.node.port.available}'")
+    private String encodedHostNodeAvailablePorts;
+    
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
@@ -63,9 +79,10 @@ public class DockerContainerManagement {
             return;
         }
 
-
+        /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
+        /* Update the list of available docker images */
         if (!dh.getAvailableImages().contains(operatorConfiguration.getImage(container.getOperator()))) {
             docker.pull(operatorConfiguration.getImage(container.getOperator()));
             List<String> availableImages = dh.getAvailableImages();
@@ -74,7 +91,7 @@ public class DockerContainerManagement {
             dhr.save(dh);
         }
 
-
+        /* Configure environment variables */
         List<String> environmentVariables = new ArrayList<>();
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + infrastructureHost);
@@ -84,39 +101,57 @@ public class DockerContainerManagement {
         environmentVariables.add("ROLE=" + container.getOperator());
 
 
+        /* Configure docker container */
         Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
 
         long containerRam = (long) container.getRam().doubleValue() * 1024 * 1024;
         long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
 
+        /* Bind container port (processingNodeServerPort) to an available host port */
+        String hostPort = getAvailablePortOnHost(dh);
+        if (hostPort == null)
+        	throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
+        
+        final Map<String, List<PortBinding>> portBindings = new HashMap<String, List<PortBinding>>(); 
+        portBindings.put(processingNodeServerPort, Lists.newArrayList(PortBinding.of("0.0.0.0", hostPort)));
+        
         final HostConfig hostConfig = HostConfig.builder()
                 .cpuShares(cpuShares)
                 .memoryReservation(containerRam)
+                .portBindings(portBindings)
+                .networkMode("bridge")
                 .build();
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
                 .image(operatorConfiguration.getImage(container.getOperator()))
+                .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
                 .build();
 
-
-
+        /* Start docker container */
         final ContainerCreation creation = docker.createContainer(containerConfig);
         final String id = creation.id();
-
         docker.startContainer(id);
+        
+        // XXX: debug -- local execution of containers
+        docker.connectToNetwork(id, "visp");
 
+        /* Save docker container information on repository */
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
         container.setHost(dh.getName());
-
-
-        ContainerInfo config = docker.inspectContainer(id);
-
+        container.setMonitoringPort(hostPort);
+//        ContainerInfo config = docker.inspectContainer(id);
         dcr.save(container);
+
+        /* Update the set of used port on docker host */
+        List<String> usedPorts = dh.getUsedPorts();
+        usedPorts.add(hostPort);
+        dh.setUsedPorts(usedPorts);
+        dhr.save(dh);
 
         LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName());
     }
@@ -176,5 +211,27 @@ public class DockerContainerManagement {
         dc.setStatus("stopping");
         dc.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
         dcr.save(dc);
+    }
+    
+    
+    private String getAvailablePortOnHost(DockerHost host){
+    	
+    	String[] range = encodedHostNodeAvailablePorts.replaceAll("[a-zA-Z\']", "").split("-");
+    	int poolStart = Integer.valueOf(range[0]);
+    	int poolEnd = Integer.valueOf(range[1]);
+    	
+    	List<String> usedPorts = host.getUsedPorts();
+    	
+    	for (int port = poolStart; port < poolEnd; port++){
+
+    		String portStr = Integer.toString(port);
+    		
+    		if (!usedPorts.contains(portStr)){
+        		return portStr;
+    		}
+    		
+    	}
+
+    	return null;
     }
 }

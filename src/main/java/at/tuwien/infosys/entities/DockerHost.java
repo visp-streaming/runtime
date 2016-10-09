@@ -1,9 +1,18 @@
 package at.tuwien.infosys.entities;
 
 
-import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 @Entity
 public class DockerHost {
@@ -23,15 +32,18 @@ public class DockerHost {
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> availableImages;
-
+    
+    private String usedPorts;
 
     public DockerHost() {
         this.availableImages = new ArrayList<>();
+        this.usedPorts = "";
     }
 
     public DockerHost(String name) {
         this.name = name;
         this.availableImages = new ArrayList<>();
+        this.usedPorts = "";
     }
 
     public long getId() {
@@ -114,7 +126,19 @@ public class DockerHost {
         this.availableImages = availableImages;
     }
 
-    public String getBTUend() {
+    public List<String> getUsedPorts() {
+        List<String> lUsedPorts = new ArrayList<String>();
+        for (String port : Splitter.on(',').split(this.usedPorts)) {
+            lUsedPorts.add(port);
+        }
+		return lUsedPorts;
+	}
+
+	public void setUsedPorts(List<String> usedPorts) {
+	    this.usedPorts = Joiner.on(',').join(usedPorts);
+	}
+
+	public String getBTUend() {
         return BTUend;
     }
 
@@ -136,6 +160,7 @@ public class DockerHost {
                 ", flavour='" + flavour + '\'' +
                 ", BTUend='" + BTUend + '\'' +
                 ", availableImages=" + availableImages +
+                ", userPorts=" + usedPorts +
                 '}';
     }
 
