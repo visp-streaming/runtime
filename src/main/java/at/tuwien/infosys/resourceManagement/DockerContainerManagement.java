@@ -1,4 +1,4 @@
-package at.tuwien.infosys.resourceManagement;
+package at.tuwien.infosys.resourceManagement; 
 
 
 import java.util.ArrayList;
@@ -63,7 +63,8 @@ public class DockerContainerManagement {
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
-        if (SIMULATION) {
+      
+    	if (SIMULATION) {
             LOG.info("Simulate DockerContainer Startup");
             try {
                 TimeUnit.SECONDS.sleep(4);
@@ -99,7 +100,7 @@ public class DockerContainerManagement {
         environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperator());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
         environmentVariables.add("ROLE=" + container.getOperator());
-
+        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperator()));        
 
         /* Configure docker container */
         Double vmCores = dh.getCores();

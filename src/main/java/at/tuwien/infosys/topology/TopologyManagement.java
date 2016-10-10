@@ -1,21 +1,26 @@
 package at.tuwien.infosys.topology;
 
 
-import at.tuwien.infosys.entities.operators.Operator;
-import at.tuwien.infosys.entities.operators.ProcessingOperator;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
+import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.entities.operators.ProcessingOperator;
+
+import com.google.common.base.Joiner;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 
 @Service
 public class TopologyManagement {
@@ -171,4 +176,25 @@ public class TopologyManagement {
         throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
     }
 
+    
+    
+    public String getDownstreamOperators(String operator){
+    
+    	Set<String> ops = new HashSet<String>();
+    	
+        for (Operator n : parser.getTopology().values()) {
+
+        	if (n.getSources() == null)
+            	continue;
+        	
+            for (Operator source : n.getSources()) {
+            	if (source.getName().equals(operator)){
+            		ops.add(n.getName());
+            	}
+            }
+        }
+
+        return Joiner.on(',').join(ops);
+   
+    }
 }

@@ -10,6 +10,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -44,6 +45,13 @@ public class OperatorMonitor {
     @Autowired
     private OperatorQoSMetricsRepository operatorRepository;
 	
+    @Value("${visp.dataprovider.host}")
+    private String dataProviderHost; 
+    
+    @Value("${visp.dataprovider.port}")
+    private String dataProviderPort; 
+    
+    
     private static final String CONNECTION_PROTOCOL = "http://";
     private static final String MONITOR_ENTRYPOINT 	= "/metrics";
     
@@ -59,8 +67,8 @@ public class OperatorMonitor {
 			return;
 		}
 		
-    	Iterable<DockerContainer> hostedContainers = dcr.findAll();
-
+    	Iterable<DockerContainer> hostedContainers = dcr.findAll();    	
+    	
     	LOG.debug("Retriving metrics for each operator...");
     	
     	Map<String, Long> receivedPerOperator = new HashMap<String, Long>();
@@ -71,13 +79,23 @@ public class OperatorMonitor {
 		long now = System.currentTimeMillis();		
     	for (DockerContainer container : hostedContainers){
     	
-    		String url = CONNECTION_PROTOCOL + container.getHost() + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
-    		RestTemplate restTemplate = new RestTemplate();
-    		ProcessingNodeMetricsMessage message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
-    		stats.add(message);
+    		ProcessingNodeMetricsMessage message = null;
+    		
+    		try{
+        		String url = CONNECTION_PROTOCOL + container.getHost() + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
+        		RestTemplate restTemplate = new RestTemplate();
+        		message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+    		} catch (Exception e){ }
 
+    		if (message != null)
+    			stats.add(message);
     	}
-
+    	
+    	/* XXX: Add also data source container */
+    	ProcessingNodeMetricsMessage srcStats = getStatsFromDataSource(); 
+    	if (srcStats != null)
+    		stats.add(srcStats);
+    	
     	/* Process collected stats to obtain: 
     	 *  - processed messages per operator
     	 *  - received messages per operator
@@ -115,7 +133,8 @@ public class OperatorMonitor {
     	Set<String> allOperators = new HashSet<String>();
     	allOperators.addAll(processedPerOperator.keySet());
     	allOperators.addAll(receivedPerOperator.keySet());
-    	long delta = now - lastUpdate;
+    	long delta = (now - lastUpdate);
+    	// delta is divided by 1000 to obtain msg/s (instead of msg/ms)
     	for(String operatorName : processedPerOperator.keySet()){
 
     		OperatorQoSMetrics operator = new OperatorQoSMetrics();
@@ -124,18 +143,16 @@ public class OperatorMonitor {
 
     		double msgProcPerUnitTime = 0;
     		if(processedPerOperator.get(operatorName) != null)
-    			msgProcPerUnitTime = (double) processedPerOperator.get(operatorName) / (double) delta;
+    			msgProcPerUnitTime = (double) processedPerOperator.get(operatorName) * 1000 / (double) delta;
     		operator.setProcessedMessages(msgProcPerUnitTime);
         	
     		double msgRecvPerUnitTime = 0;
     		if(receivedPerOperator.get(operatorName) != null)
-    			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) / (double) delta;
+    			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
-        	
-        	if (msgProcPerUnitTime == 0)        		
-        		operator.setOperatorLoad(10.0);
-        	else
-        		operator.setOperatorLoad(msgRecvPerUnitTime / msgProcPerUnitTime);
+
+        	// XXX: fix this
+        	operator.setOperatorLoad(0.0);
 
         	LOG.info(" Monitor: " + operator);
         	
@@ -150,16 +167,15 @@ public class OperatorMonitor {
     		operator.setTimestamp(Long.toString(now));
 
     		double msgProcPerUnitTime = 0;
+    		operator.setProcessedMessages(msgProcPerUnitTime);
         	
     		double msgRecvPerUnitTime = 0;
     		if(receivedPerOperator.get(operatorName) != null)
-    			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) / (double) delta;
+    			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
         	
-        	if (msgProcPerUnitTime == 0)        		
-        		operator.setOperatorLoad(10.0);
-        	else
-        		operator.setOperatorLoad(msgRecvPerUnitTime / msgProcPerUnitTime);
+        	// XXX: fix this
+        	operator.setOperatorLoad(0.0);
 
         	LOG.info(" Monitor: " + operator);
         	
@@ -171,4 +187,16 @@ public class OperatorMonitor {
 
     }
     
+	private ProcessingNodeMetricsMessage getStatsFromDataSource(){
+		
+		ProcessingNodeMetricsMessage message = null;
+		try{
+			String url = CONNECTION_PROTOCOL + dataProviderHost + ":" + dataProviderPort + MONITOR_ENTRYPOINT;
+			RestTemplate restTemplate = new RestTemplate();
+			message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+		}catch(Exception e){}
+		
+		return message; 
+	
+	}
 }
