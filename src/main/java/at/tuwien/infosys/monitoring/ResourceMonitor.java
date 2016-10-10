@@ -80,7 +80,7 @@ public class ResourceMonitor {
     	String connectionUri = CONNECTION_PROTOCOL + dockerHost.getUrl() + CONNECTION_PORT;
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
-		
+
         try {
 
 			stats = docker.stats(container.getContainerid());
@@ -109,7 +109,7 @@ public class ResourceMonitor {
 	            	/* This information should be scaled with respect to the CPU share */
 	                double allocatedCpuShares = container.getCpuCores() / dockerHost.getCores();
 
-	                cpuUsage = (cpuDelta / systemDelta) / allocatedCpuShares; // * 100.0;
+	                cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares; // * 100.0;
 
 		        	LOG.debug("Container " + container.getContainerid() + " CPU Utilization: " 
 		        			+ cpuUsage + " (allocatedShares: " + allocatedCpuShares + ")");
