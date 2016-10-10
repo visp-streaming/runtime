@@ -47,6 +47,9 @@ public class Utilities {
     @Autowired
     private ProcessingDurationRepository pcr;
 
+    @Autowired
+    private ScalingActivityRepository sar;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -76,11 +79,13 @@ public class Utilities {
 
     public void createInitialStatus() {
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
+        resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
-        resetPooledVMs();
+        sar.deleteAll();
+
 
         topologyMgmt.cleanup(infrastructureHost);
         topologyMgmt.createMapping(infrastructureHost);

@@ -162,7 +162,8 @@ public class TopologyManagement {
                 }
             }
         }
-        throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
+        LOG.error("value for key: " + key + " could not be found for operator: " + operator);
+        return "500";
     }
 
 }
