@@ -112,7 +112,7 @@ public class ResourcePoolConnector implements ResourceConnector {
          }
 
 
-        if (!cleanupPool) {
+        if (cleanupPool) {
 
             try {
                 List<Image> availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
@@ -152,7 +152,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             }
         }
     }
-
 
 
     public void initializeVMs(Integer amount) {

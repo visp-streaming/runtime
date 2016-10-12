@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -66,7 +65,6 @@ public class ReasonerPeerJ {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
-//    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 

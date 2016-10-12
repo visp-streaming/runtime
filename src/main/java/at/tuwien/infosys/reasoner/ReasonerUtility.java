@@ -104,13 +104,13 @@ public class ReasonerUtility {
 
             if (blacklistedHost != null) {
                 if (dh.getName().equals(blacklistedHost.getName())) {
-                    LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is targeted to be shut down.");
+                    LOG.info("Omitted host: " + dh.getName() + "for scheduling, since it is targeted to be shut down.");
                     continue;
                 }
             }
 
             if (dh.getScheduledForShutdown()) {
-                LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is scheduled to shut down.");
+                LOG.info("Omitted host: " + dh.getName() + "for scheduling, since it is scheduled to shut down.");
                 continue;
             }
 
@@ -121,7 +121,6 @@ public class ReasonerUtility {
             availability.setRam(dh.getRam() - usage.getRam());
             availability.setStorage(dh.getStorage() - usage.getStorage());
             freeResources.add(availability);
-
         }
 
         return freeResources;
@@ -132,7 +131,7 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        LOG.info("##### select suitable host for Container initialized. ####");
+        LOG.info("##### select suitable host for Container started. ####");
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
@@ -149,7 +148,6 @@ public class ReasonerUtility {
             Double difference = Math.abs((remainingMemory / ra.getHost().getRam()) - (remainingCpuCores / ra.getHost().getCores()));
 
             Double suitablility = difference / feasibilityThreshold;
-
 
             if (!ra.getHost().getAvailableImages().contains(dc.getImage())) {
                 suitablility = suitablility / 100;
