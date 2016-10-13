@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import at.tuwien.infosys.entities.DockerHost;
+
 @Service
 public class ResourceProvider {
 
@@ -32,4 +34,11 @@ public class ResourceProvider {
         return null;
     }
 
+    public DockerHost createContainerSkeleton(){
+    	
+    	DockerHost dh = new DockerHost("additionaldockerhost");
+        dh.setFlavour("m2.medium");
+        return dh;
+    	
+    }
 }

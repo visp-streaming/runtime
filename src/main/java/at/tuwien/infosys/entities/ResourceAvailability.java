@@ -74,6 +74,18 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     public int compareTo(ResourceAvailability o) {
         return ResourceComparator.AMOUNTOFCONTAINERASC.compare(this, o);
     }
+    
+    public ResourceAvailability clone() {
+    	ResourceAvailability ra = new ResourceAvailability();
+    	
+    	ra.host = this.host;
+        ra.amountOfContainer = new Integer(this.amountOfContainer);
+        ra.cpuCores = new Double(this.cpuCores);
+        ra.ram = new Integer(this.ram);
+        ra.storage = new Float(storage);
+        
+        return ra;
+    }
 }
 
 

@@ -16,20 +16,17 @@ public class OperatorQoSMetrics {
     private String timestamp;
     private double processedMessages;
     private double receivedMessages;
-    private double operatorLoad;
 
     public OperatorQoSMetrics() {
     }
 
 	public OperatorQoSMetrics(String name, String timestamp,
-			double processedMessages, double receivedMessages,
-			double operatorLoad) {
+			double processedMessages, double receivedMessages) {
 		super();
 		this.name = name;
 		this.timestamp = timestamp;
 		this.processedMessages = processedMessages;
 		this.receivedMessages = receivedMessages;
-		this.operatorLoad = operatorLoad;
 	}
 
 	public long getId() {
@@ -72,14 +69,6 @@ public class OperatorQoSMetrics {
 		this.receivedMessages = receivedMessages;
 	}
 
-	public double getOperatorLoad() {
-		return operatorLoad;
-	}
-
-	public void setOperatorLoad(double operatorLoad) {
-		this.operatorLoad = operatorLoad;
-	}
-
 	@Override
     public String toString() {
         return "ost{" +
@@ -88,7 +77,6 @@ public class OperatorQoSMetrics {
 	                ", "+ timestamp +
 	                ", r:"+ receivedMessages +
 	                ", p:"+ processedMessages +
-	                ", l:"+ operatorLoad +
                 '}';
     }
 }

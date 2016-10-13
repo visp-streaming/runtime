@@ -27,7 +27,7 @@ public class DockerContainer {
     private String monitoringPort;
     
     /* Monitoring Information */
-    private double cpuUsagePercentage;
+    private double cpuUsage;
     private long previousCpuUsage;
     private long previousSystemUsage;
     
@@ -106,16 +106,16 @@ public class DockerContainer {
     public DockerContainer() {
         this.previousCpuUsage = 0;
         this.previousSystemUsage = 0;
-        this.cpuUsagePercentage = 0.0;
+        this.cpuUsage = 0.0;
         this.monitoringPort = "";
     }
 
-    public double getCpuUsagePercentage() {
-		return cpuUsagePercentage;
+    public double getCpuUsage() {
+		return cpuUsage;
 	}
 
-	public void setCpuUsagePercentage(double cpuUsagePercentage) {
-		this.cpuUsagePercentage = cpuUsagePercentage;
+	public void setCpuUsage(double cpuUsagePercentage) {
+		this.cpuUsage = cpuUsagePercentage;
 	}
 
 	public long getPreviousCpuUsage() {
@@ -150,7 +150,7 @@ public class DockerContainer {
         this.status = "running";
         this.previousCpuUsage = 0;
         this.previousSystemUsage = 0;
-        this.cpuUsagePercentage = 0.0;
+        this.cpuUsage = 0.0;
         this.monitoringPort = "";
     }
 

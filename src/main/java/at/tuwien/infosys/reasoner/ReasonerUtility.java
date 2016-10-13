@@ -1,5 +1,17 @@
 package at.tuwien.infosys.reasoner;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
@@ -8,17 +20,8 @@ import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
+import at.tuwien.infosys.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import at.tuwien.infosys.topology.TopologyManagement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class ReasonerUtility {
@@ -246,6 +249,66 @@ public class ReasonerUtility {
         LOG.info("##### select operator to be scaled down initialized. ####");
         return selectedOperator;
 
+    }
+    
+    
+    public Map<DockerContainer, DockerHost> canRelocateHostedContainers(ResourceAvailability resource, List<ResourceAvailability> availableResources){
+    	
+    	Map<DockerContainer, DockerHost> relocationMap = new HashMap<DockerContainer, DockerHost>();
+    	boolean canRelocate = false;
+    	
+    	/* Retrieve containers to be relocated */
+    	List<DockerContainer> containers = dcr.findByHost(resource.getHost().getName());
+    	
+    	/* Simulate container relocation */
+    	List<ResourceAvailability> resources = new ArrayList<ResourceAvailability>();
+    	for (ResourceAvailability ra : availableResources)
+    		resources.add(ra.clone());
+    	
+    	/* Check if every hosted container can be relocated */
+    	for (DockerContainer container : containers){
+    		
+    		canRelocate = false;
+
+    		/* Sort resources w.r.t. already hosted containers */
+    		Collections.sort(resources, new LeastLoadedHostFirstComparator());
+    		
+    		for (ResourceAvailability otherResource : resources){
+    			
+    			if (resource.equals(otherResource))
+    				continue;
+    			
+    			/* Check resources */
+    			if ((otherResource.getCpuCores() - container.getCpuCores()) > 0 && 
+    				(otherResource.getRam() - container.getRam()) > 0 && 
+    				(otherResource.getStorage() - container.getStorage()) > 0){
+    				
+        			/* Simulate relocation */
+    				canRelocate = true;
+    				resource.setAmountOfContainer(resource.getAmountOfContainer() + 1);
+    				resource.setCpuCores(resource.getCpuCores() + container.getCpuCores());
+    				resource.setRam(resource.getRam() + container.getRam());
+    				resource.setStorage(resource.getStorage() + container.getStorage());
+    				
+    				/* Save relocation on the relocation map */
+    				relocationMap.put(container, resource.getHost());
+    				
+    				break;
+    			}
+    		}
+
+    		/* Current container cannot be relocated */
+    		if (!canRelocate)
+    			return null;
+    		
+    	}
+    	
+    	/* If every container can be relocate, return the relocation map */
+    	if (canRelocate)
+    		return relocationMap;
+    	    	
+    	return null;
+    	
     }
 
 

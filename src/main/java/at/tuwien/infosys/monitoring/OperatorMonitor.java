@@ -91,7 +91,8 @@ public class OperatorMonitor {
     			stats.add(message);
     	}
     	
-    	/* XXX: Add also data source container */
+    	/* Add also data source container */
+    	/* TODO: Decouple data source from VISP-Runtime parameters */
     	ProcessingNodeMetricsMessage srcStats = getStatsFromDataSource(); 
     	if (srcStats != null)
     		stats.add(srcStats);
@@ -151,9 +152,6 @@ public class OperatorMonitor {
     			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
 
-        	// XXX: fix this
-        	operator.setOperatorLoad(0.0);
-
         	LOG.info(" Monitor: " + operator);
         	
         	operatorRepository.save(operator);
@@ -174,9 +172,6 @@ public class OperatorMonitor {
     			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
         	
-        	// XXX: fix this
-        	operator.setOperatorLoad(0.0);
-
         	LOG.info(" Monitor: " + operator);
         	
         	operatorRepository.save(operator);

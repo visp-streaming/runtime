@@ -91,7 +91,7 @@ public class ResourceMonitor {
 	        	
 	        	container.setPreviousCpuUsage(stats.cpuStats().cpuUsage().totalUsage());
 	        	container.setPreviousSystemUsage(stats.cpuStats().systemCpuUsage());
-	        	container.setCpuUsagePercentage(0);
+	        	container.setCpuUsage(0);
 	        	
 	        } else {
 
@@ -114,7 +114,7 @@ public class ResourceMonitor {
 		        	LOG.debug("Container " + container.getContainerid() + " CPU Utilization: " 
 		        			+ cpuUsage + " (allocatedShares: " + allocatedCpuShares + ")");
 		        	
-	                container.setCpuUsagePercentage(cpuUsage);
+	                container.setCpuUsage(cpuUsage);
 	                container.setPreviousCpuUsage(currentCpuUsage);
 	                container.setPreviousSystemUsage(currentSystemUsage);
 	            }
