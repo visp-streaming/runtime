@@ -101,7 +101,7 @@ public class DockerContainerManagement {
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
         environmentVariables.add("ROLE=" + container.getOperator());
         environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperator()));        
-        
+
         /* Configure docker container */
         Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
@@ -137,15 +137,11 @@ public class DockerContainerManagement {
         final String id = creation.id();
         docker.startContainer(id);
         
-        // XXX: debug -- local execution of containers
-        docker.connectToNetwork(id, "visp");
-
         /* Save docker container information on repository */
         container.setContainerid(id);
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
         container.setHost(dh.getName());
         container.setMonitoringPort(hostPort);
-//        ContainerInfo config = docker.inspectContainer(id);
         dcr.save(container);
 
         /* Update the set of used port on docker host */

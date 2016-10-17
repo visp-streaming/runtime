@@ -103,6 +103,8 @@ public class CentralizedRLReasoner {
 	private Map<String, RLController> controller;
 	private Map<String, Operator> operatorNameToOperator;
 
+	private long MEASUREMENTS_EXPIRATION_INTERVAL = 5000;
+	
 	public CentralizedRLReasoner() {
 	}
 	
@@ -418,6 +420,12 @@ public class CentralizedRLReasoner {
     		qosMetrics = new ApplicationQoSMetrics(Long.toString(System.currentTimeMillis()), APPNAME, 0.0);
     	} else {
     		qosMetrics = metrics.get(FIRST);
+    		
+    		/* Check if measurement is expired */
+	 		long lastMeasurementTimestamp = new Long(qosMetrics.getTimestamp());
+	 		if (lastMeasurementTimestamp < System.currentTimeMillis() - MEASUREMENTS_EXPIRATION_INTERVAL){
+	 			qosMetrics = new ApplicationQoSMetrics(Long.toString(System.currentTimeMillis()), APPNAME, 0.0);
+	 		}
     	}
 
     	return ApplicationModelBuilder.create(qosMetrics);
@@ -433,7 +441,13 @@ public class CentralizedRLReasoner {
 	 	if (operatorsMetrics == null || operatorsMetrics.isEmpty()){
 	 		qosMetrics = new OperatorQoSMetrics(operatorName, Long.toString(System.currentTimeMillis()), 0.0, 0.0);
 	 	} else {
-	 		qosMetrics = operatorsMetrics.get(FIRST);	
+	 		qosMetrics = operatorsMetrics.get(FIRST);
+
+	 		/* Check if measurement is expired */
+	 		long lastMeasurementTimestamp = new Long(qosMetrics.getTimestamp());
+	 		if (lastMeasurementTimestamp < System.currentTimeMillis() - MEASUREMENTS_EXPIRATION_INTERVAL){
+	 			qosMetrics = new OperatorQoSMetrics(operatorName, Long.toString(System.currentTimeMillis()), 0.0, 0.0);
+	 		}
 	 	}
 	 	
 	 	return OperatorModelBuilder.create(operatorName, qosMetrics, containers);
