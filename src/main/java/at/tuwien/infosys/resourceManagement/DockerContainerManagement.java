@@ -101,7 +101,7 @@ public class DockerContainerManagement {
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
         environmentVariables.add("ROLE=" + container.getOperator());
         environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperator()));        
-
+        
         /* Configure docker container */
         Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
@@ -180,6 +180,15 @@ public class DockerContainerManagement {
         } catch (Exception e) {
             LOG.error("Could not kill the container", e);
         }
+        
+        /* Free monitoring port previously used by the docker container */
+        String containerPort = dc.getMonitoringPort();
+        List<String> usedPorts = dh.getUsedPorts();
+        usedPorts.remove(containerPort);
+        dh.setUsedPorts(usedPorts);
+        dhr.save(dh);
+        
+                
         dcr.delete(dc);
 
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");

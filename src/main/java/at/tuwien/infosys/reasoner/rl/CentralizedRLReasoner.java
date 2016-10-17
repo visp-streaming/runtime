@@ -91,6 +91,9 @@ public class CentralizedRLReasoner {
     
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
+    
+    @Value("#{'${application.pinned}'.split(',')}")
+    private List<String> pinnedOperators;
 
     private static final Logger LOG = LoggerFactory.getLogger(CentralizedRLReasoner.class);
 
@@ -137,26 +140,58 @@ public class CentralizedRLReasoner {
 		applicationSla.setMaxUtilization(paramManager.getMaxUtilization());
 		applicationSla.setMinThroughtput(paramManager.getMinThroughput());
 		
+		LOG.info("Application SLA: " + applicationSla);
+		
 	}
 	
 	public void runAdaptationCycle(){
 				
 		/* Terminate container and hosts that have been flagged 
 		 * to shutdown in the previous adaptation cycles */
+		LOG.info(" ============================================================= .");
+		LOG.info(". Terminating Containers and Host if flagged.");
 		terminateFlaggedContainersAndHosts();
 		
+		LOG.info(". Try to consolidate container");
 		consolidateContainers();
+		
+		LOG.info(". Pinned Operators: " + pinnedOperators);
 		
 		/* Execute MAPE control cycle */
 		try {
 
+			LOG.info(". Monitoring...");
 			monitor();
 
+			/* ************** DEBUG ************** */
+			LOG.info(". Monitored Application: " + application.getApplicationId() + " respTime="+ application.getResponseTime());
+			if (!operatorNameToOperator.isEmpty())
+				for(Operator o : operatorNameToOperator.values()){
+					int repl = 0;
+					double avgUtil = 0.0;
+					if (o.getDeployment() != null){
+						repl = o.getDeployment().getResources().size();
+						avgUtil = o.getDeployment().getAverageUtilization();
+					}
+					LOG.info(". Monitored Operator: " + o.getOperatorId() + " - repl:" + repl + ", u:" + avgUtil + " - p:" + o.getProcessedMessagesPerUnitTime() + " r:"+ o.getReceivedMessagesPerUnitTime());
+				}
+			/* ************** DEBUG ************** */
+			
 			/* Run -APE steps for each operator (in a concurrent way) */
 			for (String operatorName : topologyManager.getOperatorsAsList()) {
+				
+				LOG.info(". Operator: " + operatorName);
+				
+				/* Do not scale pinned operators */
+				if (pinnedOperators.contains(operatorName.toLowerCase()))
+					continue;
+				
 				try{
 					
 					Action action = analyzeAndPlan(operatorName);
+					LOG.info(". Analyze: Next action for " + operatorName + " " + action.getAction());
+					
+					LOG.info(". Execute: " + action.getAction());
 					execute(operatorName, action);
 			
 				}catch(RLException apeExc){
@@ -169,6 +204,8 @@ public class CentralizedRLReasoner {
 			LOG.error(rle.getMessage());
 			rle.printStackTrace();
 		}
+
+		LOG.info(" ============================================================= .");
 
 	}
 	
@@ -225,6 +262,14 @@ public class CentralizedRLReasoner {
 		
 		Action action = operatorController.nextAction(application, operator, applicationSla);
 
+		while(!isFeasible(operatorName, action)){
+			
+			LOG.info("Action " + action + " is unfeasible. Computing new action... ");
+			operatorController.declareLastActionAsUnfeasible();
+			action = operatorController.nextAction(application, operator, applicationSla);
+			
+		}
+		
 		return action; 
 		
 	}
@@ -337,10 +382,13 @@ public class CentralizedRLReasoner {
     	}
     	
     	/* Execute relocation, if suitable */
-    	if (relocationMap == null)
+    	if (relocationMap == null){
+    		LOG.info(". Nothing to consolidate...");
     		return;
+    	}
 
     	for(DockerContainer container : relocationMap.keySet()){
+    		LOG.info(". Consolidation: moving " + container.getContainerid() + " to " + relocationMap.get(container).getName());
     		
     		/* Relocate Container */
     		DockerHost destinationHost = relocationMap.get(container);
@@ -354,19 +402,24 @@ public class CentralizedRLReasoner {
 
     	}
     	
+    	LOG.info(". Host " + hostToTurnOff.getName() + " marked for removal... ");
+		
     	/* Release resource */
     	resourceProvider.get().markHostForRemoval(hostToTurnOff);
                 	
     }
 
     private Application createApplicationModel(){
-    	
+
+    	ApplicationQoSMetrics qosMetrics = null;
     	List<ApplicationQoSMetrics> metrics = applicationMetricsRepository.findFirstByApplicationNameOrderByTimestampDesc(APPNAME);
-    	if (metrics == null || metrics.isEmpty()){
-    		return null;
-    	}
-    	ApplicationQoSMetrics qosMetrics = metrics.get(FIRST);
     	
+    	if (metrics == null || metrics.isEmpty()){
+    		qosMetrics = new ApplicationQoSMetrics(Long.toString(System.currentTimeMillis()), APPNAME, 0.0);
+    	} else {
+    		qosMetrics = metrics.get(FIRST);
+    	}
+
     	return ApplicationModelBuilder.create(qosMetrics);
     	
     }
@@ -376,10 +429,12 @@ public class CentralizedRLReasoner {
 		List<OperatorQoSMetrics> operatorsMetrics = operatorMetricsRepository.findFirstByNameOrderByTimestampDesc(operatorName);
 		List<DockerContainer> containers = dockerRepository.findByOperator(operatorName);
 
+	 	OperatorQoSMetrics qosMetrics = null;
 	 	if (operatorsMetrics == null || operatorsMetrics.isEmpty()){
-	 		return null;
+	 		qosMetrics = new OperatorQoSMetrics(operatorName, Long.toString(System.currentTimeMillis()), 0.0, 0.0);
+	 	} else {
+	 		qosMetrics = operatorsMetrics.get(FIRST);	
 	 	}
-	 	OperatorQoSMetrics qosMetrics = operatorsMetrics.get(FIRST);
 	 	
 	 	return OperatorModelBuilder.create(operatorName, qosMetrics, containers);
 	 	
@@ -393,5 +448,18 @@ public class CentralizedRLReasoner {
     	
     }
 	 
+    private boolean isFeasible(String operatorName, Action action){
+    	
+    	Operator operator = operatorNameToOperator.get(operatorName);
+    	
+    	if (operator == null || operator.getDeployment() == null)
+    		return false;
+    	
+    	if (operator.getDeployment().getResources().size() < 2 && 
+    			ActionAvailable.SCALE_IN.equals(action.getAction()))
+    			return false;
+    	
+    	return true;
+    }
  
 }

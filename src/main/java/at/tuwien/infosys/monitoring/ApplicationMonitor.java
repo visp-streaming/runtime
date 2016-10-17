@@ -1,5 +1,7 @@
 package at.tuwien.infosys.monitoring;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -27,12 +29,20 @@ public class ApplicationMonitor {
 	@Autowired
 	private ApplicationQoSMetricsRepository appMetricsRepository;
 
+//    private static final Logger LOG = LoggerFactory.getLogger(ApplicationMonitor.class);
+
 	@RabbitListener(queues = "applicationmetrics")
 	public void assign(ApplicationQoSMetricsMessage message) throws InterruptedException {
 
-		ApplicationQoSMetrics data = new ApplicationQoSMetrics(message.getTimestamp(), message.getApplicationName(), message.getAverageResponseTime());
-		appMetricsRepository.save(data);
+//		LOG.info("Application Monitor: received " + message.getTimestamp() + 
+//				" (a:" + message.getApplicationName() + ")" + 
+//				"avgResp=" + message.getAverageResponseTime());
 		
-	}
+		if (!Double.isNaN(message.getAverageResponseTime())){
 
+			ApplicationQoSMetrics data = new ApplicationQoSMetrics(message.getTimestamp(), message.getApplicationName(), message.getAverageResponseTime());
+			appMetricsRepository.save(data);
+			
+		}
+	}
 }
