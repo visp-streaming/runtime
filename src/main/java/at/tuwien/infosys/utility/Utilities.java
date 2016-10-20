@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -52,6 +53,9 @@ public class Utilities {
     @Autowired
     private ScalingActivityRepository sar;
 
+    @Autowired
+    private StringRedisTemplate template;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -71,7 +75,7 @@ public class Utilities {
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
         for (Operator op : parser.getTopology().values()) {
-            if (op.getName().equals("source")) {
+            if (op.getName().contains("source")) {
                 continue;
             }
             DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
@@ -91,6 +95,7 @@ public class Utilities {
         pcr.deleteAll();
         sar.deleteAll();
 
+        template.getConnectionFactory().getConnection().flushAll();
 
         topologyMgmt.cleanup(infrastructureHost);
         topologyMgmt.createMapping(infrastructureHost);

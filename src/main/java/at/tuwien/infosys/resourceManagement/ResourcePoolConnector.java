@@ -100,17 +100,33 @@ public class ResourcePoolConnector implements ResourceConnector {
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
 
-         try {
-         List<Container> runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
-         for (Container container : runningContainer) {
+        List<Container> runningContainer = null;
+        try {
+            runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
+        } catch (DockerException e) {
+            LOG.error("containers cloud not be fetched ", e);
+        } catch (InterruptedException e) {
+            LOG.error("containers cloud not be fetched ", e);
+        }
+        for (Container container : runningContainer) {
+             try {
              docker.killContainer(container.id());
-         }
-         } catch (DockerException e) {
-         e.printStackTrace();
-         } catch (InterruptedException e) {
-         LOG.error("Images could not be cleanedup", e);
+             } catch (DockerException e) {
+                 LOG.error("container " + container.id() + " could not be cleanedup", e);
+             } catch (InterruptedException e) {
+                 LOG.error("container " + container.id() + " could not be cleanedup", e);
+             }
          }
 
+        for (Container container : runningContainer) {
+            try {
+                docker.removeContainer(container.id());
+            } catch (DockerException e) {
+                LOG.error("image " + container.id() + " could not be cleanedup", e);
+            } catch (InterruptedException e) {
+                LOG.error("image " + container.id() + " could not be cleanedup", e);
+            }
+        }
 
         if (cleanupPool) {
 
@@ -120,7 +136,7 @@ public class ResourcePoolConnector implements ResourceConnector {
                     docker.removeImage(img.id());
                 }
             } catch (DockerException e) {
-                e.printStackTrace();
+                LOG.error("Images could not be cleanedup", e);
             } catch (InterruptedException e) {
                 LOG.error("Images could not be cleanedup", e);
             }
