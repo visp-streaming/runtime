@@ -14,7 +14,7 @@ public class Reasoner {
     private static final Logger LOG = LoggerFactory.getLogger(Reasoner.class);
 
     @Autowired
-    private ReasonerBasic reasoner;
+    private ReasonerPeerJ reasoner;
 
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {

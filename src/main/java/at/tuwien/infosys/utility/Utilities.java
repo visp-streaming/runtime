@@ -80,7 +80,6 @@ public class Utilities {
             }
             DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
             processingNodeManagement.scaleup(dc, dh, infrastructureHost);
-        
         }
     }
 

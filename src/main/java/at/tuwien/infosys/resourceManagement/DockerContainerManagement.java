@@ -118,7 +118,7 @@ public class DockerContainerManagement {
 
         dcr.save(container);
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName());
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName() + " has been started.");
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {

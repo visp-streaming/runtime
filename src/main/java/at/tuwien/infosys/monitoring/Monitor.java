@@ -1,6 +1,6 @@
 package at.tuwien.infosys.monitoring;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.ProcessingDuration;
@@ -45,10 +45,10 @@ public class Monitor {
     private ProcessingDurationRepository pcr;
 
     @Autowired
-    private QueueMonitorRepository qmr;
+    private DockerContainerRepository dcr;
 
     @Autowired
-    private OperatorConfiguration opConf;
+    private QueueMonitorRepository qmr;
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -81,6 +81,10 @@ public class Monitor {
         List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
         if (pds.isEmpty()) {
+            if (operator.contains("source")) {
+                return ScalingAction.DONOTHING;
+            }
+
             return ScalingAction.DONOTHING;
         }
 

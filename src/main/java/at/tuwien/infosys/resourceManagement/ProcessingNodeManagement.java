@@ -74,7 +74,7 @@ public class ProcessingNodeManagement {
         } catch (DockerException e) {
             LOG.error("Could not start a docker container.", e);
         }
-        LOG.info("VISP - Scale UP " + dc.getOperator());
+        LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
     }
 
     public void scaleDown(String operator) {
