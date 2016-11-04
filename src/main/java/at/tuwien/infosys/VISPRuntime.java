@@ -5,8 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import javax.annotation.PreDestroy;
-
 @SpringBootApplication
 @EnableScheduling
 @PropertySource(value = {"classpath:/credential.properties"})
@@ -16,8 +14,5 @@ public class VISPRuntime {
         SpringApplication.run(VISPRuntime.class, args);
     }
 
-    @PreDestroy
-    public void exportData() {
-        //TODO implement Dataexport functionality and generate graphics
-    }
+
 }

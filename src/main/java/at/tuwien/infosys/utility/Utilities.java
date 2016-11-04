@@ -6,6 +6,7 @@ import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.reporting.ReportingScalingActivities;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
@@ -19,9 +20,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Service
 public class Utilities {
+
+    @Autowired
+    private ReportingScalingActivities rsa;
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -107,6 +112,11 @@ public class Utilities {
 
             initializeTopology(dh, infrastructureHost);
         }
+    }
+
+    @PreDestroy
+    public void exportData() {
+        rsa.generateCSV();
     }
     
     private void resetPooledVMs() {
