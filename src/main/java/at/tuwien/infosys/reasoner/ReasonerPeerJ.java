@@ -128,7 +128,7 @@ public class ReasonerPeerJ {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 //Optimization was not possible and VM needs to leased for another BTU
 
-                                dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
+                                dh.setBTUend((btuEnd.plusSeconds(btu)));
                                 dhr.save(dh);
 
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");

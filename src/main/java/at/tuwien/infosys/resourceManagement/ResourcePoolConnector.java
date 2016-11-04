@@ -75,7 +75,7 @@ public class ResourcePoolConnector implements ResourceConnector {
 
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
         btuEnd = btuEnd.plusSeconds(BTU + (startuptime / 1000));
-        dh.setBTUend(btuEnd.toString());
+        dh.setBTUend(btuEnd);
 
 
         selectedVM.setLinkedhost(dh.getName());
@@ -152,7 +152,7 @@ public class ResourcePoolConnector implements ResourceConnector {
 
     public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
-        dh.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
     }
 

@@ -144,7 +144,7 @@ public class OpenstackConnector implements ResourceConnector {
 
             DateTime btuEnd = new DateTime(DateTimeZone.UTC);
             btuEnd = btuEnd.plusSeconds(BTU);
-            dh.setBTUend(btuEnd.toString());
+            dh.setBTUend(btuEnd);
 
             dhr.save(dh);
             sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
@@ -214,7 +214,7 @@ public class OpenstackConnector implements ResourceConnector {
         dh.setScheduledForShutdown(false);
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
         btuEnd = btuEnd.plusSeconds(BTU);
-        dh.setBTUend(btuEnd.toString());
+        dh.setBTUend(btuEnd);
 
 
         LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + ip + " was started.");
@@ -310,7 +310,7 @@ public class OpenstackConnector implements ResourceConnector {
     @Override
     public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
-        dh.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
     }
 

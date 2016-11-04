@@ -113,7 +113,7 @@ public class ProcessingNodeManagement {
             }
             dcm.executeCommand(dc, "cd ~ ; touch killme");
 
-            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)).toString());
+            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaledown", dc.getHost()));
             LOG.info("VISP - Scale DOWN " + dc.getOperator() + "-" + dc.getContainerid());
 

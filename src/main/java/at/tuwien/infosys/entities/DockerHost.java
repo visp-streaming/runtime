@@ -1,6 +1,9 @@
 package at.tuwien.infosys.entities;
 
 
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +20,14 @@ public class DockerHost {
     private Integer ram;
     private Float storage;
     private Boolean scheduledForShutdown;
-    private String terminationTime;
     private String flavour;
-    private String BTUend;
+
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    private DateTime BTUend;
+
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    private DateTime terminationTime;
+
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> availableImages;
@@ -89,11 +97,11 @@ public class DockerHost {
         this.scheduledForShutdown = scheduledForShutdown;
     }
 
-    public String getTerminationTime() {
+    public DateTime getTerminationTime() {
         return terminationTime;
     }
 
-    public void setTerminationTime(String terminationTime) {
+    public void setTerminationTime(DateTime terminationTime) {
         this.terminationTime = terminationTime;
     }
 
@@ -113,11 +121,11 @@ public class DockerHost {
         this.availableImages = availableImages;
     }
 
-    public String getBTUend() {
+    public DateTime getBTUend() {
         return BTUend;
     }
 
-    public void setBTUend(String BTUend) {
+    public void setBTUend(DateTime BTUend) {
         this.BTUend = BTUend;
     }
 

@@ -174,7 +174,7 @@ public class DockerContainerManagement {
 
     public void markContainerForRemoval(DockerContainer dc) {
         dc.setStatus("stopping");
-        dc.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dc.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dcr.save(dc);
     }
 }
