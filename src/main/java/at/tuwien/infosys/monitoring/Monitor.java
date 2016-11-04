@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.TimeZone;
 
 @Service
 public class Monitor {
@@ -69,7 +70,7 @@ public class Monitor {
                 max = queueCount;
             }
 
-            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
+            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator, queue, queueCount));
         }
 
         return upscalingDuration(operator, max);

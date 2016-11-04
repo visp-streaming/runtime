@@ -136,7 +136,7 @@ public class ReasonerPeerJ {
 
                             } else {
                                 pcm.triggerShutdown(dc);
-                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "migration", dc.getHost()));
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                                 pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                             }
 

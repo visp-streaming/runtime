@@ -82,7 +82,7 @@ public class ResourcePoolConnector implements ResourceConnector {
 
         dhr.save(dh);
         pvmr.save(selectedVM);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
         try {
             TimeUnit.MILLISECONDS.sleep(startuptime);
@@ -147,7 +147,7 @@ public class ResourcePoolConnector implements ResourceConnector {
         pvmr.save(selectedVM);
 
         dhr.delete(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
     }
 
     public void markHostForRemoval(DockerHost dh) {
@@ -184,9 +184,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             pvm.setStorage(dh.getStorage());
             pvm.setFlavour(dh.getFlavour());
             pvmr.save(pvm);
-
         }
     }
-
-
 }

@@ -79,11 +79,11 @@ public class ComparatorTests {
 
     @Test
     public void testQuery() {
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 1.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -2.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 3.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -4.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "bbb", 1.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", 1.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", -2.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", 3.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", -4.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "bbb", 1.0));
 
         List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
 

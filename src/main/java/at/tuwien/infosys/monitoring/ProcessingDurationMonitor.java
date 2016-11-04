@@ -26,7 +26,7 @@ public class ProcessingDurationMonitor {
 
     @RabbitListener(queues =  "processingduration" )
     public void assign(Message message) throws InterruptedException {
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), message.getHeader(), Double.parseDouble(message.getPayload())));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), message.getHeader(), Double.parseDouble(message.getPayload())));
     }
 
 }

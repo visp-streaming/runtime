@@ -24,7 +24,6 @@ public class DockerHost {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> availableImages;
 
-
     public DockerHost() {
         this.availableImages = new ArrayList<>();
     }

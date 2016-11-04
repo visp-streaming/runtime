@@ -147,7 +147,7 @@ public class OpenstackConnector implements ResourceConnector {
             dh.setBTUend(btuEnd.toString());
 
             dhr.save(dh);
-            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
+            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
             return dh;
         }
@@ -239,7 +239,7 @@ public class OpenstackConnector implements ResourceConnector {
         }
 
         dhr.save(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
         //startupEntropyContainer(dh);
         return dh;
@@ -285,7 +285,7 @@ public class OpenstackConnector implements ResourceConnector {
             } catch (InterruptedException ignore) {
                 LOG.error("Simulate Dockerhost Schutdown failed");
             }
-            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
+            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
             return;
         }
 
@@ -302,7 +302,7 @@ public class OpenstackConnector implements ResourceConnector {
             LOG.info("DockerHost terminated " + nodeMetadata.getName());
         }
         dhr.delete(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
 
     }
 
