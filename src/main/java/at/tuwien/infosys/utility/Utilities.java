@@ -111,8 +111,8 @@ public class Utilities {
     
     private void resetPooledVMs() {
         for(PooledVM vm : pvmr.findAll()) {
-            if (!dhr.findByName(vm.getLinkedhost()).isEmpty()) {
-                rpc.stopDockerHost(dhr.findByName(vm.getLinkedhost()).get(0));
+            if (dhr.findFirstByName(vm.getLinkedhost()) != null) {
+                rpc.stopDockerHost(dhr.findFirstByName(vm.getLinkedhost()));
             }
 
             vm.setLinkedhost(null);

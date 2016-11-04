@@ -97,7 +97,7 @@ public class ReasonerUtility {
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
             String name = entry.getKey();
             ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findByName(name).get(0);
+            DockerHost dh = dhr.findFirstByName(name);
 
             if (blacklistedHost != null) {
                 if (dh.getName().equals(blacklistedHost.getName())) {

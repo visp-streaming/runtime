@@ -57,31 +57,29 @@ public class ResourcePoolConnector implements ResourceConnector {
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
     public DockerHost startVM(DockerHost dh) {
-        List<PooledVM> availableVMs = pvmr.findByLinkedhostIsNull();
+        PooledVM availableVM = pvmr.findFirstByLinkedhostIsNull();
 
-        if (availableVMs.size() == 0) {
+        if (availableVM == null) {
             LOG.error("There are too little VMs in the resourcePool.");
             throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
-        PooledVM selectedVM = availableVMs.get(0);
-
-        dh.setCores(selectedVM.getCores());
-        dh.setRam(selectedVM.getRam());
-        dh.setStorage(selectedVM.getStorage());
+        dh.setCores(availableVM.getCores());
+        dh.setRam(availableVM.getRam());
+        dh.setStorage(availableVM.getStorage());
         dh.setScheduledForShutdown(false);
-        dh.setUrl(selectedVM.getUrl());
-        dh.setName(selectedVM.getName());
+        dh.setUrl(availableVM.getUrl());
+        dh.setName(availableVM.getName());
 
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
         btuEnd = btuEnd.plusSeconds(BTU + (startuptime / 1000));
         dh.setBTUend(btuEnd);
 
 
-        selectedVM.setLinkedhost(dh.getName());
+        availableVM.setLinkedhost(dh.getName());
 
         dhr.save(dh);
-        pvmr.save(selectedVM);
+        pvmr.save(availableVM);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
         try {
@@ -95,7 +93,7 @@ public class ResourcePoolConnector implements ResourceConnector {
 
     public final void stopDockerHost(final DockerHost dh) {
 
-        PooledVM selectedVM = pvmr.findByName(dh.getName()).get(0);
+        PooledVM selectedVM = pvmr.findFirstByName(dh.getName());
 
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 

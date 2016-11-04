@@ -135,7 +135,7 @@ public class DockerContainerManagement {
             return;
         }
 
-        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         try {
@@ -162,7 +162,7 @@ public class DockerContainerManagement {
         }
 
         final String[] command = {"bash", "-c", cmd};
-        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
