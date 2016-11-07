@@ -3,9 +3,9 @@ package at.tuwien.infosys.utility;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.*;
 import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.reasoner.ReasonerBasic;
 import at.tuwien.infosys.reporting.ReportingScalingActivities;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
@@ -81,17 +81,20 @@ public class Utilities {
 
     @Autowired
     private ResourcePoolConnector rpc;
+
+    @Autowired
+    private ReasonerBasic basicReasoner;
     
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-    public void initializeTopology(DockerHost dh, String infrastructureHost) {
+    public void initializeTopology(String infrastructureHost) {
         for (Operator op : parser.getTopology().values()) {
             if (op.getName().contains("source")) {
                 continue;
             }
             DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
-            processingNodeManagement.scaleup(dc, dh, infrastructureHost);
-        
+
+            processingNodeManagement.scaleup(dc, basicReasoner.selectSuitableDockerHost(dc, null), infrastructureHost);
         }
     }
 
@@ -106,11 +109,9 @@ public class Utilities {
         qmr.deleteAll();
         pcr.deleteAll();
 
-        /* Cleanup Previous Application/Operator Metrics */
         appMetRepos.deleteAll();
         opeMetRepos.deleteAll();
         opeReplRepos.deleteAll();
-        
 
         resetPooledVMs();
         sar.deleteAll();
@@ -120,14 +121,8 @@ public class Utilities {
 
         LOG.info("Cleanup Completed");
 
-
         topologyMgmt.createMapping(infrastructureHost);
-
-        DockerHost dh = new DockerHost("initialhost");
-        dh.setFlavour("m2.medium");
-        dh = resourceprovider.get().startVM(dh);
-
-        initializeTopology(dh, infrastructureHost);
+        initializeTopology(infrastructureHost);
     }
 
     @PreDestroy

@@ -74,7 +74,7 @@ public class DockerTests {
     @Ignore
     @Test
     public void initializeTopology() throws DockerException, InterruptedException {
-        utility.initializeTopology(dh, "128.130.172.225");
+        utility.initializeTopology("128.130.172.225");
     }
 
 
