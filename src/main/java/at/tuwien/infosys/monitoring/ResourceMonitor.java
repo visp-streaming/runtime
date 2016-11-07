@@ -41,24 +41,20 @@ public class ResourceMonitor {
 
     @Scheduled(fixedRateString = "${visp.monitor.period}")
     public void updateAllHostsCpuUtilization(){
-
-    	Iterator<DockerHost> hosts = dhr.findAll().iterator();
+		Iterator<DockerHost> hosts = dhr.findAll().iterator();
     	
     	while(hosts.hasNext()){
-
     		DockerHost dockerHost = hosts.next();
     		updateCpuUtilization(dockerHost);
     	}
     }
     
     public void updateCpuUtilization(DockerHost dh){
-
     	List<DockerContainer> hostedContainers = dcr.findByHost(dh.getName());
     	
     	for (DockerContainer container : hostedContainers){
-    		container = retrieveCpuUtilization(dh, container);
+    		retrieveCpuUtilization(dh, container);
     	}
-    	
     	dcr.save(hostedContainers);
     }
     
@@ -72,13 +68,11 @@ public class ResourceMonitor {
      * @return
      */
     private DockerContainer retrieveCpuUtilization(DockerHost dockerHost, DockerContainer container){
-
-    	String connectionUri = CONNECTION_PROTOCOL + dockerHost.getUrl() + CONNECTION_PORT;
+		String connectionUri = CONNECTION_PROTOCOL + dockerHost.getUrl() + CONNECTION_PORT;
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
         try {
-
 			stats = docker.stats(container.getContainerid());
 		
 	        if (container.getPreviousSystemUsage() == 0 && container.getPreviousCpuUsage() == 0){
@@ -118,7 +112,7 @@ public class ResourceMonitor {
 	        }
 		
 		} catch (DockerException | InterruptedException e) {
-			e.printStackTrace();
+			LOG.error(e.getMessage());
 		}      
 
         return container;
