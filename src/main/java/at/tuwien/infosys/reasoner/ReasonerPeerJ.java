@@ -61,13 +61,21 @@ public class ReasonerPeerJ {
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
+    @Value("${visp.reasoner}")
+    private String reasoner;
+
     @Autowired
     private ScalingActivityRepository sar;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
-    //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
+
+        if (!reasoner.equals("peerj")) {
+            return;
+        }
+
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
@@ -236,6 +244,5 @@ public class ReasonerPeerJ {
         LOG.info("###### select suitable container for ######");
         return null;
     }
-
 
 }
