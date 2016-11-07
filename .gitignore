@@ -1,5 +1,6 @@
 credential.properties
 reporting/*
+!reporting/report.txt
 
 #=================
 #eclipse-project
