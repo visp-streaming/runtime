@@ -114,6 +114,8 @@ public class DockerContainerManagement {
         container.setImage(operatorConfiguration.getImage(container.getOperator()));
         container.setHost(dh.getName());
         container.setMonitoringPort(hostPort);
+        container.setStatus("running");
+        container.setTerminationTime(null);
         dcr.save(container);
 
         /* Update the set of used port on docker host */

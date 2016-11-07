@@ -126,31 +126,12 @@ public class ReasonerPeerJ {
 
                         DockerHost selectedHost = selectSuitableDockerHost(dc, dh);
                         if (selectedHost.equals(dh)) {
-
-                            Boolean optimization = false;
-
-                            //TODO implement optional additional optimization measures
-
-                            //TODO asses affected instances
-
-
-                            if (!optimization) {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
-                                //Optimization was not possible and VM needs to leased for another BTU
-
                                 dh.setBTUend((btuEnd.plusSeconds(btu)));
                                 dhr.save(dh);
                                 sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
-
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");
                                 return;
-
-                            } else {
-                                pcm.triggerShutdown(dc);
-                                pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
-                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
-                            }
-
                         } else {
                             pcm.triggerShutdown(dc);
                             pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
