@@ -25,12 +25,15 @@
         <joda.version>2.9.4</joda.version>
         <spotify.docker.version>6.0.0</spotify.docker.version>
         <quartz.version>2.2.3</quartz.version>
-        <apache.commons.lang.version>3.4</apache.commons.lang.version>
+        <apache.commons.lang.version>3.5</apache.commons.lang.version>
         <apache.commons.io.version>2.5</apache.commons.io.version>
         <apache.commons.math.version>3.6.1</apache.commons.math.version>
         <gson.version>2.3.1</gson.version>
         <!-- TODO: remove as soon as https://issues.apache.org/jira/browse/JCLOUDS-1160 is fixed -->
-	</properties>
+        <jadira.usertype.version>5.0.0.GA</jadira.usertype.version>
+        <jackson.dataformat.cvs.version>2.7.0</jackson.dataformat.cvs.version>
+
+    </properties>
 
 	<dependencies>
 		<dependency>
@@ -38,12 +41,20 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
-
+        <dependency>
+            <groupId>org.jadira.usertype</groupId>
+            <artifactId>usertype.core</artifactId>
+            <version>${jadira.usertype.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-redis</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -114,6 +125,11 @@
             <version>${apache.commons.math.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-csv</artifactId>
+            <version>${jackson.dataformat.cvs.version}</version>
+        </dependency>
 
         <!-- Openstack dependencies -->
         <dependency>

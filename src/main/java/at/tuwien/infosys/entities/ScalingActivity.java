@@ -1,5 +1,8 @@
 package at.tuwien.infosys.entities;
 
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -13,7 +16,10 @@ public class ScalingActivity {
     private long id;
 
     private String type;
-    private String time;
+
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    private DateTime time;
+
     private String operator;
     private String scalingActivity;
     private String host;
@@ -21,7 +27,7 @@ public class ScalingActivity {
     public ScalingActivity() {
     }
 
-    public ScalingActivity(String type, String time, String operator, String scalingActivity, String host) {
+    public ScalingActivity(String type, DateTime time, String operator, String scalingActivity, String host) {
         this.type = type;
         this.time = time;
         this.operator = operator;
@@ -34,7 +40,7 @@ public class ScalingActivity {
         return "ScalingActivity{" +
                 "id=" + id +
                 ", type='" + type + '\'' +
-                ", time='" + time + '\'' +
+                ", time='" + time.toString() + '\'' +
                 ", operator='" + operator + '\'' +
                 ", scalingActivity='" + scalingActivity + '\'' +
                 ", host='" + host + '\'' +
@@ -49,11 +55,11 @@ public class ScalingActivity {
         this.type = type;
     }
 
-    public String getTime() {
+    public DateTime getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(DateTime time) {
         this.time = time;
     }
 

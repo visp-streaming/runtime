@@ -1,6 +1,9 @@
 package at.tuwien.infosys.entities;
 
 
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -19,11 +22,10 @@ public class DockerContainer {
     private String image;
     private String operator;
     private String status;
-    private String terminationTime;
     private Double cpuCores;
     private Integer ram;
     private Integer storage;
-    
+
     private String monitoringPort;
     
     /* Monitoring Information */
@@ -31,6 +33,9 @@ public class DockerContainer {
     private long previousCpuUsage;
     private long previousSystemUsage;
     
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    private DateTime terminationTime;
+
     public String getContainerid() {
         return containerid;
     }
@@ -71,11 +76,11 @@ public class DockerContainer {
         this.status = status;
     }
 
-    public String getTerminationTime() {
+    public DateTime getTerminationTime() {
         return terminationTime;
     }
 
-    public void setTerminationTime(String terminationTime) {
+    public void setTerminationTime(DateTime terminationTime) {
         this.terminationTime = terminationTime;
     }
 

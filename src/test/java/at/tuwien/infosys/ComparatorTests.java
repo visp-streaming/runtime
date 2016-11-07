@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @TestPropertySource(locations="classpath:application.properties")
 public class ComparatorTests {
 
@@ -79,11 +81,11 @@ public class ComparatorTests {
 
     @Test
     public void testQuery() {
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 1.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -2.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", 3.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "aaa", -4.0));
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC).toString(), "bbb", 1.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", 1.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", -2.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", 3.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", -4.0));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "bbb", 1.0));
 
         List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
 

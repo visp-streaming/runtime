@@ -1,5 +1,8 @@
 package at.tuwien.infosys.entities;
 
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,7 +15,9 @@ public class QueueMonitor {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
 
-    private String time;
+    @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
+    private DateTime time;
+
     private String operator;
     private String queue;
     private Integer amount;
@@ -20,7 +25,7 @@ public class QueueMonitor {
     public QueueMonitor() {
     }
 
-    public QueueMonitor(String time, String operator, String queue, Integer amount) {
+    public QueueMonitor(DateTime time, String operator, String queue, Integer amount) {
         this.time = time;
         this.operator = operator;
         this.queue = queue;
@@ -35,11 +40,11 @@ public class QueueMonitor {
         this.amount = amount;
     }
 
-    public String getTime() {
+    public DateTime getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(DateTime time) {
         this.time = time;
     }
 

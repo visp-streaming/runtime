@@ -1,35 +1,32 @@
 package at.tuwien.infosys.utility;
 
-import javax.annotation.PostConstruct;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import entities.ApplicationQoSMetricsMessage;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
-import at.tuwien.infosys.datasources.ApplicationQoSMetricsRepository;
-import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
-import at.tuwien.infosys.datasources.OperatorReplicationReportRepository;
-import at.tuwien.infosys.datasources.PooledVMRepository;
-import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.datasources.QueueMonitorRepository;
+import at.tuwien.infosys.datasources.*;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.reporting.ReportingScalingActivities;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.topology.TopologyParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Service
 public class Utilities {
+
+    @Autowired
+    private ReportingScalingActivities rsa;
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -67,6 +64,12 @@ public class Utilities {
     @Autowired
     private OperatorReplicationReportRepository opeReplRepos;    
 
+    @Autowired
+    private ScalingActivityRepository sar;
+
+    @Autowired
+    private StringRedisTemplate template;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -86,7 +89,7 @@ public class Utilities {
 
     public void initializeTopology(DockerHost dh, String infrastructureHost) {
         for (Operator op : parser.getTopology().values()) {
-            if (op.getName().equals("source")) {
+            if (op.getName().contains("source")) {
                 continue;
             }
             DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
@@ -99,23 +102,28 @@ public class Utilities {
     public void createInitialStatus() {
 
     	LOG.info("Deleting old configurations");
-    	
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
+        resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
-        
+
         /* Cleanup Previous Application/Operator Metrics */
         appMetRepos.deleteAll();
         opeMetRepos.deleteAll();
         opeReplRepos.deleteAll();
         
-        LOG.info("Cleanup Completed");
-        
-        resetPooledVMs();
 
+        resetPooledVMs();
+        sar.deleteAll();
+
+        template.getConnectionFactory().getConnection().flushAll();
         topologyMgmt.cleanup(infrastructureHost);
+
+        LOG.info("Cleanup Completed");
+
+
         topologyMgmt.createMapping(infrastructureHost);
 
         if (!SIMULATION) {
@@ -127,11 +135,16 @@ public class Utilities {
             initializeTopology(dh, infrastructureHost);
         }
     }
-    
+
+    @PreDestroy
+    public void exportData() {
+        rsa.generateCSV();
+    }
+
     private void resetPooledVMs() {
         for(PooledVM vm : pvmr.findAll()) {
-            if (!dhr.findByName(vm.getLinkedhost()).isEmpty()) {
-                rpc.stopDockerHost(dhr.findByName(vm.getLinkedhost()).get(0));
+            if (dhr.findFirstByName(vm.getLinkedhost()) != null) {
+                rpc.stopDockerHost(dhr.findFirstByName(vm.getLinkedhost()));
             }
 
             vm.setLinkedhost(null);

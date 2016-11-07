@@ -68,13 +68,13 @@ public class ProcessingNodeManagement {
     public void scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
         try {
             dcm.startContainer(dh, dc, infrastructureHost);
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaleup", dh.getName()));
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaleup", dh.getName()));
         }  catch (InterruptedException e) {
             LOG.error("Could not start a docker container.", e);
         } catch (DockerException e) {
             LOG.error("Could not start a docker container.", e);
         }
-        LOG.info("VISP - Scale UP " + dc.getOperator());
+        LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
     }
 
     public void scaleDown(String operator) {
@@ -113,8 +113,8 @@ public class ProcessingNodeManagement {
             }
             dcm.executeCommand(dc, "cd ~ ; touch killme");
 
-            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)).toString());
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "scaledown", dc.getHost()));
+            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaledown", dc.getHost()));
             LOG.info("VISP - Scale DOWN " + dc.getOperator() + "-" + dc.getContainerid());
 
 

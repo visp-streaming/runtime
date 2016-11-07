@@ -150,7 +150,7 @@ public class DockerContainerManagement {
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName());
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName() + " has been started.");
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
@@ -167,7 +167,7 @@ public class DockerContainerManagement {
             return;
         }
 
-        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         try {
@@ -203,7 +203,7 @@ public class DockerContainerManagement {
         }
 
         final String[] command = {"bash", "-c", cmd};
-        DockerHost dh = dhr.findByName(dc.getHost()).get(0);
+        DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
@@ -215,7 +215,7 @@ public class DockerContainerManagement {
 
     public void markContainerForRemoval(DockerContainer dc) {
         dc.setStatus("stopping");
-        dc.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dc.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dcr.save(dc);
     }
     

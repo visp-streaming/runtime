@@ -66,7 +66,7 @@ public class ReasonerPeerJ {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
-//    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
@@ -130,7 +130,7 @@ public class ReasonerPeerJ {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 //Optimization was not possible and VM needs to leased for another BTU
 
-                                dh.setBTUend((btuEnd.plusSeconds(btu)).toString());
+                                dh.setBTUend((btuEnd.plusSeconds(btu)));
                                 dhr.save(dh);
 
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");
@@ -138,7 +138,7 @@ public class ReasonerPeerJ {
 
                             } else {
                                 pcm.triggerShutdown(dc);
-                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC).toString(), dc.getOperator(), "migration", dc.getHost()));
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                                 pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
                             }
 

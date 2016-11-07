@@ -452,9 +452,7 @@ public class CentralizedRLReasoner {
     		procNodeManager.scaleup(container, destinationHost, infrastructureHost);
     		
     		/* Track consolidation activity */
-    		scalingActivityRepository.save(new ScalingActivity("container", 
-    				new DateTime(DateTimeZone.UTC).toString(), container.getOperator(), 
-    							"consolidation", container.getHost()));
+    		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperator(), "consolidation", container.getHost()));
 
     	}
     	
@@ -591,7 +589,7 @@ public class CentralizedRLReasoner {
     	
     	String state = ctr.qStateAsString();
     	
-    	File f = new File("Qtable_" + operatorName);
+    	File f = new File("reporting/Qtable_" + operatorName);
     	try {
     		if (!f.exists()) {
 				f.createNewFile();
@@ -614,7 +612,7 @@ public class CentralizedRLReasoner {
 		RLController ctr = controller.get(operatorName);
 		String state = ctr.stateVisitsAsString();
 		
-		File f = new File("Visits_" + operatorName);
+		File f = new File("reporting/Visits_" + operatorName);
 		try {
 			if (!f.exists()) {
 				f.createNewFile();
@@ -635,7 +633,7 @@ public class CentralizedRLReasoner {
 		
 		String output = System.currentTimeMillis() + ", " + reward + "\n";
 		
-		File f = new File("Reward_" + operatorName);
+		File f = new File("reporting/Reward_" + operatorName);
 		try {
 			if (!f.exists()) {
 				f.createNewFile();
@@ -656,7 +654,7 @@ public class CentralizedRLReasoner {
 		
 		String output = System.currentTimeMillis() + ", " + actionCode + "\n";
 		
-		File f = new File("Action_" + operatorName);
+		File f = new File("reporting/Action_" + operatorName);
 		try {
 			if (!f.exists()) {
 				f.createNewFile();

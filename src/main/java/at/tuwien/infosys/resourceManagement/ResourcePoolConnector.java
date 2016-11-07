@@ -57,32 +57,30 @@ public class ResourcePoolConnector implements ResourceConnector {
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
     public DockerHost startVM(DockerHost dh) {
-        List<PooledVM> availableVMs = pvmr.findByLinkedhostIsNull();
+        PooledVM availableVM = pvmr.findFirstByLinkedhostIsNull();
 
-        if (availableVMs.size() == 0) {
+        if (availableVM == null) {
             LOG.error("There are too little VMs in the resourcePool.");
             throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
-        PooledVM selectedVM = availableVMs.get(0);
-
-        dh.setCores(selectedVM.getCores());
-        dh.setRam(selectedVM.getRam());
-        dh.setStorage(selectedVM.getStorage());
+        dh.setCores(availableVM.getCores());
+        dh.setRam(availableVM.getRam());
+        dh.setStorage(availableVM.getStorage());
         dh.setScheduledForShutdown(false);
-        dh.setUrl(selectedVM.getUrl());
-        dh.setName(selectedVM.getName());
+        dh.setUrl(availableVM.getUrl());
+        dh.setName(availableVM.getName());
 
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
         btuEnd = btuEnd.plusSeconds(BTU + (startuptime / 1000));
-        dh.setBTUend(btuEnd.toString());
+        dh.setBTUend(btuEnd);
 
 
-        selectedVM.setLinkedhost(dh.getName());
+        availableVM.setLinkedhost(dh.getName());
 
         dhr.save(dh);
-        pvmr.save(selectedVM);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "startVM", dh.getName()));
+        pvmr.save(availableVM);
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
         try {
             TimeUnit.MILLISECONDS.sleep(startuptime);
@@ -95,24 +93,40 @@ public class ResourcePoolConnector implements ResourceConnector {
 
     public final void stopDockerHost(final DockerHost dh) {
 
-        PooledVM selectedVM = pvmr.findByName(dh.getName()).get(0);
+        PooledVM selectedVM = pvmr.findFirstByName(dh.getName());
 
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
 
-         try {
-         List<Container> runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
-         for (Container container : runningContainer) {
+        List<Container> runningContainer = null;
+        try {
+            runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
+        } catch (DockerException e) {
+            LOG.error("containers cloud not be fetched ", e);
+        } catch (InterruptedException e) {
+            LOG.error("containers cloud not be fetched ", e);
+        }
+        for (Container container : runningContainer) {
+             try {
              docker.killContainer(container.id());
-         }
-         } catch (DockerException e) {
-         e.printStackTrace();
-         } catch (InterruptedException e) {
-         LOG.error("Images could not be cleanedup", e);
+             } catch (DockerException e) {
+                 LOG.error("container " + container.id() + " could not be cleanedup", e);
+             } catch (InterruptedException e) {
+                 LOG.error("container " + container.id() + " could not be cleanedup", e);
+             }
          }
 
+        for (Container container : runningContainer) {
+            try {
+                docker.removeContainer(container.id());
+            } catch (DockerException e) {
+                LOG.error("image " + container.id() + " could not be cleanedup", e);
+            } catch (InterruptedException e) {
+                LOG.error("image " + container.id() + " could not be cleanedup", e);
+            }
+        }
 
-        if (!cleanupPool) {
+        if (cleanupPool) {
 
             try {
                 List<Image> availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
@@ -120,7 +134,7 @@ public class ResourcePoolConnector implements ResourceConnector {
                     docker.removeImage(img.id());
                 }
             } catch (DockerException e) {
-                e.printStackTrace();
+                LOG.error("Images could not be cleanedup", e);
             } catch (InterruptedException e) {
                 LOG.error("Images could not be cleanedup", e);
             }
@@ -131,12 +145,12 @@ public class ResourcePoolConnector implements ResourceConnector {
         pvmr.save(selectedVM);
 
         dhr.delete(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC).toString(), "", "stopWM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
     }
 
     public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
-        dh.setTerminationTime(new DateTime(DateTimeZone.UTC).toString());
+        dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
     }
 
@@ -154,7 +168,6 @@ public class ResourcePoolConnector implements ResourceConnector {
     }
 
 
-
     public void initializeVMs(Integer amount) {
         for (int i=0; i<amount; i++) {
             DockerHost dh = new DockerHost("dockerhost");
@@ -169,9 +182,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             pvm.setStorage(dh.getStorage());
             pvm.setFlavour(dh.getFlavour());
             pvmr.save(pvm);
-
         }
     }
-
-
 }

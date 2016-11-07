@@ -1,17 +1,5 @@
 package at.tuwien.infosys.reasoner;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
@@ -22,6 +10,13 @@ import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import at.tuwien.infosys.topology.TopologyManagement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
 
 @Service
 public class ReasonerUtility {
@@ -103,17 +98,17 @@ public class ReasonerUtility {
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
             String name = entry.getKey();
             ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findByName(name).get(0);
+            DockerHost dh = dhr.findFirstByName(name);
 
             if (blacklistedHost != null) {
                 if (dh.getName().equals(blacklistedHost.getName())) {
-                    LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is targeted to be shut down.");
+                    LOG.info("Omitted host: " + dh.getName() + " for scheduling, since it is targeted to be shut down.");
                     continue;
                 }
             }
 
             if (dh.getScheduledForShutdown()) {
-                LOG.info("omitted host: " + dh.getName() + "for scheduling, since it is scheduled to shut down.");
+                LOG.info("Omitted host: " + dh.getName() + " for scheduling, since it is scheduled to shut down.");
                 continue;
             }
 
@@ -124,7 +119,6 @@ public class ReasonerUtility {
             availability.setRam(dh.getRam() - usage.getRam());
             availability.setStorage(dh.getStorage() - usage.getStorage());
             freeResources.add(availability);
-
         }
 
         return freeResources;
@@ -135,7 +129,7 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        LOG.info("##### select suitable host for Container initialized. ####");
+        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") started. ####");
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
@@ -153,7 +147,6 @@ public class ReasonerUtility {
 
             Double suitablility = difference / feasibilityThreshold;
 
-
             if (!ra.getHost().getAvailableImages().contains(dc.getImage())) {
                 suitablility = suitablility / 100;
             }
@@ -166,6 +159,7 @@ public class ReasonerUtility {
             }
         }
 
+        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") finished with host (" + selectedHost +"). ####");
         return selectedHost;
     }
 
@@ -182,7 +176,10 @@ public class ReasonerUtility {
 
         for (String operator : tmgmt.getOperatorsAsList()) {
             Integer amount = dcr.findByOperator(operator).size();
-            operatorAmount.put(operator, dcr.findByOperator(operator).size());
+            if (amount < 2) {
+                continue;
+            }
+            operatorAmount.put(operator, amount);
             if (amount > maxInstances) {
                 maxInstances = amount;
             }
@@ -191,7 +188,7 @@ public class ReasonerUtility {
             }
         }
 
-        if (maxInstances < 2) {
+        if (operatorAmount.isEmpty()) {
             return null;
         }
 
@@ -246,11 +243,11 @@ public class ReasonerUtility {
             }
         }
 
-        LOG.info("##### select operator to be scaled down initialized. ####");
+        LOG.info("##### select operator to be scaled down finished. ####");
         return selectedOperator;
 
     }
-    
+
     
     public Map<DockerContainer, DockerHost> canRelocateHostedContainers(ResourceAvailability resource, List<ResourceAvailability> availableResources){
     	

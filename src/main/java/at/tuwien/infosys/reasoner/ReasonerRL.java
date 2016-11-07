@@ -1,14 +1,13 @@
 package at.tuwien.infosys.reasoner;
 
-import javax.annotation.PostConstruct;
-
+import at.tuwien.infosys.reasoner.rl.CentralizedRLReasoner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import at.tuwien.infosys.reasoner.rl.CentralizedRLReasoner;
+import javax.annotation.PostConstruct;
 
 @Service
 public class ReasonerRL {
@@ -23,7 +22,6 @@ public class ReasonerRL {
 
     	LOG.info("Initializing RLReasoner");
     	rlReasoner.initialize();
-    	
     }
     
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")

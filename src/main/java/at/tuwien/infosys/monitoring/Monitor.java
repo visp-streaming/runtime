@@ -1,6 +1,6 @@
 package at.tuwien.infosys.monitoring;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
 import at.tuwien.infosys.entities.ProcessingDuration;
@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.TimeZone;
 
 @Service
 public class Monitor {
@@ -45,10 +46,10 @@ public class Monitor {
     private ProcessingDurationRepository pcr;
 
     @Autowired
-    private QueueMonitorRepository qmr;
+    private DockerContainerRepository dcr;
 
     @Autowired
-    private OperatorConfiguration opConf;
+    private QueueMonitorRepository qmr;
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -69,7 +70,7 @@ public class Monitor {
                 max = queueCount;
             }
 
-            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC).toString(), operator, queue, queueCount));
+            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator, queue, queueCount));
         }
 
         return upscalingDuration(operator, max);
@@ -81,6 +82,10 @@ public class Monitor {
         List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
         if (pds.isEmpty()) {
+            if (operator.contains("source")) {
+                return ScalingAction.DONOTHING;
+            }
+
             return ScalingAction.DONOTHING;
         }
 

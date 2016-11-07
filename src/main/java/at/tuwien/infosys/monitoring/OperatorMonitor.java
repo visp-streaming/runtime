@@ -1,18 +1,5 @@
 package at.tuwien.infosys.monitoring;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
@@ -20,6 +7,13 @@ import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.OperatorQoSMetrics;
 import entities.ProcessingNodeMetricsMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
 
 /**
  * The OperatorMonitor retrieves the statistics related
@@ -79,16 +73,18 @@ public class OperatorMonitor {
     		
     		try{
     			
-    			List<DockerHost> hosts = dhr.findByName(container.getHost());
-    			if (hosts == null || hosts.isEmpty())
+    			DockerHost host = dhr.findFirstByName(container.getHost());
+    			if (host == null)
     				continue;
-    			String hostUrl = hosts.get(0).getUrl();
+    			String hostUrl = host.getUrl();
 
     			String url = CONNECTION_PROTOCOL + hostUrl + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
         		RestTemplate restTemplate = new RestTemplate();
         		message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
     		
-    		} catch (Exception e){ }
+    		} catch (Exception e){
+
+			}
 
     		if (message != null){
     			stats.add(message);
