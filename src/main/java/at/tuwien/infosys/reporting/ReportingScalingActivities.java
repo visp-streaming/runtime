@@ -42,17 +42,37 @@ public class ReportingScalingActivities {
         Integer inactivityCounter = 0;
         Integer vmCounter = 0;
 
+        Integer vmCost = 1;
+        Integer totalVMCost = 0;
+
         //assume that after 15 minutes lack of data there is no more data
         while (inactivityCounter < 16) {
             GraphData gd = new GraphData(firstTime.toString());
 
             for (ScalingActivity sa : activities) {
                 switch (sa.getScalingActivity()) {
-                    case "startVM": gd.vmUpInc(); vmCounter++; break;
-                    case "stopVM": gd.vmDownInc(); vmCounter--; break;
-                    case "scaleup" : gd.operatorUpInc(); break;
-                    case "scaledown" : gd.operatorDownInc(); break;
-                    case "migrate" : gd.operatorMigrateInc(); break;
+                    case "startVM":
+                        gd.vmUpInc();
+                        vmCounter++;
+                        totalVMCost += vmCost;
+                        break;
+                    case "stopVM":
+                        gd.vmDownInc();
+                        vmCounter--;
+                        break;
+                    case "prolongLease":
+                        gd.vmProlongLease();
+                        totalVMCost += vmCost;
+                        break;
+                    case "scaleup":
+                        gd.operatorUpInc();
+                        break;
+                    case "scaledown":
+                        gd.operatorDownInc();
+                        break;
+                    case "migrate":
+                        gd.operatorMigrateInc();
+                        break;
                     default: //do nothing
                 }
             }
@@ -69,6 +89,19 @@ public class ReportingScalingActivities {
             } else {
                 inactivityCounter = 0;
             }
+        }
+
+        Path overalmetricsPath = Paths.get("reporting/overallMetrics.csv");
+        try {
+            if (Files.exists(overalmetricsPath)) {
+                Files.delete(overalmetricsPath);
+            }
+            Files.createFile(overalmetricsPath);
+            Files.write(overalmetricsPath, ("TotalCost: " + totalVMCost).getBytes());
+        } catch (JsonProcessingException e) {
+            LOG.error(e.getMessage());
+        } catch (IOException e) {
+            LOG.error(e.getMessage());
         }
 
         CsvMapper mapper = new CsvMapper();

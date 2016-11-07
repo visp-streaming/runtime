@@ -140,19 +140,21 @@ public class ReasonerPeerJ {
 
                                 dh.setBTUend((btuEnd.plusSeconds(btu)));
                                 dhr.save(dh);
+                                sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
 
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");
                                 return;
 
                             } else {
                                 pcm.triggerShutdown(dc);
-                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                                 pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                             }
 
                         } else {
                             pcm.triggerShutdown(dc);
                             pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
+                            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                         }
                     }
                     resourceProvider.get().markHostForRemoval(dh);

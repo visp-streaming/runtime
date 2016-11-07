@@ -198,13 +198,11 @@ public class ReasonerUtility {
             instancesValue.put(entry.getKey(), ((entry.getValue() - minInstances) / (maxInstances - minInstances)));
         }
 
-        //TODO implemented affected instances
-
 
         Map<String, Double> delayValues = new HashMap<>();
 
-        for (String operator : tmgmt.getOperatorsAsList()) {
-            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
+        for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
+            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(entry.getKey());
 
             Double avgDuration = 0.0;
             for (ProcessingDuration pd : pds) {
@@ -213,22 +211,19 @@ public class ReasonerUtility {
 
             avgDuration = avgDuration / 5;
 
-            delayValues.put(operator, (avgDuration / (Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration")) * relaxationfactor) * (1 + penaltycosts)));
+            delayValues.put(entry.getKey(), (avgDuration / (Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration")) * relaxationfactor) * (1 + penaltycosts)));
         }
 
 
         Long totalScalingActions = scr.count();
         Map<String, Long> scalingActions = new HashMap<>();
-        for (String operator : tmgmt.getOperatorsAsList()) {
-            scalingActions.put(operator, scr.countByOperator(operator) / totalScalingActions);
+        for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
+            scalingActions.put(entry.getKey(), scr.countByOperator(entry.getKey()) / totalScalingActions);
         }
 
         Double selectionValue = 0.0;
         for (Map.Entry<String, Integer> entry : instancesValue.entrySet()) {
             String op = entry.getKey();
-            if (operatorAmount.get(op) < 2) {
-                continue;
-            }
 
             value = instancesValue.get(op) * 3 - delayValues.get(op) - scalingActions.get(op) * 0.5;
             LOG.info("Operator: " + op + " has the suitability value of: " + value);
@@ -238,14 +233,13 @@ public class ReasonerUtility {
             }
 
             if (value > selectionValue) {
-                value = selectionValue;
+                selectionValue = value;
                 selectedOperator = op;
             }
         }
 
         LOG.info("##### select operator to be scaled down finished. ####");
         return selectedOperator;
-
     }
 
     

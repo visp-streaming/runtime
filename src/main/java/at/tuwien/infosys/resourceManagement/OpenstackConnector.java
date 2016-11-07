@@ -208,7 +208,6 @@ public class OpenstackConnector implements ResourceConnector {
             } catch (DockerException e) {
                 LOG.debug(e.getMessage());
             }
-
         }
 
         dhr.save(dh);

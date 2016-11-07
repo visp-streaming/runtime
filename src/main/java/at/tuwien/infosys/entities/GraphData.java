@@ -9,6 +9,7 @@ public class GraphData {
     private String time;
     private Integer vmUp;
     private Integer vmDown;
+    private Integer vmprolongLease;
     private Integer operatorUp;
     private Integer operatorDown;
     private Integer operatorMigrate;
@@ -17,6 +18,7 @@ public class GraphData {
     public GraphData(String time) {
         this.time = time;
         this.vmUp = 0;
+        this.vmprolongLease = 0;
         this.vmDown = 0;
         this.operatorUp = 0;
         this.operatorDown = 0;
@@ -30,6 +32,10 @@ public class GraphData {
 
     public void vmDownInc() {
         this.vmDown++;
+    }
+
+    public void vmProlongLease() {
+        this.vmprolongLease++;
     }
 
     public void operatorUpInc() {
@@ -101,12 +107,21 @@ public class GraphData {
         this.totalVMs = totalVMs;
     }
 
+    public Integer getVmprolongLease() {
+        return vmprolongLease;
+    }
+
+    public void setVmprolongLease(Integer vmprolongLease) {
+        this.vmprolongLease = vmprolongLease;
+    }
+
     @Override
     public String toString() {
         return "GraphData{" +
-                "time=" + time +
+                "time='" + time + '\'' +
                 ", vmUp=" + vmUp +
                 ", vmDown=" + vmDown +
+                ", vmprolongLease=" + vmprolongLease +
                 ", operatorUp=" + operatorUp +
                 ", operatorDown=" + operatorDown +
                 ", operatorMigrate=" + operatorMigrate +

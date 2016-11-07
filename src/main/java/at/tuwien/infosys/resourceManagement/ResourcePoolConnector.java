@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -124,17 +125,25 @@ public class ResourcePoolConnector implements ResourceConnector {
         }
 
         if (cleanupPool) {
+            List<Image> availableImages = new ArrayList<>();
+            List<Image> danglingImages = new ArrayList<>();
 
             try {
-                List<Image> availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
-                for (Image img : availableImages) {
-                    docker.removeImage(img.id());
-                }
+                availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
+                danglingImages = docker.listImages(DockerClient.ListImagesParam.danglingImages());
             } catch (DockerException e) {
                 LOG.error("Images could not be cleanedup", e);
             } catch (InterruptedException e) {
                 LOG.error("Images could not be cleanedup", e);
             }
+
+            for (Image img : availableImages) {
+                deleteImage(docker, img);
+            }
+            for (Image img : danglingImages) {
+                deleteImage(docker, img);
+            }
+
         }
 
         selectedVM.setLinkedhost(null);
@@ -143,6 +152,16 @@ public class ResourcePoolConnector implements ResourceConnector {
 
         dhr.delete(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+    }
+
+    private void deleteImage(DockerClient docker, Image img) {
+        try {
+            docker.removeImage(img.id().replace("sha256:", ""));
+        } catch (DockerException e) {
+            LOG.error("image " + img.id() + " could not be cleanedup");
+        } catch (InterruptedException e) {
+            LOG.error("image " + img.id() + " could not be cleanedup");
+        }
     }
 
     public void markHostForRemoval(DockerHost dh) {

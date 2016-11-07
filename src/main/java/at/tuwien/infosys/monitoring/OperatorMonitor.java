@@ -53,7 +53,7 @@ public class OperatorMonitor {
     private long lastUpdate = 0;
     
 	@Scheduled(fixedRateString = "${visp.monitor.period}")
-	public void retrieveOperatorsMetricsFromAllContainers(){
+	public synchronized void retrieveOperatorsMetricsFromAllContainers(){
 	
 		if (lastUpdate == 0){
 			lastUpdate = System.currentTimeMillis();
@@ -171,8 +171,7 @@ public class OperatorMonitor {
         	operator.setReceivedMessages(msgRecvPerUnitTime);
         	
         	operatorRepository.save(operator);
-        	
-        	allOperators.remove(operatorName);
+
     	}
     	lastUpdate = now;
 
