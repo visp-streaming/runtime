@@ -1,5 +1,9 @@
 package at.tuwien.infosys.reasoner.rl;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +28,13 @@ import at.tuwien.infosys.datasources.ApplicationQoSMetricsRepository;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
+import at.tuwien.infosys.datasources.OperatorReplicationReportRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.ApplicationQoSMetrics;
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.OperatorQoSMetrics;
+import at.tuwien.infosys.entities.OperatorReplicationReport;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.entities.ScalingActivity;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
@@ -51,7 +57,9 @@ public class CentralizedRLReasoner {
 	/* Currently, VISP-Runtime manages a single application */
 	public static final String APPNAME = "default";
 	public static final int FIRST = 0;
-
+	
+	public static final boolean DEBUG = true;
+	
 	/* *** Auto-wired Dependencies 	*** */
 	@Autowired
 	private TopologyManagement topologyManager;
@@ -89,8 +97,14 @@ public class CentralizedRLReasoner {
     @Autowired
     private ScalingActivityRepository scalingActivityRepository;
     
+    @Autowired
+    private OperatorReplicationReportRepository operatorReplicationRepository;
+    
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
+    
+    @Value("${reasoner.evaluate.afterrounds}")
+    private Integer waitForReconfigurationEffects;
     
     @Value("#{'${application.pinned}'.split(',')}")
     private List<String> pinnedOperators;
@@ -102,8 +116,9 @@ public class CentralizedRLReasoner {
     private ApplicationSLA applicationSla; 
 	private Map<String, RLController> controller;
 	private Map<String, Operator> operatorNameToOperator;
+	private Map<String, Integer> cooldownOperators;
 
-	private long MEASUREMENTS_EXPIRATION_INTERVAL = 5000;
+	private long MEASUREMENTS_EXPIRATION_INTERVAL = 5 * 60 * 1000;
 	
 	public CentralizedRLReasoner() {
 	}
@@ -113,7 +128,8 @@ public class CentralizedRLReasoner {
 		/* Centralized Version of ReLED Controller */
 		controller = new HashMap<String, RLController>();
 		operatorNameToOperator = new HashMap<String, Operator>();
-				
+		cooldownOperators = new HashMap<String, Integer>();
+		
 		/* Generate a new RL Controller for each operator */
 		createRLController();
 	
@@ -150,56 +166,78 @@ public class CentralizedRLReasoner {
 				
 		/* Terminate container and hosts that have been flagged 
 		 * to shutdown in the previous adaptation cycles */
-		LOG.info(" ============================================================= .");
-		LOG.info(". Terminating Containers and Host if flagged.");
+		if (DEBUG){
+			LOG.info(" ============================================================= .");
+			LOG.info(". Terminating Containers and Host if flagged.");
+		}
 		terminateFlaggedContainersAndHosts();
 		
-		LOG.info(". Try to consolidate container");
-		consolidateContainers();
-		
-		LOG.info(". Pinned Operators: " + pinnedOperators);
+//		if (DEBUG)
+//			LOG.info(". Try to consolidate container");
+//		consolidateContainers();
+
+		/* Update operators in a cooldown state */
+		updateCoolingDownOperators();
+
+		if (DEBUG)
+			LOG.info(". Pinned Operators: " + pinnedOperators);
 		
 		/* Execute MAPE control cycle */
 		try {
 
-			LOG.info(". Monitoring...");
+			if (DEBUG)
+				LOG.info(". Monitoring...");
 			monitor();
 
+			/* Report Operators Replication and Stats */
+			saveOperatorReplication();
+
 			/* ************** DEBUG ************** */
-			LOG.info(". Monitored Application: " + application.getApplicationId() + " respTime="+ application.getResponseTime());
-			if (!operatorNameToOperator.isEmpty())
-				for(Operator o : operatorNameToOperator.values()){
-					int repl = 0;
-					double avgUtil = 0.0;
-					if (o.getDeployment() != null){
-						repl = o.getDeployment().getResources().size();
-						avgUtil = o.getDeployment().getAverageUtilization();
+			if (DEBUG){
+				LOG.info(". Monitored Application: " + application.getApplicationId() + " respTime="+ application.getResponseTime());
+				if (!operatorNameToOperator.isEmpty())
+					for(Operator o : operatorNameToOperator.values()){
+						int repl = 0;
+						double avgUtil = 0.0;
+						if (o.getDeployment() != null){
+							repl = o.getDeployment().getResources().size();
+							avgUtil = o.getDeployment().getAverageUtilization();
+						}
+						LOG.info(". Monitored Operator: " + o.getOperatorId() + " - repl:" + repl + ", u:" + avgUtil + " - p:" + o.getProcessedMessagesPerUnitTime() + " r:"+ o.getReceivedMessagesPerUnitTime());
 					}
-					LOG.info(". Monitored Operator: " + o.getOperatorId() + " - repl:" + repl + ", u:" + avgUtil + " - p:" + o.getProcessedMessagesPerUnitTime() + " r:"+ o.getReceivedMessagesPerUnitTime());
-				}
+			}
 			/* ************** DEBUG ************** */
+			
 			
 			/* Run -APE steps for each operator (in a concurrent way) */
 			for (String operatorName : topologyManager.getOperatorsAsList()) {
 				
-				LOG.info(". Operator: " + operatorName);
+				if (DEBUG)
+					LOG.info(". Operator: " + operatorName);
 				
-				/* Do not scale pinned operators */
-				if (pinnedOperators.contains(operatorName.toLowerCase()))
+				/* Save RL information */
+				saveQ(operatorName);
+				saveStateVisits(operatorName);
+				
+		    	/* Do not scale pinned or cooling-down operators */
+				if (!canReconfigure(operatorName))
 					continue;
 				
 				try{
 					
 					Action action = analyzeAndPlan(operatorName);
-					LOG.info(". Analyze: Next action for " + operatorName + " " + action.getAction());
+					if (DEBUG){
+						LOG.info(". Analyze: Next action for " + operatorName + " " + action.getAction());
+						LOG.info(". Execute: " + action.getAction());
+					}
 					
-					LOG.info(". Execute: " + action.getAction());
 					execute(operatorName, action);
 			
 				}catch(RLException apeExc){
 					LOG.error(apeExc.getMessage());
 					apeExc.printStackTrace();
 				}
+				
 			}
 			
 		} catch (RLException rle) {
@@ -207,7 +245,8 @@ public class CentralizedRLReasoner {
 			rle.printStackTrace();
 		}
 
-		LOG.info(" ============================================================= .");
+		if (DEBUG)
+			LOG.info(" ============================================================= .");
 
 	}
 	
@@ -262,6 +301,11 @@ public class CentralizedRLReasoner {
 		if (operatorController == null || application == null || operator == null)
 			throw new RLException("Invalid operator information (controller, application, operator)");
 		
+		// DEBUG: 
+		double reward = operatorController.getReward(application, operator, applicationSla);
+		LOG.info(" Last Action reward = " + reward);
+		saveReward(operatorName, reward);
+		
 		Action action = operatorController.nextAction(application, operator, applicationSla);
 
 		while(!isFeasible(operatorName, action)){
@@ -291,6 +335,8 @@ public class CentralizedRLReasoner {
 		
 		ActionAvailable decodedAction = action.getAction();
 		
+		saveAction(operatorName, action.getValue());
+		
 		switch(decodedAction){
 			case SCALE_IN:
 				/* Scale-in the number of operator replicas by stopping a 
@@ -303,6 +349,10 @@ public class CentralizedRLReasoner {
 				/* In this step containers are flagged as "stopping";
 				 * the consolidation of containers on available hosts is
 				 * postponed to next execution of the adaptation cycle */
+				
+				/* Put operator in a cooling down state */
+				cooldownOperators.put(operatorName, waitForReconfigurationEffects);
+				
 				break;
 				
 			case NO_ACTIONS:
@@ -319,6 +369,10 @@ public class CentralizedRLReasoner {
 
 				/* Track scaling activity */
 				/* Action already tracked in procNodeManager.scaleUp() */
+
+				/* Put operator in a cooling down state */
+				cooldownOperators.put(operatorName, waitForReconfigurationEffects);
+
 				break;
 		}
 		
@@ -432,6 +486,39 @@ public class CentralizedRLReasoner {
     	
     }
     
+    private void updateCoolingDownOperators(){
+
+    	if (cooldownOperators == null || cooldownOperators.isEmpty())
+    		return;
+    	
+    	for (String operator : cooldownOperators.keySet()){
+    		Integer roundToWait = cooldownOperators.get(operator);
+    		
+    		if (roundToWait == null || roundToWait.equals(0)){
+    			cooldownOperators.remove(operator);
+    		}else{
+        		roundToWait = new Integer(roundToWait.intValue() - 1);
+        		cooldownOperators.put(operator, roundToWait);
+    		}
+    		
+    	}
+    	
+    }
+    
+    private boolean canReconfigure(String operatorName){
+    	
+    	/* Do not scale pinned operators */
+		if (pinnedOperators.contains(operatorName.toLowerCase()))
+			return false;
+		
+		/* Do not scale operators in a cooling down state*/
+		if (cooldownOperators.containsKey(operatorName))
+    		return false;
+    	
+    	return true;
+    	
+    }
+    
  	private Operator createOperatorModel(String operatorName){
 
 		List<OperatorQoSMetrics> operatorsMetrics = operatorMetricsRepository.findFirstByNameOrderByTimestampDesc(operatorName);
@@ -476,4 +563,114 @@ public class CentralizedRLReasoner {
     	return true;
     }
  
+    
+    private void saveOperatorReplication(){
+
+    	if (operatorNameToOperator.isEmpty())
+			return;
+		
+    	for(Operator o : operatorNameToOperator.values()){
+    		
+    		try{
+
+    			OperatorReplicationReport report = new OperatorReplicationReport(o.getOperatorId(), 
+        				Long.toString(System.currentTimeMillis()), o.getDeployment());
+            	operatorReplicationRepository.save(report);
+    			
+    		} catch (Exception e){
+    			
+    		}
+    		
+		}
+    	
+    }
+
+    private void saveQ(String operatorName){
+    	
+    	RLController ctr = controller.get(operatorName);
+    	
+    	String state = ctr.qStateAsString();
+    	
+    	File f = new File("Qtable_" + operatorName);
+    	try {
+    		if (!f.exists()) {
+				f.createNewFile();
+			}
+			FileWriter fw = new FileWriter(f.getAbsoluteFile());
+			PrintWriter pw = new PrintWriter(fw);
+			pw.write(state);
+			pw.flush(); 
+			pw.close();
+			fw.close();
+    	} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	
+    }
+
+    
+    private void saveStateVisits(String operatorName){
+		
+		RLController ctr = controller.get(operatorName);
+		String state = ctr.stateVisitsAsString();
+		
+		File f = new File("Visits_" + operatorName);
+		try {
+			if (!f.exists()) {
+				f.createNewFile();
+			}
+			FileWriter fw = new FileWriter(f.getAbsoluteFile());
+			PrintWriter pw = new PrintWriter(fw);
+			pw.write(state);
+			pw.flush(); 
+			pw.close();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+    private void saveReward(String operatorName, double reward){
+		
+		String output = System.currentTimeMillis() + ", " + reward + "\n";
+		
+		File f = new File("Reward_" + operatorName);
+		try {
+			if (!f.exists()) {
+				f.createNewFile();
+			}
+			FileWriter fw = new FileWriter(f.getAbsoluteFile(), true);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.write(output);
+			pw.flush(); 
+			pw.close();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+    private void saveAction(String operatorName, int actionCode){
+		
+		String output = System.currentTimeMillis() + ", " + actionCode + "\n";
+		
+		File f = new File("Action_" + operatorName);
+		try {
+			if (!f.exists()) {
+				f.createNewFile();
+			}
+			FileWriter fw = new FileWriter(f.getAbsoluteFile(), true);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.write(output);
+			pw.flush(); 
+			pw.close();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
 }

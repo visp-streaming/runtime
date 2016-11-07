@@ -8,9 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import entities.ApplicationQoSMetricsMessage;
 import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.ApplicationQoSMetricsRepository;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
+import at.tuwien.infosys.datasources.OperatorReplicationReportRepository;
 import at.tuwien.infosys.datasources.PooledVMRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
@@ -53,6 +57,15 @@ public class Utilities {
 
     @Autowired
     private ProcessingDurationRepository pcr;
+    
+    @Autowired
+    private ApplicationQoSMetricsRepository appMetRepos;
+    
+    @Autowired
+    private OperatorQoSMetricsRepository opeMetRepos;
+    
+    @Autowired
+    private OperatorReplicationReportRepository opeReplRepos;    
 
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
@@ -85,11 +98,21 @@ public class Utilities {
     @PostConstruct
     public void createInitialStatus() {
 
+    	LOG.info("Deleting old configurations");
+    	
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
         dhr.deleteAll();
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
+        
+        /* Cleanup Previous Application/Operator Metrics */
+        appMetRepos.deleteAll();
+        opeMetRepos.deleteAll();
+        opeReplRepos.deleteAll();
+        
+        LOG.info("Cleanup Completed");
+        
         resetPooledVMs();
 
         topologyMgmt.cleanup(infrastructureHost);

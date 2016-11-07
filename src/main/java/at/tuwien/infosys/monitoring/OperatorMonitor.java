@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +17,7 @@ import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
 import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.OperatorQoSMetrics;
 import entities.ProcessingNodeMetricsMessage;
 
@@ -55,7 +54,7 @@ public class OperatorMonitor {
     private static final String CONNECTION_PROTOCOL = "http://";
     private static final String MONITOR_ENTRYPOINT 	= "/metrics";
     
-    private static final Logger LOG = LoggerFactory.getLogger(ResourceMonitor.class);
+//    private static final Logger LOG = LoggerFactory.getLogger(ResourceMonitor.class);
 
     private long lastUpdate = 0;
     
@@ -68,9 +67,6 @@ public class OperatorMonitor {
 		}
 		
     	Iterable<DockerContainer> hostedContainers = dcr.findAll();    	
-    	
-    	LOG.debug("Retriving metrics for each operator...");
-    	
     	Map<String, Long> receivedPerOperator = new HashMap<String, Long>();
     	Map<String, Long> processedPerOperator = new HashMap<String, Long>();
     	List<ProcessingNodeMetricsMessage> stats = new ArrayList<ProcessingNodeMetricsMessage>();
@@ -82,13 +78,21 @@ public class OperatorMonitor {
     		ProcessingNodeMetricsMessage message = null;
     		
     		try{
-        		String url = CONNECTION_PROTOCOL + container.getHost() + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
+    			
+    			List<DockerHost> hosts = dhr.findByName(container.getHost());
+    			if (hosts == null || hosts.isEmpty())
+    				continue;
+    			String hostUrl = hosts.get(0).getUrl();
+
+    			String url = CONNECTION_PROTOCOL + hostUrl + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
         		RestTemplate restTemplate = new RestTemplate();
         		message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+    		
     		} catch (Exception e){ }
 
-    		if (message != null)
+    		if (message != null){
     			stats.add(message);
+    		}
     	}
     	
     	/* Add also data source container */
@@ -152,8 +156,6 @@ public class OperatorMonitor {
     			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
 
-        	LOG.info(" Monitor: " + operator);
-        	
         	operatorRepository.save(operator);
         	
         	allOperators.remove(operatorName);
@@ -171,8 +173,6 @@ public class OperatorMonitor {
     		if(receivedPerOperator.get(operatorName) != null)
     			msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName)  * 1000 / (double) delta;
         	operator.setReceivedMessages(msgRecvPerUnitTime);
-        	
-        	LOG.info(" Monitor: " + operator);
         	
         	operatorRepository.save(operator);
         	
