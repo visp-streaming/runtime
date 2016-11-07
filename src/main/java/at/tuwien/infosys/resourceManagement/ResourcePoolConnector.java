@@ -27,9 +27,6 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ResourcePoolConnector implements ResourceConnector {
 
-    @Value("${visp.simulation}")
-    private Boolean SIMULATION;
-
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 

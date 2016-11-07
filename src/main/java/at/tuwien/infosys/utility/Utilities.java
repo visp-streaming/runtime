@@ -76,9 +76,6 @@ public class Utilities {
     @Value("${visp.topology}")
     private String topology;
 
-    @Value("${visp.simulation}")
-    private Boolean SIMULATION;
-
     @Autowired
     private PooledVMRepository pvmr;
 
@@ -126,14 +123,11 @@ public class Utilities {
 
         topologyMgmt.createMapping(infrastructureHost);
 
-        if (!SIMULATION) {
+        DockerHost dh = new DockerHost("initialhost");
+        dh.setFlavour("m2.medium");
+        dh = resourceprovider.get().startVM(dh);
 
-            DockerHost dh = new DockerHost("initialhost");
-            dh.setFlavour("m2.medium");
-            dh = resourceprovider.get().startVM(dh);
-
-            initializeTopology(dh, infrastructureHost);
-        }
+        initializeTopology(dh, infrastructureHost);
     }
 
     @PreDestroy

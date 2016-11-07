@@ -23,9 +23,6 @@ public class ProcessingNodeManagement {
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
-    @Value("${visp.simulation}")
-    private Boolean SIMULATION;
-
     @Autowired
     DockerContainerManagement dcm;
 
@@ -44,17 +41,6 @@ public class ProcessingNodeManagement {
             LOG.info("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperator() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
                 try {
-
-                    if (SIMULATION) {
-                        LOG.info("Simulate DockerContainer Shutdown while housekeeping");
-                        try {
-                            Thread.sleep(1000 * 5);
-                        } catch (InterruptedException ignore) {
-                            LOG.error("Simulate DockerContainer Shutdown while housekeeping failed");
-                        }
-                        return;
-                    }
-
                     dcm.removeContainer(dc);
                 }  catch (InterruptedException e) {
                     LOG.error("Cloud not remove docker Container while houskeeping.", e);
@@ -102,15 +88,6 @@ public class ProcessingNodeManagement {
 
         try {
             dcm.markContainerForRemoval(dc);
-            if (SIMULATION) {
-                LOG.info("Simulate Trigger Shoutdown");
-                try {
-                    Thread.sleep(1000 * 2);
-                } catch (InterruptedException ignore) {
-                    LOG.error("Simulate Trigger Shoutdown failed");
-                }
-                return;
-            }
             dcm.executeCommand(dc, "cd ~ ; touch killme");
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));

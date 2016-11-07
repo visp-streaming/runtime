@@ -49,9 +49,6 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class OpenstackConnector implements ResourceConnector {
 
-    @Value("${visp.simulation}")
-    private Boolean SIMULATION;
-
     @Value("${visp.dockerhost.image}")
     private String dockerhostImage;
 
@@ -128,30 +125,6 @@ public class OpenstackConnector implements ResourceConnector {
 
     @Override
     public DockerHost startVM(DockerHost dh) {
-        if (SIMULATION) {
-            LOG.info("Simulate Dockerhost Startup");
-            try {
-                TimeUnit.SECONDS.sleep(30);
-            } catch (InterruptedException ignore) {
-                LOG.error("Simulate Dockerhost Startup failed");
-            }
-
-            dh.setCores(4.0);
-            dh.setRam(5760);
-            dh.setStorage(40.0F);
-            dh.setScheduledForShutdown(false);
-            dh.setUrl("simulatedURL");
-
-            DateTime btuEnd = new DateTime(DateTimeZone.UTC);
-            btuEnd = btuEnd.plusSeconds(BTU);
-            dh.setBTUend(btuEnd);
-
-            dhr.save(dh);
-            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
-
-            return dh;
-        }
-
         setup();
 
         String cloudInit = "";
@@ -278,18 +251,6 @@ public class OpenstackConnector implements ResourceConnector {
 
     @Override
     public final void stopDockerHost(final DockerHost dh) {
-        if (SIMULATION) {
-            LOG.info("Simulate Dockerhost Schutdown");
-            try {
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException ignore) {
-                LOG.error("Simulate Dockerhost Schutdown failed");
-            }
-            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
-            return;
-        }
-
-
         Set<? extends NodeMetadata> nodeMetadatas = compute.destroyNodesMatching(new Predicate<NodeMetadata>() {
             @Override
             public boolean apply(@Nullable NodeMetadata input) {

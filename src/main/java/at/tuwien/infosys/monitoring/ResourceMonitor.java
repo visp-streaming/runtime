@@ -1,23 +1,21 @@
 package at.tuwien.infosys.monitoring;
 
-import java.util.Iterator;
-import java.util.List;
-
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerStats;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * ResourceMonitor monitors the computing resources, 
@@ -50,9 +48,7 @@ public class ResourceMonitor {
 
     		DockerHost dockerHost = hosts.next();
     		updateCpuUtilization(dockerHost);
-    		
     	}
-    	
     }
     
     public void updateCpuUtilization(DockerHost dh){

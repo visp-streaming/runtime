@@ -66,7 +66,3 @@ The billing time unit of the Hosts can be configured based on the value of *visp
 ## Graceperiod for shutdown
 The graceperiod for shutting down processing services can be set based on the value of *visp.shutdown.graceperiod* in *application.properties*.
 
-## Simulation
-The property *visp.simulation* in *application.properties* allows the runtime to simulate the scheduling behavior without spawning hosts
-
-

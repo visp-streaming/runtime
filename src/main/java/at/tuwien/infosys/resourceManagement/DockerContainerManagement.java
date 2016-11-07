@@ -1,14 +1,18 @@
 package at.tuwien.infosys.resourceManagement; 
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
+import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.datasources.DockerContainerRepository;
+import at.tuwien.infosys.datasources.DockerHostRepository;
+import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.topology.TopologyManagement;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.*;
 import jersey.repackaged.com.google.common.collect.Lists;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -17,22 +21,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
-import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.topology.TopologyManagement;
-
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ExecCreation;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class DockerContainerManagement {
@@ -49,9 +41,6 @@ public class DockerContainerManagement {
     @Autowired
     private DockerHostRepository dhr;
 
-    @Value("${visp.simulation}")
-    private Boolean SIMULATION;
-    
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
     
@@ -63,23 +52,6 @@ public class DockerContainerManagement {
 
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
-      
-    	if (SIMULATION) {
-            LOG.info("Simulate DockerContainer Startup");
-            try {
-                TimeUnit.SECONDS.sleep(4);
-            } catch (InterruptedException ignore) {
-                LOG.error("Simulate DockerContainer Startup failed");
-            }
-
-            container.setImage(operatorConfiguration.getImage(container.getOperator()));
-            container.setHost(dh.getName());
-
-            dcr.save(container);
-
-            return;
-        }
-
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
@@ -154,19 +126,6 @@ public class DockerContainerManagement {
     }
 
     public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
-        if (SIMULATION) {
-            LOG.info("Simulate DockerContainer Removal");
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException ignore) {
-                LOG.error("Simulate DockerContainer Removal failed");
-            }
-
-            dcr.delete(dc);
-
-            return;
-        }
-
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
@@ -191,17 +150,6 @@ public class DockerContainerManagement {
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
-        if (SIMULATION) {
-            LOG.info("Simulate DockerContainer Command execution");
-            try {
-                TimeUnit.SECONDS.sleep(2);
-            } catch (InterruptedException ignore) {
-                LOG.error("Simulate DockerContainer Command execution failed");
-            }
-
-            return "The command execution was simulated";
-        }
-
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
