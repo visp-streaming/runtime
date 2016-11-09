@@ -166,7 +166,6 @@ public class ReasonerUtility {
 
     public String selectOperatorTobeScaledDown() {
         LOG.info("##### select operator to be scaled down initialized. ####");
-        Double value = Double.MIN_VALUE;
         String selectedOperator = null;
 
         //get all Instances
@@ -174,6 +173,7 @@ public class ReasonerUtility {
         Integer minInstances = 0;
         Map<String, Integer> operatorAmount = new HashMap<>();
 
+        // select all instances that have more than one instances
         for (String operator : tmgmt.getOperatorsAsList()) {
             Integer amount = dcr.findByOperator(operator).size();
             if (amount < 2) {
@@ -192,51 +192,59 @@ public class ReasonerUtility {
             return null;
         }
 
-        Map<String, Integer> instancesValue = new HashMap<>();
+        //Map<String, Integer> instancesValue = new HashMap<>();
+        //Map<String, Double> delayValues = new HashMap<>();
+        //Map<String, Long> scalingActions = new HashMap<>();
+        Long totalScalingActions = scr.count();
+        Double selectionValue = 0.0;
 
         for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
-            instancesValue.put(entry.getKey(), ((entry.getValue() - minInstances) / (maxInstances - minInstances)));
-        }
+            String op = entry.getKey();
+            LOG.debug("### Suitability for Operator: " + op + " ###");
 
 
-        Map<String, Double> delayValues = new HashMap<>();
+            // calculate instances impact factor
+            Integer instancefactor = (entry.getValue() - minInstances) / (maxInstances - minInstances);
+            LOG.debug("InstanceFactor: # = " + entry.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
 
-        for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
-            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(entry.getKey());
+            //calculate qos impact factor
+            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(op);
 
             Double avgDuration = 0.0;
+            Integer counter = 0;
             for (ProcessingDuration pd : pds) {
                 avgDuration += pd.getDuration();
+                counter++;
             }
+            avgDuration = avgDuration / counter;
 
-            avgDuration = avgDuration / 5;
+            //calculate delayfactor
+            Integer expectedDuration = Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration"));
+            Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
+            LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 
-            delayValues.put(entry.getKey(), (avgDuration / (Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration")) * relaxationfactor) * (1 + penaltycosts)));
-        }
+
+            //calculate scaling actions factor
+            Long scalings = scr.countByOperator(entry.getKey());
+            Long scalingFactor =  scalings / totalScalingActions;
+            LOG.debug("ScalingFactor: scalingOperations = " + scalings + ", " + "totalScalings = " + totalScalingActions);
 
 
-        Long totalScalingActions = scr.count();
-        Map<String, Long> scalingActions = new HashMap<>();
-        for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
-            scalingActions.put(entry.getKey(), scr.countByOperator(entry.getKey()) / totalScalingActions);
-        }
+            Double overallFactor = instancefactor * 2 - delayFactor - scalingFactor * 0.5;
+            LOG.debug("OverallFactor: overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")");
 
-        Double selectionValue = 0.0;
-        for (Map.Entry<String, Integer> entry : instancesValue.entrySet()) {
-            String op = entry.getKey();
+            LOG.info("###############");
 
-            value = instancesValue.get(op) * 3 - delayValues.get(op) - scalingActions.get(op) * 0.5;
-            LOG.info("Operator: " + op + " has the suitability value of: " + value);
-
-            if (value < 0) {
+            if (overallFactor < 0) {
                 continue;
             }
 
-            if (value > selectionValue) {
-                selectionValue = value;
+            if (overallFactor > selectionValue) {
+                selectionValue = overallFactor;
                 selectedOperator = op;
             }
         }
+
 
         LOG.info("##### select operator to be scaled down finished. ####");
         return selectedOperator;
