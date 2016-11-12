@@ -5,9 +5,6 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ScalingActivity;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Module;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -15,23 +12,14 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import org.apache.commons.io.IOUtils;
-import org.jclouds.ContextBuilder;
-import org.jclouds.compute.ComputeService;
-import org.jclouds.compute.ComputeServiceContext;
-import org.jclouds.compute.RunNodesException;
-import org.jclouds.compute.domain.Hardware;
-import org.jclouds.compute.domain.Image;
-import org.jclouds.compute.domain.NodeMetadata;
-import org.jclouds.compute.domain.Template;
-import org.jclouds.compute.options.TemplateOptions;
-import org.jclouds.javax.annotation.Nullable;
-import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
-import org.jclouds.openstack.nova.v2_0.NovaApi;
-import org.jclouds.openstack.nova.v2_0.compute.options.NovaTemplateOptions;
-import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
-import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
+import org.glassfish.jersey.internal.util.Base64;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.openstack4j.api.Builders;
+import org.openstack4j.api.OSClient;
+import org.openstack4j.model.common.ActionResponse;
+import org.openstack4j.model.compute.*;
+import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -78,14 +63,7 @@ public class OpenstackConnector implements ResourceConnector {
     private String OPENSTACK_TENANT_NAME;
     private String OPENSTACK_KEYPAIR_NAME;
 
-
-    private Map<String, Hardware> hardwareProfiles = new HashMap<>();
-    private Map<String, Image> imageProfiles = new HashMap<>();
-
-
-    private NovaApi novaApi;
-    private ComputeService compute;
-
+    private OSClient.OSClientV2 os;
 
     public void setup() {
 
@@ -102,22 +80,12 @@ public class OpenstackConnector implements ResourceConnector {
         OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
         OPENSTACK_KEYPAIR_NAME = prop.getProperty("os.keypair.name");
 
-        Iterable<Module> modules = ImmutableSet.<Module>of(new SLF4JLoggingModule());
 
-        novaApi = ContextBuilder.newBuilder("openstack-nova")
+        os = OSFactory.builderV2()
                 .endpoint(OPENSTACK_AUTH_URL)
-                .credentials(OPENSTACK_TENANT_NAME + ":" + OPENSTACK_USERNAME, OPENSTACK_PASSWORD)
-                .modules(modules)
-                .buildApi(NovaApi.class);
-
-        ComputeServiceContext context = ContextBuilder.newBuilder("openstack-nova")
-                .endpoint(OPENSTACK_AUTH_URL)
-                .credentials(OPENSTACK_TENANT_NAME + ":" + OPENSTACK_USERNAME, OPENSTACK_PASSWORD)
-                .modules(modules)
-                .buildView(ComputeServiceContext.class);
-        compute = context.getComputeService();
-
-        loadOpenStackData();
+                .credentials(OPENSTACK_USERNAME,OPENSTACK_PASSWORD)
+                .tenantName(OPENSTACK_TENANT_NAME)
+                .authenticate();
 
         LOG.info("VISP - Successfully connected to " + OPENSTACK_AUTH_URL + " on tenant " + OPENSTACK_TENANT_NAME + " with user " + OPENSTACK_USERNAME);
     }
@@ -134,63 +102,64 @@ public class OpenstackConnector implements ResourceConnector {
             LOG.error("Could not load cloud init file");
         }
 
-        TemplateOptions options = NovaTemplateOptions.Builder
-                .userData(cloudInit.getBytes())
-                .keyPairName(OPENSTACK_KEYPAIR_NAME)
-                .securityGroups("default");
+        Flavor flavor = os.compute().flavors().get(dh.getFlavour());
 
-        Hardware hardware = hardwareProfiles.get(dh.getFlavour());
-
-        Template template = compute.templateBuilder()
-                .locationId("myregion")
-                .options(options)
-                .fromHardware(hardware)
-                .fromImage(imageProfiles.get(dockerhostImage))
-                .build();
-
-        Set<? extends NodeMetadata> nodes = null;
-
-        try {
-            nodes = compute.createNodesInGroup(dh.getName(), 1, template);
-        } catch (RunNodesException e) {
-            LOG.error("Could not start Dockerhost." + e.getMessage());
+        //TODO check if the flavors can be retrieved in future releases
+        for (Flavor f : os.compute().flavors().list()) {
+            if (f.getName().equals(dh.getFlavour())) {
+                flavor = f;
+                break;
+            }
         }
 
-        NodeMetadata nodeMetadata = nodes.iterator().next();
+        ServerCreate sc = Builders.server()
+                .name("dockerhost")
+                .flavor(flavor)
+                .image(dockerhostImage)
+                .userData(Base64.encodeAsString(cloudInit))
+                .keypairName(OPENSTACK_KEYPAIR_NAME)
+                .addSecurityGroup("default")
+                .build();
 
-        String ip = nodeMetadata.getPrivateAddresses().iterator().next();
+        Server server = os.compute().servers().boot(sc);
+
+        String uri = server.getAccessIPv4();
 
         if (PUBLICIPUSAGE) {
-            FloatingIPApi floatingIPs = novaApi.getFloatingIPApi("myregion").get();
 
-            String publicIP = null;
-            for (FloatingIP floatingIP : floatingIPs.list()) {
-                if (floatingIP.getInstanceId() == null) {
-                    publicIP = floatingIP.getIp();
-                    floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
+            FloatingIP freeIP = null;
+
+            for (FloatingIP ip : os.compute().floatingIps().list()) {
+                if (ip.getFixedIpAddress().isEmpty()) {
+                    freeIP = ip;
                     break;
                 }
             }
-
-            if (publicIP == null) {
-                publicIP = floatingIPs.allocateFromPool("cloud").getIp();
-                floatingIPs.addToServer(publicIP, nodeMetadata.getProviderId());
+            if (freeIP == null) {
+                freeIP = os.compute().floatingIps().allocateIP("cloud");
             }
-            ip = publicIP;
+
+            ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(server, freeIP.getFloatingIpAddress());
+            if (!ipresponse.isSuccess()) {
+                LOG.error("Dockerhost could not be started", ipresponse.getFault());
+            }
+            uri = freeIP.getFloatingIpAddress();
         }
 
-        dh.setName(nodeMetadata.getHostname());
-        dh.setUrl(ip);
-        dh.setCores(hardware.getProcessors().get(0).getCores() + 0.0);
-        dh.setRam(hardware.getRam());
-        dh.setStorage(hardware.getVolumes().get(0).getSize());
+
+        dh.setName(server.getId());
+        dh.setUrl(uri);
+        dh.setCores(flavor.getVcpus() + 0.0);
+        dh.setRam(flavor.getRam());
+        //size in GB
+        dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
         btuEnd = btuEnd.plusSeconds(BTU);
         dh.setBTUend(btuEnd);
 
 
-        LOG.info("VISP - Server with id: " + dh.getId() + " and IP " + ip + " was started.");
+        LOG.info("VISP - Server with id: " + dh.getName() + " and IP " + uri + " was started.");
 
         //wait until the dockerhost is available
         Boolean connection = false;
@@ -250,20 +219,15 @@ public class OpenstackConnector implements ResourceConnector {
 
     @Override
     public final void stopDockerHost(final DockerHost dh) {
-        Set<? extends NodeMetadata> nodeMetadatas = compute.destroyNodesMatching(new Predicate<NodeMetadata>() {
-            @Override
-            public boolean apply(@Nullable NodeMetadata input) {
-                boolean contains = input.getName().contains(dh.getName());
-                contains = (contains & dh.getScheduledForShutdown());
-                return contains;
-            }
-        });
-        for (NodeMetadata nodeMetadata : nodeMetadatas) {
-            LOG.info("DockerHost terminated " + nodeMetadata.getName());
-        }
-        dhr.delete(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+        ActionResponse r = os.compute().servers().action(dh.getName(), Action.STOP);
 
+        if (!r.isSuccess()) {
+            LOG.error("Dockerhost could not be started", r.getFault());
+        } else {
+            LOG.info("DockerHost terminated " + dh.getName());
+            dhr.delete(dh);
+            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+        }
     }
 
 
@@ -287,14 +251,4 @@ public class OpenstackConnector implements ResourceConnector {
         }
     }
 
-    protected void loadOpenStackData() {
-        Set<? extends Hardware> profiles = compute.listHardwareProfiles();
-        for (Hardware profile : profiles) {
-            hardwareProfiles.put(profile.getName(), profile);
-        }
-        Set<? extends org.jclouds.compute.domain.Image> images = compute.listImages();
-        for (org.jclouds.compute.domain.Image image : images) {
-            imageProfiles.put(image.getProviderId(), image);
-        }
-    }
 }
