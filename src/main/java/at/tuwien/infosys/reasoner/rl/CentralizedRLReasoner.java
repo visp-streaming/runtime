@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -302,9 +303,9 @@ public class CentralizedRLReasoner {
 			throw new RLException("Invalid operator information (controller, application, operator)");
 		
 		// DEBUG: 
-		double reward = operatorController.getReward(application, operator, applicationSla);
-		LOG.info(" Last Action reward = " + reward);
-		saveReward(operatorName, reward);
+		String serializedReward = operatorController.getReward(application, operator, applicationSla);
+		LOG.info(" Last Action reward = " + serializedReward);
+		saveReward(operatorName, serializedReward);
 		
 		Action action = operatorController.nextAction(application, operator, applicationSla);
 
@@ -489,16 +490,22 @@ public class CentralizedRLReasoner {
     	if (cooldownOperators == null || cooldownOperators.isEmpty())
     		return;
     	
+    	List<String> operatorToRemove = new ArrayList<String>();
+    	
     	for (String operator : cooldownOperators.keySet()){
     		Integer roundToWait = cooldownOperators.get(operator);
     		
     		if (roundToWait == null || roundToWait.equals(0)){
-    			cooldownOperators.remove(operator);
+    			operatorToRemove.add(operator);
     		}else{
         		roundToWait = new Integer(roundToWait.intValue() - 1);
         		cooldownOperators.put(operator, roundToWait);
     		}
     		
+    	}
+    	
+    	for (String operator : operatorToRemove){
+    		cooldownOperators.remove(operator);
     	}
     	
     }
@@ -629,9 +636,9 @@ public class CentralizedRLReasoner {
 		
 	}
 
-    private void saveReward(String operatorName, double reward){
+    private void saveReward(String operatorName, String reward){
 		
-		String output = System.currentTimeMillis() + ", " + reward + "\n";
+		String output = System.currentTimeMillis() + ", " + reward + " \n";
 		
 		File f = new File("reporting/Reward_" + operatorName);
 		try {
