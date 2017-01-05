@@ -130,7 +130,7 @@ public class OpenstackConnector implements ResourceConnector {
             FloatingIP freeIP = null;
 
             for (FloatingIP ip : os.compute().floatingIps().list()) {
-                if (ip.getFixedIpAddress().isEmpty()) {
+                if (ip.getFixedIpAddress() == null) {
                     freeIP = ip;
                     break;
                 }

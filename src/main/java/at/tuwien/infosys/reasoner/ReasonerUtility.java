@@ -10,6 +10,7 @@ import at.tuwien.infosys.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import at.tuwien.infosys.topology.TopologyManagement;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,9 +193,6 @@ public class ReasonerUtility {
             return null;
         }
 
-        //Map<String, Integer> instancesValue = new HashMap<>();
-        //Map<String, Double> delayValues = new HashMap<>();
-        //Map<String, Long> scalingActions = new HashMap<>();
         Long totalScalingActions = scr.count();
         Double selectionValue = 0.0;
 
@@ -212,11 +210,20 @@ public class ReasonerUtility {
 
             Double avgDuration = 0.0;
             Integer counter = 0;
+            Boolean outdated = false;
             for (ProcessingDuration pd : pds) {
+                if (pd.getTime().isBefore(new DateTime().minusMinutes(2))) {
+                    outdated = true;
+                }
                 avgDuration += pd.getDuration();
                 counter++;
             }
             avgDuration = avgDuration / counter;
+
+            if (outdated) {
+                avgDuration = 1.0;
+            }
+
 
             //calculate delayfactor
             Integer expectedDuration = Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration"));
