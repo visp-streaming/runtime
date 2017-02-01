@@ -14,7 +14,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.4.2.RELEASE</version>
+		<version>1.4.3.RELEASE</version>
 		<relativePath/>
 	</parent>
 
@@ -23,7 +23,7 @@
 		<java.version>1.8</java.version>
         <jclouds.version>1.9.2</jclouds.version>
         <joda.version>2.9.4</joda.version>
-        <spotify.docker.version>6.1.0</spotify.docker.version>
+        <spotify.docker.version>7.0.0</spotify.docker.version>
         <quartz.version>2.2.3</quartz.version>
         <apache.commons.lang.version>3.5</apache.commons.lang.version>
         <apache.commons.io.version>2.5</apache.commons.io.version>
@@ -61,7 +61,7 @@
 		</dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-redis</artifactId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

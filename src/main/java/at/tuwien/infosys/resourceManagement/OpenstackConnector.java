@@ -8,9 +8,6 @@ import at.tuwien.infosys.entities.ScalingActivity;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.HostConfig;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import org.joda.time.DateTime;
@@ -32,16 +29,13 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class OpenstackConnector implements ResourceConnector {
+public class OpenstackConnector extends ResourceConnector {
 
     @Value("${visp.dockerhost.image}")
     private String dockerhostImage;
 
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
-
-    @Value("${visp.entropyContainerName}")
-    private String entropyContainerName;
 
     @Value("${visp.openstack.publicip}")
     private Boolean PUBLICIPUSAGE;
@@ -126,7 +120,6 @@ public class OpenstackConnector implements ResourceConnector {
         String uri = server.getAccessIPv4();
 
         if (PUBLICIPUSAGE) {
-
             FloatingIP freeIP = null;
 
             for (FloatingIP ip : os.compute().floatingIps().list()) {
@@ -182,40 +175,8 @@ public class OpenstackConnector implements ResourceConnector {
         dhr.save(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
-        //startupEntropyContainer(dh);
         return dh;
     }
-
-    private void startupEntropyContainer(DockerHost dh) {
-        final DockerClient docker = DefaultDockerClient.builder().
-                uri(URI.create("http://" + dh.getUrl() + ":2375")).
-                connectTimeoutMillis(3000000).
-                build();
-        try {
-            docker.pull(entropyContainerName);
-
-
-            final HostConfig expected = HostConfig.builder()
-                    .privileged(true)
-                    .build();
-
-            final ContainerConfig containerConfig = ContainerConfig.builder()
-                    .image(entropyContainerName)
-                    .hostConfig(expected)
-                    .build();
-
-            final ContainerCreation creation = docker.createContainer(containerConfig);
-            final String id = creation.id();
-
-            docker.startContainer(id);
-
-        } catch (DockerException e) {
-            LOG.error("Could not start container", e);
-        } catch (InterruptedException e) {
-            LOG.error("Could not start container", e);
-        }
-    }
-
 
     @Override
     public final void stopDockerHost(final DockerHost dh) {
@@ -230,25 +191,11 @@ public class OpenstackConnector implements ResourceConnector {
         }
     }
 
-
     @Override
     public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
         dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
-    }
-
-    @Override
-    public void removeHostsWhichAreFlaggedToShutdown() {
-        for (DockerHost dh : dhr.findAll()) {
-            if (dh.getScheduledForShutdown()) {
-                DateTime now = new DateTime(DateTimeZone.UTC);
-                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
-                    stopDockerHost(dh);
-                }
-            }
-        }
     }
 
 }

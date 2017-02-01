@@ -10,7 +10,6 @@ import at.tuwien.infosys.entities.DockerHost;
 @Service
 public class ResourceProvider {
 
-
     @Value("${visp.computational.resources}")
     private String RESOURCES;
 

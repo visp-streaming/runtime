@@ -1,7 +1,6 @@
 package at.tuwien.infosys.resourceManagement;
 
 
-import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.PooledVMRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.DockerHost;
@@ -26,10 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Service
-public class ResourcePoolConnector implements ResourceConnector {
-
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
+public class ResourcePoolConnector extends ResourceConnector {
 
     @Value("${visp.simulated.startuptime}")
     private Integer startuptime;
@@ -46,8 +42,6 @@ public class ResourcePoolConnector implements ResourceConnector {
     @Autowired
     private ScalingActivityRepository sar;
 
-    @Autowired
-    private DockerHostRepository dhr;
 
     @Autowired
     private PooledVMRepository pvmr;
@@ -143,7 +137,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             for (Image img : danglingImages) {
                 deleteImage(docker, img);
             }
-
         }
 
         selectedVM.setLinkedhost(null);
@@ -171,21 +164,9 @@ public class ResourcePoolConnector implements ResourceConnector {
     }
 
 
-    public void removeHostsWhichAreFlaggedToShutdown() {
-        for (DockerHost dh : dhr.findAll()) {
-            if (dh.getScheduledForShutdown()) {
-                DateTime now = new DateTime(DateTimeZone.UTC);
-                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
-                    stopDockerHost(dh);
-                }
-            }
-        }
-    }
-
-
     public void initializeVMs(Integer amount) {
         for (int i=0; i<amount; i++) {
+            //TODO get actual specifications
             DockerHost dh = new DockerHost("dockerhost");
             dh.setFlavour("m2.medium");
 
