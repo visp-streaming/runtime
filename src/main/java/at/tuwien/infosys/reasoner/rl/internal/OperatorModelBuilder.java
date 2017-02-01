@@ -5,8 +5,8 @@ import java.util.List;
 import reled.model.Operator;
 import reled.model.Resource;
 import reled.model.ResourcePool;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.OperatorQoSMetrics;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
 
 /**
  * OperatorModelBuilder create an operator model (instance of 

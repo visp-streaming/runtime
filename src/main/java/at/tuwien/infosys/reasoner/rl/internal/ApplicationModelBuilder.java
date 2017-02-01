@@ -1,7 +1,7 @@
 package at.tuwien.infosys.reasoner.rl.internal;
 
 import reled.model.Application;
-import at.tuwien.infosys.entities.ApplicationQoSMetrics;
+import at.tuwien.infosys.datasources.entities.ApplicationQoSMetrics;
 
 /**
  * ApplicatioModelBuilder translates the application in a model

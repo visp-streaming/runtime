@@ -1,7 +1,7 @@
 package at.tuwien.infosys.datasources;
 
 
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import org.joda.time.DateTime;
 import org.springframework.data.repository.CrudRepository;
 

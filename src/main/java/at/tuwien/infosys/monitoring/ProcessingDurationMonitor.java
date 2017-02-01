@@ -2,7 +2,7 @@ package at.tuwien.infosys.monitoring;
 
 
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import entities.Message;
 
 import org.joda.time.DateTime;

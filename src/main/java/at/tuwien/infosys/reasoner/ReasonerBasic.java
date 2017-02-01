@@ -4,8 +4,8 @@ import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
 import at.tuwien.infosys.entities.ScalingAction;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
@@ -73,7 +73,7 @@ public class ReasonerBasic {
     @PostConstruct
     public void init() {
         //get first resourcepool
-        RESOURCEPOOL = "fogpool";//resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+        RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
     }
 
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")

@@ -3,9 +3,9 @@ package at.tuwien.infosys.resourceManagement;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.PooledVMRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.PooledVM;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.PooledVM;
 import org.jvnet.hk2.annotations.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -35,7 +35,7 @@ public class ResourceUsage {
         Long actualMemoryUsage = 0L;
         Float actualStorageUsage = 0.0F;
 
-        for (PooledVM pooledVM : pvmr.findByPoolName(resourcePoolName)) {
+        for (PooledVM pooledVM : pvmr.findByPoolname(resourcePoolName)) {
             DockerHost dh = dhr.findFirstByName(pooledVM.getLinkedhost());
             overallCores+=dh.getCores();
             overallMemory+=dh.getMemory();

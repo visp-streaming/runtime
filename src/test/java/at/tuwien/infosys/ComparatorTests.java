@@ -2,8 +2,8 @@ package at.tuwien.infosys;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.entities.ResourceComparator;
 import org.apache.commons.math3.stat.regression.SimpleRegression;

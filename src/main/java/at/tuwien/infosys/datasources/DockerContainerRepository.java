@@ -1,7 +1,7 @@
 package at.tuwien.infosys.datasources;
 
 
-import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;

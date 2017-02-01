@@ -1,7 +1,7 @@
 package at.tuwien.infosys.resourceManagement;
 
 
-import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.DockerHost;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

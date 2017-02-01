@@ -1,5 +1,9 @@
 package at.tuwien.infosys.entities;
 
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import lombok.Data;
+
+@Data
 public class ResourceAvailability implements Comparable<ResourceAvailability>{
 
     private DockerHost host;
@@ -19,56 +23,6 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
         this.storage = storage;
     }
 
-    public DockerHost getHost() {
-        return host;
-    }
-
-    public void setHost(DockerHost host) {
-        this.host = host;
-    }
-
-    public Integer getAmountOfContainer() {
-        return amountOfContainer;
-    }
-
-    public void setAmountOfContainer(Integer amountOfContainer) {
-        this.amountOfContainer = amountOfContainer;
-    }
-
-    public Double getCpuCores() {
-        return cpuCores;
-    }
-
-    public void setCpuCores(Double cpuCores) {
-        this.cpuCores = cpuCores;
-    }
-
-    public Integer getMemory() {
-        return memory;
-    }
-
-    public void setMemory(Integer memory) {
-        this.memory = memory;
-    }
-
-    public Float getStorage() {
-        return storage;
-    }
-
-    public void setStorage(Float storage) {
-        this.storage = storage;
-    }
-
-    @Override
-    public String toString() {
-        return "ResourceAvailability{" +
-                "host=" + host.getName() +
-                ", amountOfContainer=" + amountOfContainer +
-                ", cpuCores=" + cpuCores +
-                ", memory=" + memory +
-                ", storage=" + storage +
-                '}';
-    }
 
     @Override
     public int compareTo(ResourceAvailability o) {

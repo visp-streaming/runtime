@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.data.repository.CrudRepository;
 
-import at.tuwien.infosys.entities.OperatorQoSMetrics;
+import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
 
 public interface OperatorQoSMetricsRepository extends CrudRepository<OperatorQoSMetrics, Long> {
 

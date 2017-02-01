@@ -3,8 +3,8 @@ package at.tuwien.infosys.monitoring;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
-import at.tuwien.infosys.entities.ProcessingDuration;
-import at.tuwien.infosys.entities.QueueMonitor;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.TimeZone;
 
 @Service
 public class Monitor {

@@ -2,7 +2,7 @@ package at.tuwien.infosys.reporting;
 
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
 import at.tuwien.infosys.entities.GraphData;
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;

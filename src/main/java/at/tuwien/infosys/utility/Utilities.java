@@ -2,8 +2,8 @@ package at.tuwien.infosys.utility;
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.*;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.PooledVM;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
 import at.tuwien.infosys.reasoner.ReasonerBasic;
 import at.tuwien.infosys.reporting.ReportingScalingActivities;

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import at.tuwien.infosys.datasources.ApplicationQoSMetricsRepository;
-import at.tuwien.infosys.entities.ApplicationQoSMetrics;
+import at.tuwien.infosys.datasources.entities.ApplicationQoSMetrics;
 import entities.ApplicationQoSMetricsMessage;
 
 /**

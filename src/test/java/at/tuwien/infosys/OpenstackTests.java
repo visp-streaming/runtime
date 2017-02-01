@@ -1,7 +1,7 @@
 package at.tuwien.infosys;
 
 
-import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.DockerHost;
 import at.tuwien.infosys.resourceManagement.ResourceConnector;
 import org.junit.Assert;
 import org.junit.Test;

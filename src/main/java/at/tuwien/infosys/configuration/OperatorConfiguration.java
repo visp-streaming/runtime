@@ -1,7 +1,7 @@
 package at.tuwien.infosys.configuration;
 
 
-import at.tuwien.infosys.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
 import org.springframework.stereotype.Service;
 
 @Service

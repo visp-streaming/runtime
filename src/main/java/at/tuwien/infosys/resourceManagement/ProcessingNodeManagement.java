@@ -2,9 +2,9 @@ package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
