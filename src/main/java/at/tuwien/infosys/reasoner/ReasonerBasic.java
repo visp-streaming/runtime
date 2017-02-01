@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+
 @Service
 public class ReasonerBasic {
 
@@ -66,6 +68,14 @@ public class ReasonerBasic {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
+    private String RESOURCEPOOL = "";
+
+    @PostConstruct
+    public void init() {
+        //get first resourcepool
+        RESOURCEPOOL = "fogpool";//resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+    }
+
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
@@ -75,7 +85,7 @@ public class ReasonerBasic {
 
         availabilityWatchdog.checkAvailablitiyOfContainer();
         pcm.removeContainerWhichAreFlaggedToShutdown();
-        resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
+        resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
 
         LOG.info("VISP - Start Reasoner");
 
@@ -86,7 +96,7 @@ public class ReasonerBasic {
             for (DockerHost dh : dhr.findAll()) {
 
                 if (dcr.findByHost(dh.getName()).size()<1) {
-                    resourceProvider.get().markHostForRemoval(dh);
+                    resourceProvider.get(RESOURCEPOOL).markHostForRemoval(dh);
                 }
             }
         }
@@ -126,9 +136,10 @@ public class ReasonerBasic {
                 return blackListedHost;
             }
 
+            //TODO move this somewhere else - the algorithm should not decide on the size of the VM
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
-            return resourceProvider.get().startVM(dh);
+            return resourceProvider.get(RESOURCEPOOL).startVM(dh);
         } else {
             return host;
         }

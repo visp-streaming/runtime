@@ -36,6 +36,8 @@ public class ResourcePoolConnector extends ResourceConnector {
     @Value("${visp.computational.resources.cleanuppool}")
     private Boolean cleanupPool;
 
+    private String ressourcePoolName;
+
     @Autowired
     private OpenstackConnector opc;
 
@@ -48,14 +50,23 @@ public class ResourcePoolConnector extends ResourceConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
+    public String getRessourcePoolName() {
+        return ressourcePoolName;
+    }
+
+    public void setRessourcePoolName(String ressourcePoolName) {
+        this.ressourcePoolName = ressourcePoolName;
+    }
+
     public DockerHost startVM(DockerHost dh) {
-        PooledVM availableVM = pvmr.findFirstByLinkedhostIsNull();
+        PooledVM availableVM = pvmr.findFirstByPoolnameAndLinkedhostIsNull(ressourcePoolName);
 
         if (availableVM == null) {
             LOG.error("There are too little VMs in the resourcePool.");
             throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
+        dh.setResourceProvider(ressourcePoolName);
         dh.setCores(availableVM.getCores());
         dh.setRam(availableVM.getRam());
         dh.setStorage(availableVM.getStorage());
@@ -164,15 +175,16 @@ public class ResourcePoolConnector extends ResourceConnector {
     }
 
 
-    public void initializeVMs(Integer amount) {
+    public void initializeVMs(Integer amount, String ressourcePoolName) {
+        this.ressourcePoolName = ressourcePoolName;
         for (int i=0; i<amount; i++) {
-            //TODO get actual specifications
+            //TODO make the actual specifications parametizable and also consider single pools such as docker swarm
             DockerHost dh = new DockerHost("dockerhost");
             dh.setFlavour("m2.medium");
 
             dh = opc.startVM(dh);
             PooledVM pvm = new PooledVM();
-            pvm.setName(dh.getName());
+            pvm.setName(ressourcePoolName + "-" + dh.getName());
             pvm.setUrl(dh.getUrl());
             pvm.setCores(dh.getCores());
             pvm.setRam(dh.getRam());

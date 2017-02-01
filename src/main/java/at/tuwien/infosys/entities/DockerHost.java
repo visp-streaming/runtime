@@ -17,6 +17,7 @@ public class DockerHost {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
     private String name;
+    private String resourceProvider;
     private String url;
     private Double cores;
     private Integer ram;
@@ -29,7 +30,6 @@ public class DockerHost {
 
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime terminationTime;
-
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> availableImages;
@@ -147,21 +147,30 @@ public class DockerHost {
         this.BTUend = BTUend;
     }
 
+    public String getResourceProvider() {
+        return resourceProvider;
+    }
+
+    public void setResourceProvider(String resourceProvider) {
+        this.resourceProvider = resourceProvider;
+    }
+
     @Override
     public String toString() {
         return "DockerHost{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", resourceProvider='" + resourceProvider + '\'' +
                 ", url='" + url + '\'' +
                 ", cores=" + cores +
                 ", ram=" + ram +
                 ", storage=" + storage +
                 ", scheduledForShutdown=" + scheduledForShutdown +
-                ", terminationTime='" + terminationTime + '\'' +
                 ", flavour='" + flavour + '\'' +
-                ", BTUend='" + BTUend + '\'' +
+                ", BTUend=" + BTUend +
+                ", terminationTime=" + terminationTime +
                 ", availableImages=" + availableImages +
-                ", userPorts=" + usedPorts +
+                ", usedPorts='" + usedPorts + '\'' +
                 '}';
     }
 

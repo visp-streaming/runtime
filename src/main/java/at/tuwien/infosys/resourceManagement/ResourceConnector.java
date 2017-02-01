@@ -31,13 +31,13 @@ public abstract class ResourceConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
-    abstract DockerHost startVM(DockerHost dh);
+    public abstract DockerHost startVM(DockerHost dh);
 
-    abstract void stopDockerHost(DockerHost dh);
+    public abstract void stopDockerHost(DockerHost dh);
 
-    abstract void markHostForRemoval(DockerHost dh);
+    public abstract void markHostForRemoval(DockerHost dh);
 
-    void removeHostsWhichAreFlaggedToShutdown() {
+    public void removeHostsWhichAreFlaggedToShutdown() {
         for (DockerHost dh : dhr.findAll()) {
             if (dh.getScheduledForShutdown()) {
                 DateTime now = new DateTime(DateTimeZone.UTC);

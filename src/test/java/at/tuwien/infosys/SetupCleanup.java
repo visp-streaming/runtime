@@ -47,6 +47,7 @@ public class SetupCleanup {
 
     @Test
     public void startVMs() {
-        rpc.initializeVMs(3);
+        //TODO specify poolname
+        rpc.initializeVMs(3, "poolName");
     }
 }

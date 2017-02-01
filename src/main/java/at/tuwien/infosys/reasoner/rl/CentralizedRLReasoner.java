@@ -120,11 +120,11 @@ public class CentralizedRLReasoner {
 	private Map<String, Integer> cooldownOperators;
 
 	private long MEASUREMENTS_EXPIRATION_INTERVAL = 5 * 60 * 1000;
-	
-	public CentralizedRLReasoner() {
-	}
-	
+
+	private String RESOURCEPOOL = "";
+
 	public void initialize(){
+		RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
 
 		/* Centralized Version of ReLED Controller */
 		controller = new HashMap<String, RLController>();
@@ -255,7 +255,7 @@ public class CentralizedRLReasoner {
 	private void terminateFlaggedContainersAndHosts(){
 		availabilityWatchdog.checkAvailablitiyOfContainer();
 		procNodeManager.removeContainerWhichAreFlaggedToShutdown();
-		resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
+		resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
 	}
 	
 	/**
@@ -398,7 +398,7 @@ public class CentralizedRLReasoner {
     	/* Start a new VM */
         if (candidateHost == null) {
         	candidateHost = resourceProvider.createContainerSkeleton(); 
-            return resourceProvider.get().startVM(candidateHost);
+            return resourceProvider.get(RESOURCEPOOL).startVM(candidateHost);
         } 
 
         return candidateHost;
@@ -460,7 +460,7 @@ public class CentralizedRLReasoner {
     	LOG.info(". Host " + hostToTurnOff.getName() + " marked for removal... ");
 		
     	/* Release resource */
-    	resourceProvider.get().markHostForRemoval(hostToTurnOff);
+    	resourceProvider.get(RESOURCEPOOL).markHostForRemoval(hostToTurnOff);
                 	
     }
 

@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 
@@ -69,6 +70,14 @@ public class ReasonerPeerJ {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
+    private String RESOURCEPOOL = "";
+
+    @PostConstruct
+    public void init() {
+        //get first resourcepool
+        RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+    }
+
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
@@ -79,7 +88,7 @@ public class ReasonerPeerJ {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
-        resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
+        resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
 
         LOG.info("VISP - Start Reasoner");
 
@@ -138,7 +147,7 @@ public class ReasonerPeerJ {
                             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                         }
                     }
-                    resourceProvider.get().markHostForRemoval(dh);
+                    resourceProvider.get(RESOURCEPOOL).markHostForRemoval(dh);
                 }
             }
         }
@@ -184,9 +193,10 @@ public class ReasonerPeerJ {
                 return blackListedHost;
             }
 
+            //TODO move this somewhere else - reasoner should not be in charge of deciding the size of the VM
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
-            return resourceProvider.get().startVM(dh);
+            return resourceProvider.get(RESOURCEPOOL).startVM(dh);
         } else {
             return host;
         }

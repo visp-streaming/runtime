@@ -7,7 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface PooledVMRepository extends CrudRepository<PooledVM, Long> {
 
     PooledVM findFirstByName(String name);
-    PooledVM findFirstByLinkedhostIsNull();
+    PooledVM findFirstByPoolnameAndLinkedhostIsNull(String poolname);
 
 
 }

@@ -139,7 +139,7 @@ public class OpenstackConnector extends ResourceConnector {
             uri = freeIP.getFloatingIpAddress();
         }
 
-
+        dh.setResourceProvider("openstack");
         dh.setName(server.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);

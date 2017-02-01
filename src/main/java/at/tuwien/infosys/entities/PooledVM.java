@@ -12,6 +12,7 @@ public class PooledVM {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private long id;
+    private String poolname;
     private String name;
     private String url;
     private Double cores;
@@ -77,6 +78,14 @@ public class PooledVM {
 
     public void setLinkedhost(String linkedhost) {
         this.linkedhost = linkedhost;
+    }
+
+    public String getPoolname() {
+        return poolname;
+    }
+
+    public void setPoolname(String poolname) {
+        this.poolname = poolname;
     }
 
     @Override
