@@ -9,7 +9,6 @@ import at.tuwien.infosys.reasoner.ReasonerBasic;
 import at.tuwien.infosys.reporting.ReportingScalingActivities;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
-import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.topology.TopologyParser;
 import org.slf4j.Logger;
@@ -32,16 +31,13 @@ public class Utilities {
     private TopologyManagement topologyMgmt;
 
     @Autowired
-    ProcessingNodeManagement processingNodeManagement;
+    private ProcessingNodeManagement processingNodeManagement;
 
     @Autowired
-    TopologyParser parser;
+    private TopologyParser parser;
 
     @Autowired
-    ResourceProvider resourceprovider;
-
-    @Autowired
-    OperatorConfiguration opConfig;
+    private OperatorConfiguration opConfig;
 
     @Autowired
     private DockerHostRepository dhr;

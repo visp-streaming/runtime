@@ -86,7 +86,7 @@ public class DockerContainerManagement {
         if (hostPort == null)
         	throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
         
-        final Map<String, List<PortBinding>> portBindings = new HashMap<String, List<PortBinding>>(); 
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
         portBindings.put(processingNodeServerPort, Lists.newArrayList(PortBinding.of("0.0.0.0", hostPort)));
         
         final HostConfig hostConfig = HostConfig.builder()
@@ -127,14 +127,16 @@ public class DockerContainerManagement {
         LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName() + " has been started.");
     }
 
-    public void removeContainer(DockerContainer dc) throws DockerException, InterruptedException {
+    public void removeContainer(DockerContainer dc) {
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         try {
             docker.killContainer(dc.getContainerid());
             docker.removeContainer(dc.getContainerid());
-        } catch (Exception e) {
+        } catch (DockerException e) {
+            LOG.error("Could not kill the container", e);
+        } catch (InterruptedException e) {
             LOG.error("Could not kill the container", e);
         }
         

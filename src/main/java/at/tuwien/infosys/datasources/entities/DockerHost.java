@@ -51,7 +51,7 @@ public class DockerHost {
 
 
     public List<String> getUsedPorts() {
-        List<String> lUsedPorts = new ArrayList<String>();
+        List<String> lUsedPorts = new ArrayList<>();
         for (String port : Splitter.on(',').split(this.usedPorts)) {
             lUsedPorts.add(port);
         }

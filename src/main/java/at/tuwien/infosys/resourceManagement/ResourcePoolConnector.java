@@ -96,27 +96,21 @@ public class ResourcePoolConnector extends ResourceConnector {
         List<Container> runningContainer = null;
         try {
             runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
-        } catch (DockerException e) {
-            LOG.error("containers cloud not be fetched ", e);
-        } catch (InterruptedException e) {
+        } catch (DockerException | InterruptedException e) {
             LOG.error("containers cloud not be fetched ", e);
         }
         for (Container container : runningContainer) {
              try {
              docker.killContainer(container.id());
-             } catch (DockerException e) {
-                 LOG.error("container " + container.id() + " could not be cleanedup", e);
-             } catch (InterruptedException e) {
+             } catch (DockerException | InterruptedException e) {
                  LOG.error("container " + container.id() + " could not be cleanedup", e);
              }
-         }
+        }
 
         for (Container container : runningContainer) {
             try {
                 docker.removeContainer(container.id());
-            } catch (DockerException e) {
-                LOG.error("image " + container.id() + " could not be cleanedup", e);
-            } catch (InterruptedException e) {
+            } catch (DockerException | InterruptedException e) {
                 LOG.error("image " + container.id() + " could not be cleanedup", e);
             }
         }
@@ -128,9 +122,7 @@ public class ResourcePoolConnector extends ResourceConnector {
             try {
                 availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
                 danglingImages = docker.listImages(DockerClient.ListImagesParam.danglingImages());
-            } catch (DockerException e) {
-                LOG.error("Images could not be cleanedup", e);
-            } catch (InterruptedException e) {
+            } catch (DockerException | InterruptedException e) {
                 LOG.error("Images could not be cleanedup", e);
             }
 
@@ -153,9 +145,7 @@ public class ResourcePoolConnector extends ResourceConnector {
     private void deleteImage(DockerClient docker, Image img) {
         try {
             docker.removeImage(img.id().replace("sha256:", ""));
-        } catch (DockerException e) {
-            LOG.error("image " + img.id() + " could not be cleanedup");
-        } catch (InterruptedException e) {
+        } catch (DockerException | InterruptedException e) {
             LOG.error("image " + img.id() + " could not be cleanedup");
         }
     }

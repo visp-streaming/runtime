@@ -61,9 +61,9 @@ public class OperatorMonitor {
 		}
 		
     	Iterable<DockerContainer> hostedContainers = dcr.findAll();    	
-    	Map<String, Long> receivedPerOperator = new HashMap<String, Long>();
-    	Map<String, Long> processedPerOperator = new HashMap<String, Long>();
-    	List<ProcessingNodeMetricsMessage> stats = new ArrayList<ProcessingNodeMetricsMessage>();
+    	Map<String, Long> receivedPerOperator = new HashMap<>();
+    	Map<String, Long> processedPerOperator = new HashMap<>();
+    	List<ProcessingNodeMetricsMessage> stats = new ArrayList<>();
 
     	/* Collect stats from all docker containers */
 		long now = System.currentTimeMillis();		
@@ -131,7 +131,7 @@ public class OperatorMonitor {
     	}
 
     	/* Save (append) information on the repository */
-    	Set<String> allOperators = new HashSet<String>();
+    	Set<String> allOperators = new HashSet<>();
     	allOperators.addAll(processedPerOperator.keySet());
     	allOperators.addAll(receivedPerOperator.keySet());
     	long delta = (now - lastUpdate);

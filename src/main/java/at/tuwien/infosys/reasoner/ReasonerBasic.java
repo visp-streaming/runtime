@@ -25,16 +25,16 @@ import javax.annotation.PostConstruct;
 public class ReasonerBasic {
 
     @Autowired
-    TopologyManagement topologyMgmt;
+    private TopologyManagement topologyMgmt;
 
     @Autowired
-    ResourceProvider resourceProvider;
+    private ResourceProvider resourceProvider;
 
     @Autowired
-    OperatorConfiguration opConfig;
+    private OperatorConfiguration opConfig;
 
     @Autowired
-    ProcessingNodeManagement pcm;
+    private ProcessingNodeManagement pcm;
 
     @Autowired
     private DockerHostRepository dhr;

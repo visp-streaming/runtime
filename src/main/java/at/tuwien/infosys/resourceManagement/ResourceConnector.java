@@ -72,9 +72,7 @@ public abstract class ResourceConnector {
 
             docker.startContainer(id);
 
-        } catch (DockerException e) {
-            LOG.error("Could not start container", e);
-        } catch (InterruptedException e) {
+        } catch (DockerException | InterruptedException e) {
             LOG.error("Could not start container", e);
         }
     }

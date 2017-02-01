@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -41,12 +40,10 @@ public class ResourceMonitor {
 
     @Scheduled(fixedRateString = "${visp.monitor.period}")
     public void updateAllHostsCpuUtilization(){
-		Iterator<DockerHost> hosts = dhr.findAll().iterator();
-    	
-    	while(hosts.hasNext()){
-    		DockerHost dockerHost = hosts.next();
-    		updateCpuUtilization(dockerHost);
-    	}
+
+		for (DockerHost dockerHost : dhr.findAll()) {
+			updateCpuUtilization(dockerHost);
+		}
     }
     
     public void updateCpuUtilization(DockerHost dh){
@@ -87,22 +84,18 @@ public class ResourceMonitor {
 
 	        } else {
 
-	            double cpuUsage = 0.0;
-	            long cpuDelta = 0;
-	            long systemDelta = 0;
-	            
 	            /* Calculate the change of container's usage in between readings */
 	            long currentCpuUsage = stats.cpuStats().cpuUsage().totalUsage();
 	            long currentSystemUsage = stats.cpuStats().systemCpuUsage();
-	            cpuDelta = currentCpuUsage - container.getPreviousCpuUsage();
-	        	systemDelta = currentSystemUsage - container.getPreviousSystemUsage();
+				long cpuDelta = currentCpuUsage - container.getPreviousCpuUsage();
+				long systemDelta = currentSystemUsage - container.getPreviousSystemUsage();
 
 
 	        	if (systemDelta > 0 && cpuDelta > 0) {
 	            	/* This information should be scaled with respect to the CPU share */
 	                double allocatedCpuShares = container.getCpuCores() / dockerHost.getCores();
 
-	                cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares; // * 100.0;
+					double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares; // * 100.0;
 
 		        	LOG.debug("Container " + container.getContainerid() + " CPU Utilization: " 
 		        			+ cpuUsage + " (allocatedShares: " + allocatedCpuShares + ")");

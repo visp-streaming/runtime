@@ -260,14 +260,14 @@ public class ReasonerUtility {
     
     public Map<DockerContainer, DockerHost> canRelocateHostedContainers(ResourceAvailability resource, List<ResourceAvailability> availableResources){
     	
-    	Map<DockerContainer, DockerHost> relocationMap = new HashMap<DockerContainer, DockerHost>();
+    	Map<DockerContainer, DockerHost> relocationMap = new HashMap<>();
     	boolean canRelocate = false;
     	
     	/* Retrieve containers to be relocated */
     	List<DockerContainer> containers = dcr.findByHost(resource.getHost().getName());
     	
     	/* Simulate container relocation */
-    	List<ResourceAvailability> resources = new ArrayList<ResourceAvailability>();
+    	List<ResourceAvailability> resources = new ArrayList<>();
     	for (ResourceAvailability ra : availableResources)
     		resources.add(ra.clone());
     	

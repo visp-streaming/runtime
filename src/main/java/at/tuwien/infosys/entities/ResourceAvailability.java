@@ -33,10 +33,10 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     	ResourceAvailability ra = new ResourceAvailability();
     	
     	ra.host = this.host;
-        ra.amountOfContainer = new Integer(this.amountOfContainer);
-        ra.cpuCores = new Double(this.cpuCores);
-        ra.memory = new Integer(this.memory);
-        ra.storage = new Float(storage);
+        ra.amountOfContainer = this.amountOfContainer;
+        ra.cpuCores = this.cpuCores;
+        ra.memory = this.memory;
+        ra.storage = storage;
         
         return ra;
     }

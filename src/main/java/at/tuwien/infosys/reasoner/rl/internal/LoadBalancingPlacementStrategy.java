@@ -12,7 +12,7 @@ public class LoadBalancingPlacementStrategy implements PlacementStrategy {
 	public DockerHost computePlacement(DockerContainer container,
 			List<ResourceAvailability> availableResources) {
 		
-        SortedList<ResourceAvailability> candidates = new SortedList<ResourceAvailability>(new LeastLoadedHostFirstComparator());
+        SortedList<ResourceAvailability> candidates = new SortedList<>(new LeastLoadedHostFirstComparator());
         
         for (ResourceAvailability ra : availableResources) {
             if (ra.getCpuCores() <= container.getCpuCores()) {

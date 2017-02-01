@@ -30,16 +30,16 @@ import java.util.List;
 public class ReasonerPeerJ {
 
     @Autowired
-    TopologyManagement topologyMgmt;
+    private TopologyManagement topologyMgmt;
 
     @Autowired
-    ResourceProvider resourceProvider;
+    private ResourceProvider resourceProvider;
 
     @Autowired
-    OperatorConfiguration opConfig;
+    private OperatorConfiguration opConfig;
 
     @Autowired
-    ProcessingNodeManagement pcm;
+    private ProcessingNodeManagement pcm;
 
     @Autowired
     private DockerHostRepository dhr;

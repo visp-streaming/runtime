@@ -51,15 +51,11 @@ public class OpenstackConnector extends ResourceConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
-    private String OPENSTACK_AUTH_URL;
-    private String OPENSTACK_USERNAME;
-    private String OPENSTACK_PASSWORD;
-    private String OPENSTACK_TENANT_NAME;
     private String OPENSTACK_KEYPAIR_NAME;
 
     private OSClient.OSClientV2 os;
 
-    public void setup() {
+    private void setup() {
 
         Properties prop = new Properties();
         try {
@@ -68,10 +64,10 @@ public class OpenstackConnector extends ResourceConnector {
             LOG.error("Could not load properties.", e);
         }
 
-        OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
-        OPENSTACK_USERNAME = prop.getProperty("os.username");
-        OPENSTACK_PASSWORD = prop.getProperty("os.password");
-        OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
+        String OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
+        String OPENSTACK_USERNAME = prop.getProperty("os.username");
+        String OPENSTACK_PASSWORD = prop.getProperty("os.password");
+        String OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
         OPENSTACK_KEYPAIR_NAME = prop.getProperty("os.keypair.name");
 
 
