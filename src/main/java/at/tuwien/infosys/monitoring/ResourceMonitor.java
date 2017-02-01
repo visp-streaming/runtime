@@ -82,7 +82,9 @@ public class ResourceMonitor {
 	        	container.setPreviousCpuUsage(stats.cpuStats().cpuUsage().totalUsage());
 	        	container.setPreviousSystemUsage(stats.cpuStats().systemCpuUsage());
 	        	container.setCpuUsage(0);
-	        	
+				container.setPreviousMemoryUsage(stats.memoryStats().usage());
+				container.setMemoryUsage(0);
+
 	        } else {
 
 	            double cpuUsage = 0.0;
@@ -94,7 +96,8 @@ public class ResourceMonitor {
 	            long currentSystemUsage = stats.cpuStats().systemCpuUsage();
 	            cpuDelta = currentCpuUsage - container.getPreviousCpuUsage();
 	        	systemDelta = currentSystemUsage - container.getPreviousSystemUsage();
-	        	
+
+
 	        	if (systemDelta > 0 && cpuDelta > 0) {
 	            	/* This information should be scaled with respect to the CPU share */
 	                double allocatedCpuShares = container.getCpuCores() / dockerHost.getCores();
@@ -107,7 +110,11 @@ public class ResourceMonitor {
 	                container.setCpuUsage(cpuUsage);
 	                container.setPreviousCpuUsage(currentCpuUsage);
 	                container.setPreviousSystemUsage(currentSystemUsage);
-	            }
+
+					container.setPreviousMemoryUsage(container.getPreviousMemoryUsage());
+					container.setMemoryUsage(stats.memoryStats().usage());
+
+				}
 
 	        }
 		

@@ -44,15 +44,10 @@ public class ResourcePoolConnector extends ResourceConnector {
     @Autowired
     private ScalingActivityRepository sar;
 
-
     @Autowired
     private PooledVMRepository pvmr;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
-
-    public String getRessourcePoolName() {
-        return ressourcePoolName;
-    }
 
     public void setRessourcePoolName(String ressourcePoolName) {
         this.ressourcePoolName = ressourcePoolName;

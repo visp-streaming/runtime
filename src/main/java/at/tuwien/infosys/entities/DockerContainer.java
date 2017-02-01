@@ -32,6 +32,10 @@ public class DockerContainer {
     private double cpuUsage;
     private long previousCpuUsage;
     private long previousSystemUsage;
+
+    private long memoryUsage;
+    private long previousMemoryUsage;
+
     
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime terminationTime;
@@ -112,6 +116,8 @@ public class DockerContainer {
         this.previousCpuUsage = 0;
         this.previousSystemUsage = 0;
         this.cpuUsage = 0.0;
+        this.memoryUsage = 0;
+        this.previousMemoryUsage = 0;
         this.monitoringPort = "";
     }
 
@@ -147,7 +153,23 @@ public class DockerContainer {
 		this.monitoringPort = monitoringPort;
 	}
 
-	public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
+    public long getMemoryUsage() {
+        return memoryUsage;
+    }
+
+    public void setMemoryUsage(long memoryUsage) {
+        this.memoryUsage = memoryUsage;
+    }
+
+    public long getPreviousMemoryUsage() {
+        return previousMemoryUsage;
+    }
+
+    public void setPreviousMemoryUsage(long previousMemoryUsage) {
+        this.previousMemoryUsage = previousMemoryUsage;
+    }
+
+    public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
         this.operator = operator;
         this.cpuCores = cpuCores;
         this.ram = ram;
@@ -156,6 +178,8 @@ public class DockerContainer {
         this.previousCpuUsage = 0;
         this.previousSystemUsage = 0;
         this.cpuUsage = 0.0;
+        this.memoryUsage = 0;
+        this.previousMemoryUsage = 0;
         this.monitoringPort = "";
     }
 
