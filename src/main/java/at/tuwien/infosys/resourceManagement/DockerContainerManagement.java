@@ -1,4 +1,4 @@
-package at.tuwien.infosys.resourceManagement; 
+package at.tuwien.infosys.resourceManagement;
 
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
@@ -43,10 +43,10 @@ public class DockerContainerManagement {
 
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
-    
+
     @Value("${visp.node.port.available}'")
     private String encodedHostNodeAvailablePorts;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
@@ -84,11 +84,11 @@ public class DockerContainerManagement {
         /* Bind container port (processingNodeServerPort) to an available host port */
         String hostPort = getAvailablePortOnHost(dh);
         if (hostPort == null)
-        	throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
-        
+            throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
+
         final Map<String, List<PortBinding>> portBindings = new HashMap<>();
         portBindings.put(processingNodeServerPort, Lists.newArrayList(PortBinding.of("0.0.0.0", hostPort)));
-        
+
         final HostConfig hostConfig = HostConfig.builder()
                 .cpuShares(cpuShares)
                 .memoryReservation(containerMemory)
@@ -146,8 +146,8 @@ public class DockerContainerManagement {
         usedPorts.remove(containerPort);
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
-        
-                
+
+
         dcr.delete(dc);
 
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");
@@ -170,26 +170,26 @@ public class DockerContainerManagement {
         dc.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dcr.save(dc);
     }
-    
-    
-    private String getAvailablePortOnHost(DockerHost host){
-    	
-    	String[] range = encodedHostNodeAvailablePorts.replaceAll("[a-zA-Z\']", "").split("-");
-    	int poolStart = Integer.valueOf(range[0]);
-    	int poolEnd = Integer.valueOf(range[1]);
-    	
-    	List<String> usedPorts = host.getUsedPorts();
-    	
-    	for (int port = poolStart; port < poolEnd; port++){
 
-    		String portStr = Integer.toString(port);
-    		
-    		if (!usedPorts.contains(portStr)){
-        		return portStr;
-    		}
-    		
-    	}
 
-    	return null;
+    private String getAvailablePortOnHost(DockerHost host) {
+
+        String[] range = encodedHostNodeAvailablePorts.replaceAll("[a-zA-Z\']", "").split("-");
+        int poolStart = Integer.valueOf(range[0]);
+        int poolEnd = Integer.valueOf(range[1]);
+
+        List<String> usedPorts = host.getUsedPorts();
+
+        for (int port = poolStart; port < poolEnd; port++) {
+
+            String portStr = Integer.toString(port);
+
+            if (!usedPorts.contains(portStr)) {
+                return portStr;
+            }
+
+        }
+
+        return null;
     }
 }

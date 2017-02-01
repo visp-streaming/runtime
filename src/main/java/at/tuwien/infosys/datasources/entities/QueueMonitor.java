@@ -14,7 +14,7 @@ import javax.persistence.Id;
 public class QueueMonitor {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")

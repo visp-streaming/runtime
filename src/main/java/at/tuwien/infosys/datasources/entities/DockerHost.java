@@ -16,7 +16,7 @@ import java.util.List;
 public class DockerHost {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private String name;
     private String resourceProvider;
@@ -55,11 +55,11 @@ public class DockerHost {
         for (String port : Splitter.on(',').split(this.usedPorts)) {
             lUsedPorts.add(port);
         }
-		return lUsedPorts;
-	}
+        return lUsedPorts;
+    }
 
-	public void setUsedPorts(List<String> usedPorts) {
-	    this.usedPorts = Joiner.on(',').join(usedPorts);
-	}
+    public void setUsedPorts(List<String> usedPorts) {
+        this.usedPorts = Joiner.on(',').join(usedPorts);
+    }
 
 }

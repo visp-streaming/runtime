@@ -16,7 +16,7 @@ import javax.persistence.Id;
 public class DockerContainer {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private String containerid;
     private String host;
@@ -28,7 +28,7 @@ public class DockerContainer {
     private Integer storage;
 
     private String monitoringPort;
-    
+
     /* Monitoring Information */
     private double cpuUsage;
     private long previousCpuUsage;

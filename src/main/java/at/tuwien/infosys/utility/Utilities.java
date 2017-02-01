@@ -50,15 +50,15 @@ public class Utilities {
 
     @Autowired
     private ProcessingDurationRepository pcr;
-    
+
     @Autowired
     private ApplicationQoSMetricsRepository appMetRepos;
-    
+
     @Autowired
     private OperatorQoSMetricsRepository opeMetRepos;
-    
+
     @Autowired
-    private OperatorReplicationReportRepository opeReplRepos;    
+    private OperatorReplicationReportRepository opeReplRepos;
 
     @Autowired
     private ScalingActivityRepository sar;
@@ -80,7 +80,7 @@ public class Utilities {
 
     @Autowired
     private ReasonerBasic basicReasoner;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(String infrastructureHost) {
@@ -97,7 +97,7 @@ public class Utilities {
     @PostConstruct
     public void createInitialStatus() {
 
-    	LOG.info("Deleting old configurations");
+        LOG.info("Deleting old configurations");
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
@@ -127,7 +127,7 @@ public class Utilities {
     }
 
     private void resetPooledVMs() {
-        for(PooledVM vm : pvmr.findAll()) {
+        for (PooledVM vm : pvmr.findAll()) {
             if (dhr.findFirstByName(vm.getLinkedhost()) != null) {
                 rpc.stopDockerHost(dhr.findFirstByName(vm.getLinkedhost()));
             }

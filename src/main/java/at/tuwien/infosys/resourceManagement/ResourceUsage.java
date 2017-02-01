@@ -37,17 +37,17 @@ public class ResourceUsage {
 
         for (PooledVM pooledVM : pvmr.findByPoolname(resourcePoolName)) {
             DockerHost dh = dhr.findFirstByName(pooledVM.getLinkedhost());
-            overallCores+=dh.getCores();
-            overallMemory+=dh.getMemory();
-            overallStorage+=dh.getStorage();
+            overallCores += dh.getCores();
+            overallMemory += dh.getMemory();
+            overallStorage += dh.getStorage();
 
             for (DockerContainer dc : dcr.findByHost(dh.getName())) {
-                plannedCoresUsage+=dc.getCpuCores();
-                plannedMemoryUsage+=dc.getMemory();
-                plannedStorageUsage+=dc.getStorage();
+                plannedCoresUsage += dc.getCpuCores();
+                plannedMemoryUsage += dc.getMemory();
+                plannedStorageUsage += dc.getStorage();
 
-                actualCoresUsage+=dc.getCpuUsage();
-                actualMemoryUsage+= dc.getMemoryUsage();
+                actualCoresUsage += dc.getCpuUsage();
+                actualMemoryUsage += dc.getMemoryUsage();
             }
         }
 

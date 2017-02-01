@@ -18,7 +18,7 @@ public class ResourceAPI {
 
         //TODO aggregate the information for a specific operator type
 
-       //TODO implement me
+        //TODO implement me
 
         return;
     }

@@ -71,8 +71,7 @@ public class Monitor {
 
 
     private ScalingAction upscalingDuration(String operator, Integer maxQueue) {
-
-        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
+        List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
         if (pds.isEmpty()) {
             if (operator.contains("source")) {
@@ -83,7 +82,7 @@ public class Monitor {
         }
 
 
-            if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
+        if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -132,7 +131,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-            if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
+        if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
             return ScalingAction.SCALEUP;
         }
 
@@ -146,7 +145,6 @@ public class Monitor {
         connectionFactory.setPassword(rabbitmqPassword);
 
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
-
 
         Integer queueLoad = 0;
         try {

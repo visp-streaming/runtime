@@ -73,7 +73,7 @@ public class OpenstackConnector extends ResourceConnector {
 
         os = OSFactory.builderV2()
                 .endpoint(OPENSTACK_AUTH_URL)
-                .credentials(OPENSTACK_USERNAME,OPENSTACK_PASSWORD)
+                .credentials(OPENSTACK_USERNAME, OPENSTACK_PASSWORD)
                 .tenantName(OPENSTACK_TENANT_NAME)
                 .authenticate();
 
@@ -161,7 +161,7 @@ public class OpenstackConnector extends ResourceConnector {
                         build();
                 docker.ping();
                 connection = true;
-            }  catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 LOG.debug("Dockerhost is not available yet.");
             } catch (DockerException e) {
                 LOG.debug(e.getMessage());

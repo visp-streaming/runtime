@@ -100,11 +100,11 @@ public class ResourcePoolConnector extends ResourceConnector {
             LOG.error("containers cloud not be fetched ", e);
         }
         for (Container container : runningContainer) {
-             try {
-             docker.killContainer(container.id());
-             } catch (DockerException | InterruptedException e) {
-                 LOG.error("container " + container.id() + " could not be cleanedup", e);
-             }
+            try {
+                docker.killContainer(container.id());
+            } catch (DockerException | InterruptedException e) {
+                LOG.error("container " + container.id() + " could not be cleanedup", e);
+            }
         }
 
         for (Container container : runningContainer) {
@@ -155,7 +155,6 @@ public class ResourcePoolConnector extends ResourceConnector {
         dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
     }
-
 
 
 }

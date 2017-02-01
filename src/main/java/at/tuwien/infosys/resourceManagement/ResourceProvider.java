@@ -48,8 +48,8 @@ public class ResourceProvider {
         return null;
     }
 
-    public DockerHost createContainerSkeleton(){
-    	DockerHost dh = new DockerHost("additionaldockerhost");
+    public DockerHost createContainerSkeleton() {
+        DockerHost dh = new DockerHost("additionaldockerhost");
         dh.setFlavour("m2.medium");
         return dh;
     }

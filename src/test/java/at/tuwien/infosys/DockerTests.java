@@ -108,7 +108,7 @@ public class DockerTests {
             containers = dcr.findByOperator("step1");
 
 
-            if (containers.size()>2) {
+            if (containers.size() > 2) {
                 continue;
             } else {
                 scaledownFinished = true;

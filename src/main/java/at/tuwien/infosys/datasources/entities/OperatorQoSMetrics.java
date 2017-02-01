@@ -12,7 +12,7 @@ import javax.persistence.Id;
 public class OperatorQoSMetrics {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
     private String name;
@@ -23,13 +23,12 @@ public class OperatorQoSMetrics {
     public OperatorQoSMetrics() {
     }
 
-	public OperatorQoSMetrics(String name, String timestamp,
-			double processedMessages, double receivedMessages) {
-		super();
-		this.name = name;
-		this.timestamp = timestamp;
-		this.processedMessages = processedMessages;
-		this.receivedMessages = receivedMessages;
-	}
+    public OperatorQoSMetrics(String name, String timestamp, double processedMessages, double receivedMessages) {
+        super();
+        this.name = name;
+        this.timestamp = timestamp;
+        this.processedMessages = processedMessages;
+        this.receivedMessages = receivedMessages;
+    }
 
 }

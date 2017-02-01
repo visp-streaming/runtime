@@ -13,7 +13,7 @@ public class PooledVM {
 
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private String poolname;
     private String name;

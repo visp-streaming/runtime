@@ -16,7 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-@TestPropertySource(locations="classpath:application.properties")
+@TestPropertySource(locations = "classpath:application.properties")
 
 
 public class SetupCleanup {
@@ -57,7 +57,7 @@ public class SetupCleanup {
     }
 
     private void initializeVMs(Integer amount, String ressourcePoolName) {
-        for (int i=0; i<amount; i++) {
+        for (int i = 0; i < amount; i++) {
             //TODO make the actual specifications parametizable and also consider single pools such as docker swarm
             DockerHost dh = new DockerHost("dockerhost");
             dh.setFlavour("m2.medium");

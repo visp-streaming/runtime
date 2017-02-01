@@ -40,7 +40,7 @@ public class ProcessingNodeManagement {
             DateTime now = new DateTime(DateTimeZone.UTC);
             LOG.info("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperator() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
-                    dcm.removeContainer(dc);
+                dcm.removeContainer(dc);
             }
         }
     }
@@ -49,7 +49,7 @@ public class ProcessingNodeManagement {
         try {
             dcm.startContainer(dh, dc, infrastructureHost);
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaleup", dh.getName()));
-        }  catch (InterruptedException | DockerException e) {
+        } catch (InterruptedException | DockerException e) {
             LOG.error("Could not start a docker container.", e);
         }
         LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
@@ -58,7 +58,7 @@ public class ProcessingNodeManagement {
     public void scaleDown(String operator) {
         List<DockerContainer> operators = dcr.findByOperator(operator);
 
-        if (operators.size()<2) {
+        if (operators.size() < 2) {
             return;
         }
 
@@ -72,7 +72,7 @@ public class ProcessingNodeManagement {
             }
 
             triggerShutdown(dc);
-                break;
+            break;
         }
     }
 

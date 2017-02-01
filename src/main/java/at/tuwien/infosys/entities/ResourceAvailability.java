@@ -4,7 +4,7 @@ import at.tuwien.infosys.datasources.entities.DockerHost;
 import lombok.Data;
 
 @Data
-public class ResourceAvailability implements Comparable<ResourceAvailability>{
+public class ResourceAvailability implements Comparable<ResourceAvailability> {
 
     private DockerHost host;
     private Integer amountOfContainer;
@@ -28,16 +28,16 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     public int compareTo(ResourceAvailability o) {
         return ResourceComparator.AMOUNTOFCONTAINERASC.compare(this, o);
     }
-    
+
     public ResourceAvailability clone() {
-    	ResourceAvailability ra = new ResourceAvailability();
-    	
-    	ra.host = this.host;
+        ResourceAvailability ra = new ResourceAvailability();
+
+        ra.host = this.host;
         ra.amountOfContainer = this.amountOfContainer;
         ra.cpuCores = this.cpuCores;
         ra.memory = this.memory;
         ra.storage = storage;
-        
+
         return ra;
     }
 }
