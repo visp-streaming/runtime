@@ -24,30 +24,30 @@ public class ResourceUsage {
     public void calculateUsageForPool(String resourcePoolName) {
 
         Double overallCores = 0.0;
-        Integer overallRam = 0;
+        Integer overallMemory = 0;
         Float overallStorage = 0.0F;
 
         Double plannedCoresUsage = 0.0;
-        Integer plannedRamUsage = 0;
+        Integer plannedMemoryUsage = 0;
         Float plannedStorageUsage = 0.0F;
 
         Double actualCoresUsage = 0.0;
-        Long actualRamUsage = 0L;
+        Long actualMemoryUsage = 0L;
         Float actualStorageUsage = 0.0F;
 
         for (PooledVM pooledVM : pvmr.findByPoolName(resourcePoolName)) {
             DockerHost dh = dhr.findFirstByName(pooledVM.getLinkedhost());
             overallCores+=dh.getCores();
-            overallRam+=dh.getRam();
+            overallMemory+=dh.getMemory();
             overallStorage+=dh.getStorage();
 
             for (DockerContainer dc : dcr.findByHost(dh.getName())) {
                 plannedCoresUsage+=dc.getCpuCores();
-                plannedRamUsage+=dc.getRam();
+                plannedMemoryUsage+=dc.getMemory();
                 plannedStorageUsage+=dc.getStorage();
 
                 actualCoresUsage+=dc.getCpuUsage();
-                actualRamUsage+= dc.getMemoryUsage();
+                actualMemoryUsage+= dc.getMemoryUsage();
             }
         }
 

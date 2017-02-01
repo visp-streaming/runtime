@@ -23,7 +23,7 @@ public class DockerContainer {
     private String operator;
     private String status;
     private Double cpuCores;
-    private Integer ram;
+    private Integer memory;
     private Integer storage;
 
     private String monitoringPort;
@@ -96,12 +96,12 @@ public class DockerContainer {
         this.cpuCores = cpuCores;
     }
 
-    public Integer getRam() {
-        return ram;
+    public Integer getMemory() {
+        return memory;
     }
 
-    public void setRam(Integer ram) {
-        this.ram = ram;
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 
     public Integer getStorage() {
@@ -169,10 +169,10 @@ public class DockerContainer {
         this.previousMemoryUsage = previousMemoryUsage;
     }
 
-    public DockerContainer(String operator, Double cpuCores, Integer ram, Integer storage) {
+    public DockerContainer(String operator, Double cpuCores, Integer memory, Integer storage) {
         this.operator = operator;
         this.cpuCores = cpuCores;
-        this.ram = ram;
+        this.memory = memory;
         this.storage = storage;
         this.status = "running";
         this.previousCpuUsage = 0;
@@ -195,7 +195,7 @@ public class DockerContainer {
                 ", status='" + status + '\'' +
                 ", terminationTime='" + terminationTime + '\'' +
                 ", cpuCores=" + cpuCores +
-                ", ram=" + ram +
+                ", memory=" + memory +
                 ", storage=" + storage +
                 '}';
     }

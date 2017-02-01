@@ -143,7 +143,7 @@ public class OpenstackConnector extends ResourceConnector {
         dh.setName(server.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);
-        dh.setRam(flavor.getRam());
+        dh.setMemory(flavor.getRam());
         //size in GB
         dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);

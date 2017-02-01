@@ -218,12 +218,12 @@ public class ReasonerPeerJ {
 
     private DockerHost selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
         LOG.info("###### select suitable container for: ######");
-        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getRam() + " - Storage: " + dc.getStorage());
+        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getMemory() + " - Storage: " + dc.getStorage());
         for (ResourceAvailability ra : freeResources) {
             if (ra.getCpuCores() <= dc.getCpuCores()) {
                 continue;
             }
-            if (ra.getRam() <= dc.getRam()) {
+            if (ra.getMemory() <= dc.getMemory()) {
                 continue;
             }
             if (ra.getStorage() <= dc.getStorage()) {

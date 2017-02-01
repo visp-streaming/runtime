@@ -16,7 +16,7 @@ public class PooledVM {
     private String name;
     private String url;
     private Double cores;
-    private Integer ram;
+    private Integer memory;
     private Float storage;
     private String flavour;
     private String linkedhost;
@@ -48,12 +48,12 @@ public class PooledVM {
         this.cores = cores;
     }
 
-    public Integer getRam() {
-        return ram;
+    public Integer getMemory() {
+        return memory;
     }
 
-    public void setRam(Integer ram) {
-        this.ram = ram;
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 
     public Float getStorage() {

@@ -5,17 +5,17 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     private DockerHost host;
     private Integer amountOfContainer;
     private Double cpuCores;
-    private Integer ram;
+    private Integer memory;
     private Float storage;
 
     public ResourceAvailability() {
     }
 
-    public ResourceAvailability(DockerHost host, Integer amountOfContainer, Double cpuCores, Integer ram, Float storage) {
+    public ResourceAvailability(DockerHost host, Integer amountOfContainer, Double cpuCores, Integer memory, Float storage) {
         this.host = host;
         this.amountOfContainer = amountOfContainer;
         this.cpuCores = cpuCores;
-        this.ram = ram;
+        this.memory = memory;
         this.storage = storage;
     }
 
@@ -43,12 +43,12 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
         this.cpuCores = cpuCores;
     }
 
-    public Integer getRam() {
-        return ram;
+    public Integer getMemory() {
+        return memory;
     }
 
-    public void setRam(Integer ram) {
-        this.ram = ram;
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 
     public Float getStorage() {
@@ -65,7 +65,7 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
                 "host=" + host.getName() +
                 ", amountOfContainer=" + amountOfContainer +
                 ", cpuCores=" + cpuCores +
-                ", ram=" + ram +
+                ", memory=" + memory +
                 ", storage=" + storage +
                 '}';
     }
@@ -81,7 +81,7 @@ public class ResourceAvailability implements Comparable<ResourceAvailability>{
     	ra.host = this.host;
         ra.amountOfContainer = new Integer(this.amountOfContainer);
         ra.cpuCores = new Double(this.cpuCores);
-        ra.ram = new Integer(this.ram);
+        ra.memory = new Integer(this.memory);
         ra.storage = new Float(storage);
         
         return ra;

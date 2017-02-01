@@ -20,7 +20,7 @@ public class DockerHost {
     private String resourceProvider;
     private String url;
     private Double cores;
-    private Integer ram;
+    private Integer memory;
     private Float storage;
     private Boolean scheduledForShutdown;
     private String flavour;
@@ -79,12 +79,12 @@ public class DockerHost {
         this.cores = cores;
     }
 
-    public Integer getRam() {
-        return ram;
+    public Integer getMemory() {
+        return memory;
     }
 
-    public void setRam(Integer ram) {
-        this.ram = ram;
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 
     public Float getStorage() {
@@ -163,7 +163,7 @@ public class DockerHost {
                 ", resourceProvider='" + resourceProvider + '\'' +
                 ", url='" + url + '\'' +
                 ", cores=" + cores +
-                ", ram=" + ram +
+                ", memory=" + memory +
                 ", storage=" + storage +
                 ", scheduledForShutdown=" + scheduledForShutdown +
                 ", flavour='" + flavour + '\'' +

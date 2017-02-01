@@ -78,7 +78,7 @@ public class DockerContainerManagement {
         Double vmCores = dh.getCores();
         Double containerCores = container.getCpuCores();
 
-        long containerRam = (long) container.getRam().doubleValue() * 1024 * 1024;
+        long containerMemory = (long) container.getMemory().doubleValue() * 1024 * 1024;
         long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
 
         /* Bind container port (processingNodeServerPort) to an available host port */
@@ -91,7 +91,7 @@ public class DockerContainerManagement {
         
         final HostConfig hostConfig = HostConfig.builder()
                 .cpuShares(cpuShares)
-                .memoryReservation(containerRam)
+                .memoryReservation(containerMemory)
                 .portBindings(portBindings)
                 .networkMode("bridge")
                 .build();

@@ -1,10 +1,10 @@
 package at.tuwien.infosys.reasoner.rl.internal;
 
-import java.util.List;
-
 import at.tuwien.infosys.entities.DockerContainer;
 import at.tuwien.infosys.entities.DockerHost;
 import at.tuwien.infosys.entities.ResourceAvailability;
+
+import java.util.List;
 
 public class LoadBalancingPlacementStrategy implements PlacementStrategy {
 
@@ -18,7 +18,7 @@ public class LoadBalancingPlacementStrategy implements PlacementStrategy {
             if (ra.getCpuCores() <= container.getCpuCores()) {
                 continue;
             }
-            if (ra.getRam() <= container.getRam()) {
+            if (ra.getMemory() <= container.getMemory()) {
                 continue;
             }
             if (ra.getStorage() <= container.getStorage()) {

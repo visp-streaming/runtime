@@ -63,7 +63,7 @@ public class ResourcePoolConnector extends ResourceConnector {
 
         dh.setResourceProvider(ressourcePoolName);
         dh.setCores(availableVM.getCores());
-        dh.setRam(availableVM.getRam());
+        dh.setMemory(availableVM.getMemory());
         dh.setStorage(availableVM.getStorage());
         dh.setScheduledForShutdown(false);
         dh.setUrl(availableVM.getUrl());
@@ -182,7 +182,7 @@ public class ResourcePoolConnector extends ResourceConnector {
             pvm.setName(ressourcePoolName + "-" + dh.getName());
             pvm.setUrl(dh.getUrl());
             pvm.setCores(dh.getCores());
-            pvm.setRam(dh.getRam());
+            pvm.setMemory(dh.getMemory());
             pvm.setStorage(dh.getStorage());
             pvm.setFlavour(dh.getFlavour());
             pvmr.save(pvm);
