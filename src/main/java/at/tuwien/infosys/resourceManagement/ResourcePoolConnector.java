@@ -39,9 +39,6 @@ public class ResourcePoolConnector extends ResourceConnector {
     private String ressourcePoolName;
 
     @Autowired
-    private OpenstackConnector opc;
-
-    @Autowired
     private ScalingActivityRepository sar;
 
     @Autowired
@@ -170,22 +167,5 @@ public class ResourcePoolConnector extends ResourceConnector {
     }
 
 
-    public void initializeVMs(Integer amount, String ressourcePoolName) {
-        this.ressourcePoolName = ressourcePoolName;
-        for (int i=0; i<amount; i++) {
-            //TODO make the actual specifications parametizable and also consider single pools such as docker swarm
-            DockerHost dh = new DockerHost("dockerhost");
-            dh.setFlavour("m2.medium");
 
-            dh = opc.startVM(dh);
-            PooledVM pvm = new PooledVM();
-            pvm.setName(ressourcePoolName + "-" + dh.getName());
-            pvm.setUrl(dh.getUrl());
-            pvm.setCores(dh.getCores());
-            pvm.setMemory(dh.getMemory());
-            pvm.setStorage(dh.getStorage());
-            pvm.setFlavour(dh.getFlavour());
-            pvmr.save(pvm);
-        }
-    }
 }

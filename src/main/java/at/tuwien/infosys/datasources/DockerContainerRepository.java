@@ -12,5 +12,4 @@ public interface DockerContainerRepository extends CrudRepository<DockerContaine
     List<DockerContainer> findByOperator(String operator);
     List<DockerContainer> findByHost(String host);
 
-
 }
