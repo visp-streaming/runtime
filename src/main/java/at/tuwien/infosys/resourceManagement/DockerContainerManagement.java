@@ -131,22 +131,44 @@ public class DockerContainerManagement {
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
+
         try {
-            docker.killContainer(dc.getContainerid());
-            docker.removeContainer(dc.getContainerid());
-        } catch (DockerException e) {
-            LOG.error("Could not kill the container", e);
-        } catch (InterruptedException e) {
+            int count = 0;
+            int maxTries = 5;
+            while(true) {
+                try {
+                    docker.killContainer(dc.getContainerid());
+                    break;
+                } catch (InterruptedException | DockerException e) {
+                    LOG.warn("Could not kill a docker container - trying again.", e);
+                    if (++count == maxTries) throw e;
+                }
+            }        } catch (DockerException | InterruptedException e) {
             LOG.error("Could not kill the container", e);
         }
-        
+
+        try {
+            int count = 0;
+            int maxTries = 5;
+            while(true) {
+                try {
+                    docker.removeContainer(dc.getContainerid());
+                    break;
+                } catch (InterruptedException | DockerException e) {
+                    LOG.warn("Could not remove a docker container - trying again.", e);
+                    if (++count == maxTries) throw e;
+                }
+            }
+        } catch (DockerException | InterruptedException e) {
+            LOG.error("Could not kill the container", e);
+        }
+
         /* Free monitoring port previously used by the docker container */
         String containerPort = dc.getMonitoringPort();
         List<String> usedPorts = dh.getUsedPorts();
         usedPorts.remove(containerPort);
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
-
 
         dcr.delete(dc);
 

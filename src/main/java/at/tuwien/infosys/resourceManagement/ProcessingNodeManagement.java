@@ -46,8 +46,19 @@ public class ProcessingNodeManagement {
     }
 
     public void scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
+
         try {
-            dcm.startContainer(dh, dc, infrastructureHost);
+            int count = 0;
+            int maxTries = 5;
+            while(true) {
+                try {
+                    dcm.startContainer(dh, dc, infrastructureHost);
+                    break;
+                } catch (InterruptedException | DockerException e) {
+                    LOG.warn("Could not start a docker container - trying again.", e);
+                    if (++count == maxTries) throw e;
+                }
+            }
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaleup", dh.getName()));
         } catch (InterruptedException | DockerException e) {
             LOG.error("Could not start a docker container.", e);
@@ -81,6 +92,7 @@ public class ProcessingNodeManagement {
         try {
             dcm.markContainerForRemoval(dc);
             dcm.executeCommand(dc, "cd ~ ; touch killme");
+
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaledown", dc.getHost()));
