@@ -39,6 +39,7 @@ import at.tuwien.infosys.datasources.entities.OperatorReplicationReport;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
+import at.tuwien.infosys.monitoring.Monitor;
 import at.tuwien.infosys.reasoner.ReasonerUtility;
 import at.tuwien.infosys.reasoner.rl.internal.ApplicationModelBuilder;
 import at.tuwien.infosys.reasoner.rl.internal.LeastLoadedHostFirstComparator;
@@ -50,6 +51,13 @@ import at.tuwien.infosys.reasoner.rl.internal.SortedList;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
+import reled.RLController;
+import reled.ReLEDParameters;
+import reled.learning.entity.Action;
+import reled.learning.entity.ActionAvailable;
+import reled.model.Application;
+import reled.model.ApplicationSLA;
+import reled.model.Operator;
 
 @Service
 public class CentralizedRLReasoner {
@@ -104,6 +112,9 @@ public class CentralizedRLReasoner {
     @Autowired
 	private OperatorModelBuilder operatorModelBuilder;
     
+    @Autowired
+    private Monitor rabbitMQMonitor;
+    
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
     
@@ -150,7 +161,10 @@ public class CentralizedRLReasoner {
 		
 		/* Create RL Controllers */
 		for (String operator : topologyManager.getOperatorsAsList()){
-			controller.put(operator, new RLController(params));
+
+			RLController ctr =  new RLController(params);
+			controller.put(operator, ctr);
+			
 		}
 		
 	}
@@ -195,7 +209,7 @@ public class CentralizedRLReasoner {
 
 			/* Report Operators Replication and Stats */
 			saveOperatorReplication();
-
+			
 			/* ************** DEBUG ************** */
 			if (DEBUG){
 				LOG.info(". Monitored Application: " + application.getApplicationId() + " respTime="+ application.getResponseTime());
@@ -219,9 +233,10 @@ public class CentralizedRLReasoner {
 				if (DEBUG)
 					LOG.info(". Operator: " + operatorName);
 				
-				/* Save RL information */
+				/* DEBUG: Save RL information */
 				saveQ(operatorName);
 				saveStateVisits(operatorName);
+				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureHost);
 				
 		    	/* Do not scale pinned or cooling-down operators */
 				if (!canReconfigure(operatorName))
@@ -597,6 +612,9 @@ public class CentralizedRLReasoner {
     	
     	RLController ctr = controller.get(operatorName);
     	
+    	if (ctr == null)
+    		return;
+    	
     	String state = ctr.qStateAsString();
     	
     	File f = new File("reporting/Qtable_" + operatorName);
@@ -620,6 +638,10 @@ public class CentralizedRLReasoner {
     private void saveStateVisits(String operatorName){
 		
 		RLController ctr = controller.get(operatorName);
+
+		if (ctr == null)
+    		return;
+    	
 		String state = ctr.stateVisitsAsString();
 		
 		File f = new File("reporting/Visits_" + operatorName);

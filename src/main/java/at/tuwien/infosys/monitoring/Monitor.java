@@ -68,6 +68,20 @@ public class Monitor {
 
         return upscalingDuration(operator, max);
     }
+    
+    
+    public void saveQueueCount(String operator, String infrastructureHost) {
+
+    	List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
+
+        for (String queue : queues) {
+        
+        	Integer queueCount = getQueueCount(queue, infrastructureHost);
+            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator, queue, queueCount));
+        
+        }
+
+    }
 
 
     private ScalingAction upscalingDuration(String operator, Integer maxQueue) {
@@ -138,6 +152,8 @@ public class Monitor {
         return ScalingAction.DONOTHING;
     }
 
+    
+    
     private Integer getQueueCount(final String name, String infrastructureHost) {
 
         CachingConnectionFactory connectionFactory = new CachingConnectionFactory(infrastructureHost);
