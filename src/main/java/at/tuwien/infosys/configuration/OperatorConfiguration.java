@@ -19,7 +19,7 @@ public class OperatorConfiguration {
 
     private String name;
     private Double cpuCores = 0.5;
-    private Integer memory = 400;
+    private Integer memory = 500;
     private Integer storage = 1;
     private Double incommingToOutgoingRatio = 0.5;
 

@@ -1,9 +1,10 @@
 package at.tuwien.infosys.monitoring;
 
+import at.tuwien.infosys.datasources.DockerContainerMonitorRepository;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
-import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.PooledVMRepository;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerContainerMonitor;
 import at.tuwien.infosys.datasources.entities.PooledVM;
 import at.tuwien.infosys.entities.ResourcePool;
 import at.tuwien.infosys.entities.ResourceTriple;
@@ -17,7 +18,7 @@ public class ResourceUsage {
     private PooledVMRepository pvmr;
 
     @Autowired
-    private DockerHostRepository dhr;
+    private DockerContainerMonitorRepository dcmr;
 
     @Autowired
     private DockerContainerRepository dcr;
@@ -35,12 +36,14 @@ public class ResourceUsage {
             overall.incrementStorage(pooledVM.getStorage());
 
             for (DockerContainer dc : dcr.findByHost(pooledVM.getLinkedhost())) {
+                DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
+
                 planned.incrementCores(dc.getCpuCores());
                 planned.incrementMemory(dc.getMemory());
                 planned.incrementStorage(Float.valueOf(dc.getStorage()));
 
-                actual.incrementCores(dc.getCpuUsage());
-                actual.incrementMemory((int) dc.getMemoryUsage());
+                actual.incrementCores((double) dcm.getCpuUsage());
+                actual.incrementMemory((int) dcm.getMemoryUsage());
                 planned.incrementStorage((float) -1);
             }
         }

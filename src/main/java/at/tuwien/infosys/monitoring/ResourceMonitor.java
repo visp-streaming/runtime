@@ -1,8 +1,10 @@
 package at.tuwien.infosys.monitoring;
 
+import at.tuwien.infosys.datasources.DockerContainerMonitorRepository;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerContainerMonitor;
 import at.tuwien.infosys.datasources.entities.DockerHost;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -31,6 +33,9 @@ public class ResourceMonitor {
     private DockerContainerRepository dcr;
 
     @Autowired
+    private DockerContainerMonitorRepository dcmr;
+
+    @Autowired
     private DockerHostRepository dhr;
 
     private static final String CONNECTION_PROTOCOL = "http://";
@@ -56,65 +61,56 @@ public class ResourceMonitor {
     }
 
 
-    /**
-     * This function changes the information within the docker container
-     * passed as argument.
-     *
-     * @param dockerHost
-     * @param container
-     * @return
-     */
-    private DockerContainer retrieveCpuUtilization(DockerHost dockerHost, DockerContainer container) {
-        String connectionUri = CONNECTION_PROTOCOL + dockerHost.getUrl() + CONNECTION_PORT;
+    private DockerContainer retrieveCpuUtilization(DockerHost dh, DockerContainer dc) {
+        String connectionUri = CONNECTION_PROTOCOL + dh.getUrl() + CONNECTION_PORT;
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
+        DockerContainerMonitor oldDcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
+        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperator());
+
         try {
-            stats = docker.stats(container.getContainerid());
+            stats = docker.stats(dc.getContainerid());
 
-            if (container.getPreviousSystemUsage() == 0 && container.getPreviousCpuUsage() == 0) {
+            if (oldDcm == null) {
 
-                LOG.debug("Container " + container.getContainerid() + " first computation of CPU Utilization");
+                LOG.debug("Container " + dc.getContainerid() + " first computation of CPU Utilization");
 
-                container.setPreviousCpuUsage(stats.cpuStats().cpuUsage().totalUsage());
-                container.setPreviousSystemUsage(stats.cpuStats().systemCpuUsage());
-                container.setCpuUsage(0);
-                container.setPreviousMemoryUsage(stats.memoryStats().usage());
-                container.setMemoryUsage(0);
+                dcm.setCpuUsage(stats.cpuStats().cpuUsage().totalUsage());
+                dcm.setSystemUsage(stats.cpuStats().systemCpuUsage());
+                dcm.setDerivedCpuUsage(0);
+                dcm.setMemoryUsage(stats.memoryStats().usage());
 
             } else {
 
 	            /* Calculate the change of container's usage in between readings */
                 long currentCpuUsage = stats.cpuStats().cpuUsage().totalUsage();
                 long currentSystemUsage = stats.cpuStats().systemCpuUsage();
-                long cpuDelta = currentCpuUsage - container.getPreviousCpuUsage();
-                long systemDelta = currentSystemUsage - container.getPreviousSystemUsage();
+                long cpuDelta = currentCpuUsage - oldDcm.getCpuUsage();
+                long systemDelta = currentSystemUsage - oldDcm.getSystemUsage();
 
 
                 if (systemDelta > 0 && cpuDelta > 0) {
                     /* This information should be scaled with respect to the CPU share */
-                    double allocatedCpuShares = container.getCpuCores() / dockerHost.getCores();
+                    double allocatedCpuShares = dc.getCpuCores() / dh.getCores();
 
                     double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares; // * 100.0;
 
-                    LOG.debug("Container " + container.getContainerid() + " CPU Utilization: "
+                    LOG.debug("Container " + dc.getContainerid() + " CPU Utilization: "
                             + cpuUsage + " (allocatedShares: " + allocatedCpuShares + ")");
 
-                    container.setCpuUsage(cpuUsage);
-                    container.setPreviousCpuUsage(currentCpuUsage);
-                    container.setPreviousSystemUsage(currentSystemUsage);
-
-                    container.setPreviousMemoryUsage(container.getPreviousMemoryUsage());
-                    container.setMemoryUsage(stats.memoryStats().usage());
-
+                    dcm.setDerivedCpuUsage(cpuUsage);
+                    dcm.setCpuUsage(currentCpuUsage);
+                    dcm.setSystemUsage(currentSystemUsage);
+                    dcm.setMemoryUsage(stats.memoryStats().usage());
                 }
-
             }
+            dcmr.save(dcm);
 
         } catch (DockerException | InterruptedException e) {
             LOG.error(e.getMessage());
         }
 
-        return container;
+        return dc;
     }
 }

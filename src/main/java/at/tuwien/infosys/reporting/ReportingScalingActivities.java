@@ -114,4 +114,6 @@ public class ReportingScalingActivities {
             LOG.error(e.getMessage());
         }
     }
+
+    //TODO collect container monitoring information
 }

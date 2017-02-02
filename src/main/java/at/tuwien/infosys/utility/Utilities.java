@@ -43,6 +43,9 @@ public class Utilities {
     private DockerHostRepository dhr;
 
     @Autowired
+    private DockerContainerMonitorRepository dcmr;
+
+    @Autowired
     private DockerContainerRepository dcr;
 
     @Autowired
@@ -104,6 +107,7 @@ public class Utilities {
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
+        dcmr.deleteAll();
 
         appMetRepos.deleteAll();
         opeMetRepos.deleteAll();

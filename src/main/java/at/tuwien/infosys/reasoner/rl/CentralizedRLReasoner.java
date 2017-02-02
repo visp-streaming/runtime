@@ -100,6 +100,9 @@ public class CentralizedRLReasoner {
     
     @Autowired
     private OperatorReplicationReportRepository operatorReplicationRepository;
+
+    @Autowired
+	private OperatorModelBuilder operatorModelBuilder;
     
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
@@ -542,7 +545,7 @@ public class CentralizedRLReasoner {
 	 		}
 	 	}
 	 	
-	 	return OperatorModelBuilder.create(operatorName, qosMetrics, containers);
+	 	return operatorModelBuilder.create(operatorName, qosMetrics, containers);
 	 	
 	 }
  	

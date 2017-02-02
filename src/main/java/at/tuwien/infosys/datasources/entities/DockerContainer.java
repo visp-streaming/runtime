@@ -27,27 +27,10 @@ public class DockerContainer {
     private Integer memory;
     private Integer storage;
 
-    private String monitoringPort;
-
-    /* Monitoring Information */
-    private double cpuUsage;
-    private long previousCpuUsage;
-    private long previousSystemUsage;
-
-    private long memoryUsage;
-    private long previousMemoryUsage;
-
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime terminationTime;
 
-    public DockerContainer() {
-        this.previousCpuUsage = 0;
-        this.previousSystemUsage = 0;
-        this.cpuUsage = 0.0;
-        this.memoryUsage = 0;
-        this.previousMemoryUsage = 0;
-        this.monitoringPort = "";
-    }
+    private String monitoringPort;
 
     public DockerContainer(String operator, Double cpuCores, Integer memory, Integer storage) {
         this.operator = operator;
@@ -55,11 +38,9 @@ public class DockerContainer {
         this.memory = memory;
         this.storage = storage;
         this.status = "running";
-        this.previousCpuUsage = 0;
-        this.previousSystemUsage = 0;
-        this.cpuUsage = 0.0;
-        this.memoryUsage = 0;
-        this.previousMemoryUsage = 0;
         this.monitoringPort = "";
+    }
+
+    public DockerContainer() {
     }
 }
