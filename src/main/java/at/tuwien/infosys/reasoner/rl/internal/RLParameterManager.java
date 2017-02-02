@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import reled.ReLEDParamConstants;
 import reled.ReLEDParameters;
+import reled.ReLEDParametersFactory;
 
 @Service
 public class RLParameterManager {
@@ -27,6 +28,12 @@ public class RLParameterManager {
     @Value("${reasoner.r-learning.epsilon}")
     private double rlEpsilon;
 
+    @Value("${reasoner.r-learning.eligibilitytraces}")
+    private boolean rlEligibility;
+
+    @Value("${reasoner.r-learning.eligibilitytraces.gamma}")
+    private double rlGamma;
+
     private ReLEDParameters params = null;
     
 //    @Value("${reasoner.r-learning.tao}")
@@ -41,17 +48,15 @@ public class RLParameterManager {
     	if (params != null)
     		return params;
     	
-    	params = new ReLEDParameters();
+    	params = ReLEDParametersFactory.createParameters();
 
     	params.set(ReLEDParamConstants.ALPHA, 	new Double(rlAlpha));
 		params.set(ReLEDParamConstants.LAMBDA, 	new Double(rlLambda));
 		params.set(ReLEDParamConstants.EPSILON, new Double(rlEpsilon));
+		
+		params.set(ReLEDParamConstants.USE_ELIGIBILITY_TRACES, new Boolean(rlEligibility));
+		params.set(ReLEDParamConstants.GAMMA, new Double(rlGamma));
     	
-//		params.set(ReLEDParamConstants.ALPHA, 	new Double(0.1));
-//		params.set(ReLEDParamConstants.LAMBDA, 	new Double(0.1));
-//		params.set(ReLEDParamConstants.EPSILON, new Double(0.1));
-//		params.set(ReLEDParamConstants.TAO, 	new Double(0.5));
-
 		return params;
 		
     }
