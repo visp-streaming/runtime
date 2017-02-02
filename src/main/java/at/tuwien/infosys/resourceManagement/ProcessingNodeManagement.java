@@ -45,7 +45,7 @@ public class ProcessingNodeManagement {
         }
     }
 
-    public void scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
+    public Boolean scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
 
         try {
             int count = 0;
@@ -62,8 +62,10 @@ public class ProcessingNodeManagement {
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaleup", dh.getName()));
         } catch (InterruptedException | DockerException e) {
             LOG.error("Could not start a docker container.", e);
+            return false;
         }
         LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
+        return true;
     }
 
     public void scaleDown(String operator) {

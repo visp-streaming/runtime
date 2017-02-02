@@ -122,16 +122,6 @@ public class ReasonerBasic {
 
         if (host == null) {
 
-            String scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
-            while (scaledownoperator != null) {
-                pcm.scaleDown(scaledownoperator);
-                host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
-                if (host != null) {
-                    break;
-                }
-                scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
-            }
-
             if (blackListedHost != null) {
                 return blackListedHost;
             }

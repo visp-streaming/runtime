@@ -145,9 +145,12 @@ public class ReasonerPeerJ {
                                 LOG.info("the host: " + dh.getName() + " was leased for another BTU");
                                 return;
                         } else {
-                            pcm.triggerShutdown(dc);
-                            pcm.scaleup(dc, selectSuitableDockerHost(dc, dh), infrastructureHost);
-                            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
+                            //Migrate container
+                            DockerContainer dcNew = opConfig.createDockerContainerConfiguration(dc.getOperator());
+                            if (pcm.scaleup(dcNew, selectSuitableDockerHost(dcNew, dh), infrastructureHost)) {
+                                pcm.triggerShutdown(dc);
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
+                            }
                         }
                     }
                     resourceProvider.get(RESOURCEPOOL).markHostForRemoval(dh);
@@ -181,7 +184,6 @@ public class ReasonerPeerJ {
         DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
         if (host == null) {
-
             String scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
             while (scaledownoperator != null) {
                 pcm.scaleDown(scaledownoperator);
