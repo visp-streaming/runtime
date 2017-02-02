@@ -2,25 +2,24 @@ package at.tuwien.infosys.configuration;
 
 
 import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.entities.ResourceTriple;
 import lombok.Data;
 import org.springframework.stereotype.Service;
 
 @Data
 @Service
-public class OperatorConfiguration {
+public class OperatorConfigurationBootstrap {
 
-    public OperatorConfiguration(String name) {
+    public OperatorConfigurationBootstrap(String name) {
         this.name = name;
     }
 
-
-    public OperatorConfiguration() {
+    public OperatorConfigurationBootstrap() {
     }
 
     private String name;
-    private Double cpuCores = 0.5;
-    private Integer memory = 500;
-    private Integer storage = 1;
+    private ResourceTriple expected = new ResourceTriple(0.5, 500,1F);
+
     private Double incommingToOutgoingRatio = 0.5;
 
     public String getImage(String operator) {
@@ -28,8 +27,7 @@ public class OperatorConfiguration {
     }
 
     public DockerContainer createDockerContainerConfiguration(String operator) {
-
-        return new DockerContainer(operator, cpuCores, memory, storage);
+        return new DockerContainer(operator, expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
     }
 
 }

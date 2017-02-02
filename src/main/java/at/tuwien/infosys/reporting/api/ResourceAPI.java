@@ -1,6 +1,5 @@
-package at.tuwien.infosys.monitoring.api;
+package at.tuwien.infosys.reporting.api;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.entities.ResourcePool;
 import at.tuwien.infosys.monitoring.ResourceUsage;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
@@ -31,15 +30,7 @@ public class ResourceAPI {
 
     @RequestMapping(value = {"/getLoad/{pool}"}, method = RequestMethod.GET)
     public ResourcePool getResourceAvailabilityForPool(@PathVariable String pool) {
+        //CPUstats = usage in % of the assigned shares (from actual resources)
         return resourceUsage.calculateUsageForPool(pool);
     }
-
-    @RequestMapping(value = {"/getOperatorConfiguration/{operator}"}, method = RequestMethod.GET)
-    public OperatorConfiguration getOperatorConfiguration(@PathVariable String operator) {
-
-        return new OperatorConfiguration(operator);
-
-        //TODO implement actual usage for Operators additionally to planned usage
-    }
-
 }

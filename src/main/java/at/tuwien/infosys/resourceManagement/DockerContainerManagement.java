@@ -1,7 +1,7 @@
 package at.tuwien.infosys.resourceManagement;
 
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
@@ -33,7 +33,7 @@ public class DockerContainerManagement {
     private TopologyManagement topologyManagement;
 
     @Autowired
-    private OperatorConfiguration operatorConfiguration;
+    private OperatorConfigurationBootstrap operatorConfigurationBootstrap;
 
     @Autowired
     private DockerContainerRepository dcr;
@@ -56,10 +56,10 @@ public class DockerContainerManagement {
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         /* Update the list of available docker images */
-        if (!dh.getAvailableImages().contains(operatorConfiguration.getImage(container.getOperator()))) {
-            docker.pull(operatorConfiguration.getImage(container.getOperator()));
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(container.getOperator()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(container.getOperator()));
             List<String> availableImages = dh.getAvailableImages();
-            availableImages.add(operatorConfiguration.getImage(container.getOperator()));
+            availableImages.add(operatorConfigurationBootstrap.getImage(container.getOperator()));
             dh.setAvailableImages(availableImages);
             dhr.save(dh);
         }
@@ -98,7 +98,7 @@ public class DockerContainerManagement {
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(operatorConfiguration.getImage(container.getOperator()))
+                .image(operatorConfigurationBootstrap.getImage(container.getOperator()))
                 .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
@@ -111,7 +111,7 @@ public class DockerContainerManagement {
         
         /* Save docker container information on repository */
         container.setContainerid(id);
-        container.setImage(operatorConfiguration.getImage(container.getOperator()));
+        container.setImage(operatorConfigurationBootstrap.getImage(container.getOperator()));
         container.setHost(dh.getName());
         container.setMonitoringPort(hostPort);
         container.setStatus("running");

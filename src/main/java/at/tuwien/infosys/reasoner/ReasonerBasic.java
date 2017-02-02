@@ -1,6 +1,6 @@
 package at.tuwien.infosys.reasoner;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
@@ -31,7 +31,7 @@ public class ReasonerBasic {
     private ResourceProvider resourceProvider;
 
     @Autowired
-    private OperatorConfiguration opConfig;
+    private OperatorConfigurationBootstrap opConfig;
 
     @Autowired
     private ProcessingNodeManagement pcm;

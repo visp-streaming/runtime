@@ -24,7 +24,7 @@ import reled.learning.entity.ActionAvailable;
 import reled.model.Application;
 import reled.model.ApplicationSLA;
 import reled.model.Operator;
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.datasources.ApplicationQoSMetricsRepository;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
@@ -66,7 +66,7 @@ public class CentralizedRLReasoner {
 	private TopologyManagement topologyManager;
 	
     @Autowired
-    private OperatorConfiguration operatorConfig;
+    private OperatorConfigurationBootstrap operatorConfig;
     
     @Autowired
     private ProcessingNodeManagement procNodeManager;

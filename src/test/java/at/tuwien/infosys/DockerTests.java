@@ -1,6 +1,6 @@
 package at.tuwien.infosys;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
 import at.tuwien.infosys.datasources.entities.DockerHost;
@@ -38,7 +38,7 @@ public class DockerTests {
     private ResourceConnector opm;
 
     @Autowired
-    private OperatorConfiguration opConf;
+    private OperatorConfigurationBootstrap opConf;
 
     @Autowired
     private Utilities utility;

@@ -50,12 +50,25 @@ public class ResourceUsage {
 
         actual.setMemory(actual.getMemory()/1024);
 
-        //TODO clarify the actual CPU usage
-
         rp.setActualResources(actual);
         rp.setOverallResources(overall);
         rp.setPlannedResources(planned);
 
+        //CPUstats = usage in % of the assigned shares (from actual resources)
+
         return rp;
     }
+
+    public ResourceTriple calculateActualUsageForOperator(String operator) {
+        ResourceTriple result = new ResourceTriple();
+        for (DockerContainerMonitor dcm : dcmr.findByOperator(operator)) {
+            result.incrementCores((double) dcm.getCpuUsage());
+            result.incrementMemory((int) dcm.getMemoryUsage());
+            result.incrementStorage(0F);
+        }
+        //CPUstats = usage in % of the assigned shares (from actual resources)
+        return result;
+    }
+
+
 }

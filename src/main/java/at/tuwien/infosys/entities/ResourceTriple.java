@@ -14,6 +14,12 @@ public class ResourceTriple {
         this.storage = 0.0F;
     }
 
+    public ResourceTriple(Double cores, Integer memory, Float storage) {
+        this.cores = cores;
+        this.memory = memory;
+        this.storage = storage;
+    }
+
     public void incrementCores(Double cores) {
         this.cores += cores;
     }

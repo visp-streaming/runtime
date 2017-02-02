@@ -1,6 +1,6 @@
 package at.tuwien.infosys.utility;
 
-import at.tuwien.infosys.configuration.OperatorConfiguration;
+import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.datasources.*;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
 import at.tuwien.infosys.datasources.entities.PooledVM;
@@ -37,7 +37,7 @@ public class Utilities {
     private TopologyParser parser;
 
     @Autowired
-    private OperatorConfiguration opConfig;
+    private OperatorConfigurationBootstrap opConfig;
 
     @Autowired
     private DockerHostRepository dhr;
