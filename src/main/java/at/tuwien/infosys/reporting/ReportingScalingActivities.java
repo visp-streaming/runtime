@@ -1,9 +1,8 @@
 package at.tuwien.infosys.reporting;
 
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import at.tuwien.infosys.entities.GraphData;
-import at.tuwien.infosys.entities.ScalingActivity;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import org.joda.time.DateTime;
@@ -98,8 +97,6 @@ public class ReportingScalingActivities {
             }
             Files.createFile(overalmetricsPath);
             Files.write(overalmetricsPath, ("TotalCost: " + totalVMCost).getBytes());
-        } catch (JsonProcessingException e) {
-            LOG.error(e.getMessage());
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
@@ -113,10 +110,10 @@ public class ReportingScalingActivities {
             }
             Files.createFile(path);
             Files.write(path, mapper.writer(schema).writeValueAsString(data).getBytes());
-        } catch (JsonProcessingException e) {
-            LOG.error(e.getMessage());
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
     }
+
+    //TODO collect container monitoring information
 }

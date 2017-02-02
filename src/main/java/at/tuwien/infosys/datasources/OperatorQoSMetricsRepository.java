@@ -1,11 +1,10 @@
 package at.tuwien.infosys.datasources;
 
 
-import java.util.List;
-
+import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
 import org.springframework.data.repository.CrudRepository;
 
-import at.tuwien.infosys.entities.OperatorQoSMetrics;
+import java.util.List;
 
 public interface OperatorQoSMetricsRepository extends CrudRepository<OperatorQoSMetrics, Long> {
 

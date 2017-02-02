@@ -1,7 +1,7 @@
 package at.tuwien.infosys.datasources;
 
 
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;

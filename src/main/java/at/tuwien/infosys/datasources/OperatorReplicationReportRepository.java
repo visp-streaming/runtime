@@ -1,11 +1,10 @@
 package at.tuwien.infosys.datasources;
 
 
-import java.util.List;
-
+import at.tuwien.infosys.datasources.entities.OperatorReplicationReport;
 import org.springframework.data.repository.CrudRepository;
 
-import at.tuwien.infosys.entities.OperatorReplicationReport;
+import java.util.List;
 
 public interface OperatorReplicationReportRepository extends CrudRepository<OperatorReplicationReport, Long> {
 

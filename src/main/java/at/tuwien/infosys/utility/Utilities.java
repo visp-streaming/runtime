@@ -2,14 +2,13 @@ package at.tuwien.infosys.utility;
 
 import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.*;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.PooledVM;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.PooledVM;
 import at.tuwien.infosys.entities.operators.Operator;
 import at.tuwien.infosys.reasoner.ReasonerBasic;
 import at.tuwien.infosys.reporting.ReportingScalingActivities;
 import at.tuwien.infosys.resourceManagement.ProcessingNodeManagement;
 import at.tuwien.infosys.resourceManagement.ResourcePoolConnector;
-import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import at.tuwien.infosys.topology.TopologyManagement;
 import at.tuwien.infosys.topology.TopologyParser;
 import org.slf4j.Logger;
@@ -32,19 +31,19 @@ public class Utilities {
     private TopologyManagement topologyMgmt;
 
     @Autowired
-    ProcessingNodeManagement processingNodeManagement;
+    private ProcessingNodeManagement processingNodeManagement;
 
     @Autowired
-    TopologyParser parser;
+    private TopologyParser parser;
 
     @Autowired
-    ResourceProvider resourceprovider;
-
-    @Autowired
-    OperatorConfiguration opConfig;
+    private OperatorConfiguration opConfig;
 
     @Autowired
     private DockerHostRepository dhr;
+
+    @Autowired
+    private DockerContainerMonitorRepository dcmr;
 
     @Autowired
     private DockerContainerRepository dcr;
@@ -54,15 +53,15 @@ public class Utilities {
 
     @Autowired
     private ProcessingDurationRepository pcr;
-    
+
     @Autowired
     private ApplicationQoSMetricsRepository appMetRepos;
-    
+
     @Autowired
     private OperatorQoSMetricsRepository opeMetRepos;
-    
+
     @Autowired
-    private OperatorReplicationReportRepository opeReplRepos;    
+    private OperatorReplicationReportRepository opeReplRepos;
 
     @Autowired
     private ScalingActivityRepository sar;
@@ -84,7 +83,7 @@ public class Utilities {
 
     @Autowired
     private ReasonerBasic basicReasoner;
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology(String infrastructureHost) {
@@ -101,13 +100,14 @@ public class Utilities {
     @PostConstruct
     public void createInitialStatus() {
 
-    	LOG.info("Deleting old configurations");
+        LOG.info("Deleting old configurations");
         parser.loadTopology("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
         qmr.deleteAll();
         pcr.deleteAll();
+        dcmr.deleteAll();
 
         appMetRepos.deleteAll();
         opeMetRepos.deleteAll();
@@ -131,7 +131,7 @@ public class Utilities {
     }
 
     private void resetPooledVMs() {
-        for(PooledVM vm : pvmr.findAll()) {
+        for (PooledVM vm : pvmr.findAll()) {
             if (dhr.findFirstByName(vm.getLinkedhost()) != null) {
                 rpc.stopDockerHost(dhr.findFirstByName(vm.getLinkedhost()));
             }

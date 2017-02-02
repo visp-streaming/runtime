@@ -1,21 +1,30 @@
 package at.tuwien.infosys.reasoner.rl.internal;
 
-import java.util.List;
-
+import at.tuwien.infosys.datasources.DockerContainerMonitorRepository;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerContainerMonitor;
+import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import reled.model.Operator;
 import reled.model.Resource;
 import reled.model.ResourcePool;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.OperatorQoSMetrics;
+
+import java.util.List;
 
 /**
  * OperatorModelBuilder create an operator model (instance of 
  * Operator) that is managed by the reinforcement learning 
  * reasoner
  */
+
+@Service
 public class OperatorModelBuilder {
 
-	public static Operator create(String operatorName, OperatorQoSMetrics qosMetrics, List<DockerContainer> containers){
+	@Autowired
+	private DockerContainerMonitorRepository dcmr;
+
+	public Operator create(String operatorName, OperatorQoSMetrics qosMetrics, List<DockerContainer> containers){
 
 		Operator operator = new Operator(operatorName);
 		
@@ -23,7 +32,14 @@ public class OperatorModelBuilder {
 		ResourcePool resourcePool = new ResourcePool();
 		if (!(containers == null || containers.isEmpty())){
 			for (DockerContainer container : containers){
-				Resource resource = new Resource(container.getContainerid(), container.getCpuUsage());
+				DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(container.getContainerid());
+				Resource resource;
+				if (dcm!=null) {
+					resource = new Resource(container.getContainerid(), dcm.getCpuUsage());
+				} else {
+					resource = new Resource(container.getContainerid(), 0.0);
+				}
+
 				resourcePool.addResource(resource);
 			}
 		}

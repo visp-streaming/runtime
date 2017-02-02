@@ -1,29 +1,25 @@
 package at.tuwien.infosys.monitoring;
 
-import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.QueueMonitorRepository;
-import at.tuwien.infosys.entities.ProcessingDuration;
-import at.tuwien.infosys.entities.QueueMonitor;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.QueueMonitor;
 import at.tuwien.infosys.entities.ScalingAction;
 import at.tuwien.infosys.resourceManagement.OpenstackConnector;
 import at.tuwien.infosys.topology.TopologyManagement;
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.TimeZone;
 
 @Service
 public class Monitor {
@@ -44,9 +40,6 @@ public class Monitor {
 
     @Autowired
     private ProcessingDurationRepository pcr;
-
-    @Autowired
-    private DockerContainerRepository dcr;
 
     @Autowired
     private QueueMonitorRepository qmr;
@@ -92,8 +85,7 @@ public class Monitor {
 
 
     private ScalingAction upscalingDuration(String operator, Integer maxQueue) {
-
-        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
+        List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
 
         if (pds.isEmpty()) {
             if (operator.contains("source")) {
@@ -104,7 +96,7 @@ public class Monitor {
         }
 
 
-            if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
+        if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -153,7 +145,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-            if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
+        if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
             return ScalingAction.SCALEUP;
         }
 
@@ -170,14 +162,9 @@ public class Monitor {
 
         RabbitAdmin admin = new RabbitAdmin(connectionFactory);
 
-
         Integer queueLoad = 0;
         try {
-            AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(new ChannelCallback<AMQP.Queue.DeclareOk>() {
-                public AMQP.Queue.DeclareOk doInRabbit(Channel channel) throws Exception {
-                    return channel.queueDeclarePassive(name);
-                }
-            });
+            AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(name));
             queueLoad = declareOk.getMessageCount();
             LOG.info("Current load for queue: " + name + " is " + queueLoad);
         } catch (Exception e) {

@@ -13,7 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@TestPropertySource(locations="classpath:application.properties")
+@TestPropertySource(locations = "classpath:application.properties")
 public class SimulateLoadOnQueues {
 
     @Autowired
@@ -46,7 +46,7 @@ public class SimulateLoadOnQueues {
         template.setRoutingKey(queue);
         template.setQueue(queue);
 
-        for (int i = 0; i<amount; i++) {
+        for (int i = 0; i < amount; i++) {
             template.convertAndSend(queue, queue, msg);
         }
 

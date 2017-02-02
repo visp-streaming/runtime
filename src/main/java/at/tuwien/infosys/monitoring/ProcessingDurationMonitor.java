@@ -2,9 +2,8 @@ package at.tuwien.infosys.monitoring;
 
 
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import entities.Message;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
@@ -24,7 +23,7 @@ public class ProcessingDurationMonitor {
     private ProcessingDurationRepository pcr;
 
 
-    @RabbitListener(queues =  "processingduration" )
+    @RabbitListener(queues = "processingduration")
     public void assign(Message message) throws InterruptedException {
         pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), message.getHeader(), Double.parseDouble(message.getPayload())));
     }

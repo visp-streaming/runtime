@@ -1,26 +1,24 @@
 package at.tuwien.infosys.topology;
 
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
-
+import at.tuwien.infosys.entities.operators.Operator;
+import at.tuwien.infosys.entities.operators.ProcessingOperator;
+import com.google.common.base.Joiner;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import at.tuwien.infosys.entities.operators.Operator;
-import at.tuwien.infosys.entities.operators.ProcessingOperator;
-
-import com.google.common.base.Joiner;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class TopologyManagement {
@@ -127,7 +125,7 @@ public class TopologyManagement {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
-                        incomingQueues.append(op.getName() + source.getName()).append("_");
+                        incomingQueues.append(op.getName()).append(source.getName()).append("_");
                     }
                 }
             }

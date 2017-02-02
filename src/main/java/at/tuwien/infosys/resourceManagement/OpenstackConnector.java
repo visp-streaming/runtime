@@ -3,14 +3,11 @@ package at.tuwien.infosys.resourceManagement;
 
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.HostConfig;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.internal.util.Base64;
 import org.joda.time.DateTime;
@@ -32,16 +29,13 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class OpenstackConnector implements ResourceConnector {
+public class OpenstackConnector extends ResourceConnector {
 
     @Value("${visp.dockerhost.image}")
     private String dockerhostImage;
 
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
-
-    @Value("${visp.entropyContainerName}")
-    private String entropyContainerName;
 
     @Value("${visp.openstack.publicip}")
     private Boolean PUBLICIPUSAGE;
@@ -57,15 +51,11 @@ public class OpenstackConnector implements ResourceConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
-    private String OPENSTACK_AUTH_URL;
-    private String OPENSTACK_USERNAME;
-    private String OPENSTACK_PASSWORD;
-    private String OPENSTACK_TENANT_NAME;
     private String OPENSTACK_KEYPAIR_NAME;
 
     private OSClient.OSClientV2 os;
 
-    public void setup() {
+    private void setup() {
 
         Properties prop = new Properties();
         try {
@@ -74,16 +64,16 @@ public class OpenstackConnector implements ResourceConnector {
             LOG.error("Could not load properties.", e);
         }
 
-        OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
-        OPENSTACK_USERNAME = prop.getProperty("os.username");
-        OPENSTACK_PASSWORD = prop.getProperty("os.password");
-        OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
+        String OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
+        String OPENSTACK_USERNAME = prop.getProperty("os.username");
+        String OPENSTACK_PASSWORD = prop.getProperty("os.password");
+        String OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
         OPENSTACK_KEYPAIR_NAME = prop.getProperty("os.keypair.name");
 
 
         os = OSFactory.builderV2()
                 .endpoint(OPENSTACK_AUTH_URL)
-                .credentials(OPENSTACK_USERNAME,OPENSTACK_PASSWORD)
+                .credentials(OPENSTACK_USERNAME, OPENSTACK_PASSWORD)
                 .tenantName(OPENSTACK_TENANT_NAME)
                 .authenticate();
 
@@ -126,11 +116,10 @@ public class OpenstackConnector implements ResourceConnector {
         String uri = server.getAccessIPv4();
 
         if (PUBLICIPUSAGE) {
-
             FloatingIP freeIP = null;
 
             for (FloatingIP ip : os.compute().floatingIps().list()) {
-                if (ip.getFixedIpAddress().isEmpty()) {
+                if (ip.getFixedIpAddress() == null) {
                     freeIP = ip;
                     break;
                 }
@@ -146,11 +135,11 @@ public class OpenstackConnector implements ResourceConnector {
             uri = freeIP.getFloatingIpAddress();
         }
 
-
+        dh.setResourceProvider("openstack");
         dh.setName(server.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);
-        dh.setRam(flavor.getRam());
+        dh.setMemory(flavor.getRam());
         //size in GB
         dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);
@@ -172,7 +161,7 @@ public class OpenstackConnector implements ResourceConnector {
                         build();
                 docker.ping();
                 connection = true;
-            }  catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 LOG.debug("Dockerhost is not available yet.");
             } catch (DockerException e) {
                 LOG.debug(e.getMessage());
@@ -182,40 +171,8 @@ public class OpenstackConnector implements ResourceConnector {
         dhr.save(dh);
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
-        //startupEntropyContainer(dh);
         return dh;
     }
-
-    private void startupEntropyContainer(DockerHost dh) {
-        final DockerClient docker = DefaultDockerClient.builder().
-                uri(URI.create("http://" + dh.getUrl() + ":2375")).
-                connectTimeoutMillis(3000000).
-                build();
-        try {
-            docker.pull(entropyContainerName);
-
-
-            final HostConfig expected = HostConfig.builder()
-                    .privileged(true)
-                    .build();
-
-            final ContainerConfig containerConfig = ContainerConfig.builder()
-                    .image(entropyContainerName)
-                    .hostConfig(expected)
-                    .build();
-
-            final ContainerCreation creation = docker.createContainer(containerConfig);
-            final String id = creation.id();
-
-            docker.startContainer(id);
-
-        } catch (DockerException e) {
-            LOG.error("Could not start container", e);
-        } catch (InterruptedException e) {
-            LOG.error("Could not start container", e);
-        }
-    }
-
 
     @Override
     public final void stopDockerHost(final DockerHost dh) {
@@ -230,25 +187,11 @@ public class OpenstackConnector implements ResourceConnector {
         }
     }
 
-
     @Override
     public void markHostForRemoval(DockerHost dh) {
         dh.setScheduledForShutdown(true);
         dh.setTerminationTime(new DateTime(DateTimeZone.UTC));
         dhr.save(dh);
-    }
-
-    @Override
-    public void removeHostsWhichAreFlaggedToShutdown() {
-        for (DockerHost dh : dhr.findAll()) {
-            if (dh.getScheduledForShutdown()) {
-                DateTime now = new DateTime(DateTimeZone.UTC);
-                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
-                    stopDockerHost(dh);
-                }
-            }
-        }
     }
 
 }

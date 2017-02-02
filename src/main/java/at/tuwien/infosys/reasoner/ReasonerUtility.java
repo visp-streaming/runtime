@@ -4,12 +4,13 @@ import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import at.tuwien.infosys.topology.TopologyManagement;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,7 @@ public class ReasonerUtility {
         ResourceAvailability all = new ResourceAvailability();
         all.setAmountOfContainer(0);
         all.setCpuCores(0.0);
-        all.setRam(0);
+        all.setMemory(0);
         all.setStorage(0.0F);
 
 
@@ -60,10 +61,10 @@ public class ReasonerUtility {
         for (ResourceAvailability ra : resources) {
             all.setAmountOfContainer(all.getAmountOfContainer() + ra.getAmountOfContainer());
             all.setCpuCores(all.getCpuCores() + ra.getCpuCores());
-            all.setRam(all.getRam() + ra.getRam());
+            all.setMemory(all.getMemory() + ra.getMemory());
             all.setStorage(all.getStorage() + ra.getStorage());
 
-            LOG.info(ra.getHost().getName() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getRam() + " - Storage: " + ra.getStorage());
+            LOG.info(ra.getHost().getName() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getMemory() + " - Storage: " + ra.getStorage());
         }
         LOG.info("###### free resources ######");
 
@@ -88,7 +89,7 @@ public class ReasonerUtility {
             ResourceAvailability rc = hostResourceUsage.get(dc.getHost());
             rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
             rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
-            rc.setRam(rc.getRam() + dc.getRam());
+            rc.setMemory(rc.getMemory() + dc.getMemory());
             rc.setStorage(rc.getStorage() + dc.getStorage());
             hostResourceUsage.put(dc.getHost(), rc);
         }
@@ -116,7 +117,7 @@ public class ReasonerUtility {
             availability.setHost(dh);
             availability.setAmountOfContainer(usage.getAmountOfContainer());
             availability.setCpuCores(dh.getCores() - usage.getCpuCores());
-            availability.setRam(dh.getRam() - usage.getRam());
+            availability.setMemory(dh.getMemory() - usage.getMemory());
             availability.setStorage(dh.getStorage() - usage.getStorage());
             freeResources.add(availability);
         }
@@ -134,16 +135,16 @@ public class ReasonerUtility {
         DockerHost selectedHost = null;
 
         for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost)) {
-            Double feasibilityThreshold = Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getRam() / dc.getRam());
+            Double feasibilityThreshold = Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory());
 
             if (feasibilityThreshold < 1) {
                 continue;
             }
 
-            Integer remainingMemory = ra.getRam() - dc.getRam();
+            Integer remainingMemory = ra.getMemory() - dc.getMemory();
             Double remainingCpuCores = ra.getCpuCores() - dc.getCpuCores();
 
-            Double difference = Math.abs((remainingMemory / ra.getHost().getRam()) - (remainingCpuCores / ra.getHost().getCores()));
+            Double difference = Math.abs((remainingMemory / ra.getHost().getMemory()) - (remainingCpuCores / ra.getHost().getCores()));
 
             Double suitablility = difference / feasibilityThreshold;
 
@@ -192,9 +193,6 @@ public class ReasonerUtility {
             return null;
         }
 
-        //Map<String, Integer> instancesValue = new HashMap<>();
-        //Map<String, Double> delayValues = new HashMap<>();
-        //Map<String, Long> scalingActions = new HashMap<>();
         Long totalScalingActions = scr.count();
         Double selectionValue = 0.0;
 
@@ -212,11 +210,20 @@ public class ReasonerUtility {
 
             Double avgDuration = 0.0;
             Integer counter = 0;
+            Boolean outdated = false;
             for (ProcessingDuration pd : pds) {
+                if (pd.getTime().isBefore(new DateTime().minusMinutes(2))) {
+                    outdated = true;
+                }
                 avgDuration += pd.getDuration();
                 counter++;
             }
             avgDuration = avgDuration / counter;
+
+            if (outdated) {
+                avgDuration = 1.0;
+            }
+
 
             //calculate delayfactor
             Integer expectedDuration = Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration"));
@@ -253,14 +260,14 @@ public class ReasonerUtility {
     
     public Map<DockerContainer, DockerHost> canRelocateHostedContainers(ResourceAvailability resource, List<ResourceAvailability> availableResources){
     	
-    	Map<DockerContainer, DockerHost> relocationMap = new HashMap<DockerContainer, DockerHost>();
+    	Map<DockerContainer, DockerHost> relocationMap = new HashMap<>();
     	boolean canRelocate = false;
     	
     	/* Retrieve containers to be relocated */
     	List<DockerContainer> containers = dcr.findByHost(resource.getHost().getName());
     	
     	/* Simulate container relocation */
-    	List<ResourceAvailability> resources = new ArrayList<ResourceAvailability>();
+    	List<ResourceAvailability> resources = new ArrayList<>();
     	for (ResourceAvailability ra : availableResources)
     		resources.add(ra.clone());
     	
@@ -279,14 +286,14 @@ public class ReasonerUtility {
     			
     			/* Check resources */
     			if ((otherResource.getCpuCores() - container.getCpuCores()) > 0 && 
-    				(otherResource.getRam() - container.getRam()) > 0 && 
+    				(otherResource.getMemory() - container.getMemory()) > 0 &&
     				(otherResource.getStorage() - container.getStorage()) > 0){
     				
         			/* Simulate relocation */
     				canRelocate = true;
     				resource.setAmountOfContainer(resource.getAmountOfContainer() + 1);
     				resource.setCpuCores(resource.getCpuCores() + container.getCpuCores());
-    				resource.setRam(resource.getRam() + container.getRam());
+    				resource.setMemory(resource.getMemory() + container.getMemory());
     				resource.setStorage(resource.getStorage() + container.getStorage());
     				
     				/* Save relocation on the relocation map */

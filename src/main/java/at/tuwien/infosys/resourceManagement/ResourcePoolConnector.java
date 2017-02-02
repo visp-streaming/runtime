@@ -1,12 +1,11 @@
 package at.tuwien.infosys.resourceManagement;
 
 
-import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.PooledVMRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.PooledVM;
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.PooledVM;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -26,10 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @Service
-public class ResourcePoolConnector implements ResourceConnector {
-
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
+public class ResourcePoolConnector extends ResourceConnector {
 
     @Value("${visp.simulated.startuptime}")
     private Integer startuptime;
@@ -40,30 +36,31 @@ public class ResourcePoolConnector implements ResourceConnector {
     @Value("${visp.computational.resources.cleanuppool}")
     private Boolean cleanupPool;
 
-    @Autowired
-    private OpenstackConnector opc;
+    private String ressourcePoolName;
 
     @Autowired
     private ScalingActivityRepository sar;
-
-    @Autowired
-    private DockerHostRepository dhr;
 
     @Autowired
     private PooledVMRepository pvmr;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
+    public void setRessourcePoolName(String ressourcePoolName) {
+        this.ressourcePoolName = ressourcePoolName;
+    }
+
     public DockerHost startVM(DockerHost dh) {
-        PooledVM availableVM = pvmr.findFirstByLinkedhostIsNull();
+        PooledVM availableVM = pvmr.findFirstByPoolnameAndLinkedhostIsNull(ressourcePoolName);
 
         if (availableVM == null) {
             LOG.error("There are too little VMs in the resourcePool.");
             throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
+        dh.setResourceProvider(ressourcePoolName);
         dh.setCores(availableVM.getCores());
-        dh.setRam(availableVM.getRam());
+        dh.setMemory(availableVM.getMemory());
         dh.setStorage(availableVM.getStorage());
         dh.setScheduledForShutdown(false);
         dh.setUrl(availableVM.getUrl());
@@ -99,27 +96,21 @@ public class ResourcePoolConnector implements ResourceConnector {
         List<Container> runningContainer = null;
         try {
             runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
-        } catch (DockerException e) {
-            LOG.error("containers cloud not be fetched ", e);
-        } catch (InterruptedException e) {
+        } catch (DockerException | InterruptedException e) {
             LOG.error("containers cloud not be fetched ", e);
         }
         for (Container container : runningContainer) {
-             try {
-             docker.killContainer(container.id());
-             } catch (DockerException e) {
-                 LOG.error("container " + container.id() + " could not be cleanedup", e);
-             } catch (InterruptedException e) {
-                 LOG.error("container " + container.id() + " could not be cleanedup", e);
-             }
-         }
+            try {
+                docker.killContainer(container.id());
+            } catch (DockerException | InterruptedException e) {
+                LOG.error("container " + container.id() + " could not be cleanedup", e);
+            }
+        }
 
         for (Container container : runningContainer) {
             try {
                 docker.removeContainer(container.id());
-            } catch (DockerException e) {
-                LOG.error("image " + container.id() + " could not be cleanedup", e);
-            } catch (InterruptedException e) {
+            } catch (DockerException | InterruptedException e) {
                 LOG.error("image " + container.id() + " could not be cleanedup", e);
             }
         }
@@ -131,9 +122,7 @@ public class ResourcePoolConnector implements ResourceConnector {
             try {
                 availableImages = docker.listImages(DockerClient.ListImagesParam.allImages());
                 danglingImages = docker.listImages(DockerClient.ListImagesParam.danglingImages());
-            } catch (DockerException e) {
-                LOG.error("Images could not be cleanedup", e);
-            } catch (InterruptedException e) {
+            } catch (DockerException | InterruptedException e) {
                 LOG.error("Images could not be cleanedup", e);
             }
 
@@ -143,7 +132,6 @@ public class ResourcePoolConnector implements ResourceConnector {
             for (Image img : danglingImages) {
                 deleteImage(docker, img);
             }
-
         }
 
         selectedVM.setLinkedhost(null);
@@ -157,9 +145,7 @@ public class ResourcePoolConnector implements ResourceConnector {
     private void deleteImage(DockerClient docker, Image img) {
         try {
             docker.removeImage(img.id().replace("sha256:", ""));
-        } catch (DockerException e) {
-            LOG.error("image " + img.id() + " could not be cleanedup");
-        } catch (InterruptedException e) {
+        } catch (DockerException | InterruptedException e) {
             LOG.error("image " + img.id() + " could not be cleanedup");
         }
     }
@@ -171,33 +157,4 @@ public class ResourcePoolConnector implements ResourceConnector {
     }
 
 
-    public void removeHostsWhichAreFlaggedToShutdown() {
-        for (DockerHost dh : dhr.findAll()) {
-            if (dh.getScheduledForShutdown()) {
-                DateTime now = new DateTime(DateTimeZone.UTC);
-                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
-                    stopDockerHost(dh);
-                }
-            }
-        }
-    }
-
-
-    public void initializeVMs(Integer amount) {
-        for (int i=0; i<amount; i++) {
-            DockerHost dh = new DockerHost("dockerhost");
-            dh.setFlavour("m2.medium");
-
-            dh = opc.startVM(dh);
-            PooledVM pvm = new PooledVM();
-            pvm.setName(dh.getName());
-            pvm.setUrl(dh.getUrl());
-            pvm.setCores(dh.getCores());
-            pvm.setRam(dh.getRam());
-            pvm.setStorage(dh.getStorage());
-            pvm.setFlavour(dh.getFlavour());
-            pvmr.save(pvm);
-        }
-    }
 }

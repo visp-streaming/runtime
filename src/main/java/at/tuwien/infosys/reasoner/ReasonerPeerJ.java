@@ -4,6 +4,9 @@ import at.tuwien.infosys.configuration.OperatorConfiguration;
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import at.tuwien.infosys.entities.*;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
@@ -19,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,16 +30,16 @@ import java.util.List;
 public class ReasonerPeerJ {
 
     @Autowired
-    TopologyManagement topologyMgmt;
+    private TopologyManagement topologyMgmt;
 
     @Autowired
-    ResourceProvider resourceProvider;
+    private ResourceProvider resourceProvider;
 
     @Autowired
-    OperatorConfiguration opConfig;
+    private OperatorConfiguration opConfig;
 
     @Autowired
-    ProcessingNodeManagement pcm;
+    private ProcessingNodeManagement pcm;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -69,6 +73,14 @@ public class ReasonerPeerJ {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
 
+    private String RESOURCEPOOL = "";
+
+    @PostConstruct
+    public void init() {
+        //get first resourcepool
+        RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+    }
+
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
@@ -79,7 +91,7 @@ public class ReasonerPeerJ {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
-        resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
+        resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
 
         LOG.info("VISP - Start Reasoner");
 
@@ -138,7 +150,7 @@ public class ReasonerPeerJ {
                             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                         }
                     }
-                    resourceProvider.get().markHostForRemoval(dh);
+                    resourceProvider.get(RESOURCEPOOL).markHostForRemoval(dh);
                 }
             }
         }
@@ -184,9 +196,10 @@ public class ReasonerPeerJ {
                 return blackListedHost;
             }
 
+            //TODO move this somewhere else - reasoner should not be in charge of deciding the size of the VM
             DockerHost dh = new DockerHost("additionaldockerhost");
             dh.setFlavour("m2.medium");
-            return resourceProvider.get().startVM(dh);
+            return resourceProvider.get(RESOURCEPOOL).startVM(dh);
         } else {
             return host;
         }
@@ -208,12 +221,12 @@ public class ReasonerPeerJ {
 
     private DockerHost selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
         LOG.info("###### select suitable container for: ######");
-        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getRam() + " - Storage: " + dc.getStorage());
+        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getMemory() + " - Storage: " + dc.getStorage());
         for (ResourceAvailability ra : freeResources) {
             if (ra.getCpuCores() <= dc.getCpuCores()) {
                 continue;
             }
-            if (ra.getRam() <= dc.getRam()) {
+            if (ra.getMemory() <= dc.getMemory()) {
                 continue;
             }
             if (ra.getStorage() <= dc.getStorage()) {

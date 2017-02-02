@@ -1,7 +1,7 @@
 package at.tuwien.infosys;
 
 
-import at.tuwien.infosys.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.DockerHost;
 import at.tuwien.infosys.resourceManagement.ResourceConnector;
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,7 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-@TestPropertySource(locations="classpath:application.properties")
+@TestPropertySource(locations = "classpath:application.properties")
 public class OpenstackTests {
 
     @Autowired

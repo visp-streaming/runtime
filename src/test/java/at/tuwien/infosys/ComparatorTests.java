@@ -2,8 +2,8 @@ package at.tuwien.infosys;
 
 import at.tuwien.infosys.datasources.DockerContainerRepository;
 import at.tuwien.infosys.datasources.ProcessingDurationRepository;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.ProcessingDuration;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.ProcessingDuration;
 import at.tuwien.infosys.entities.ResourceAvailability;
 import at.tuwien.infosys.entities.ResourceComparator;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -23,7 +23,7 @@ import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-@TestPropertySource(locations="classpath:application.properties")
+@TestPropertySource(locations = "classpath:application.properties")
 public class ComparatorTests {
 
     @Autowired
@@ -69,10 +69,9 @@ public class ComparatorTests {
     }
 
 
-
     @Test
     public void testRegression() {
-        double[][] data = { { 1, 3 }, {2, 5 }, {3, 7 }, {4, 14 }, {5, 11 }};
+        double[][] data = {{1, 3}, {2, 5}, {3, 7}, {4, 14}, {5, 11}};
         SimpleRegression regression = new SimpleRegression(false);
         regression.addData(data);
         System.out.println(regression.predict(6));
@@ -87,7 +86,7 @@ public class ComparatorTests {
         pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "aaa", -4.0));
         pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), "bbb", 1.0));
 
-        List <ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
+        List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc("aaa");
 
         Integer count = 4;
         double[][] data = new double[5][2];

@@ -24,13 +24,13 @@ import at.tuwien.infosys.datasources.DockerHostRepository;
 import at.tuwien.infosys.datasources.OperatorQoSMetricsRepository;
 import at.tuwien.infosys.datasources.OperatorReplicationReportRepository;
 import at.tuwien.infosys.datasources.ScalingActivityRepository;
-import at.tuwien.infosys.entities.ApplicationQoSMetrics;
-import at.tuwien.infosys.entities.DockerContainer;
-import at.tuwien.infosys.entities.DockerHost;
-import at.tuwien.infosys.entities.OperatorQoSMetrics;
-import at.tuwien.infosys.entities.OperatorReplicationReport;
+import at.tuwien.infosys.datasources.entities.ApplicationQoSMetrics;
+import at.tuwien.infosys.datasources.entities.DockerContainer;
+import at.tuwien.infosys.datasources.entities.DockerHost;
+import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
+import at.tuwien.infosys.datasources.entities.OperatorReplicationReport;
 import at.tuwien.infosys.entities.ResourceAvailability;
-import at.tuwien.infosys.entities.ScalingActivity;
+import at.tuwien.infosys.datasources.entities.ScalingActivity;
 import at.tuwien.infosys.monitoring.AvailabilityWatchdog;
 import at.tuwien.infosys.monitoring.Monitor;
 import at.tuwien.infosys.reasoner.ReasonerUtility;
@@ -101,6 +101,9 @@ public class CentralizedRLReasoner {
     
     @Autowired
     private OperatorReplicationReportRepository operatorReplicationRepository;
+
+    @Autowired
+	private OperatorModelBuilder operatorModelBuilder;
     
     @Autowired
     private Monitor rabbitMQMonitor;
@@ -124,11 +127,11 @@ public class CentralizedRLReasoner {
 	private Map<String, Integer> cooldownOperators;
 
 	private long MEASUREMENTS_EXPIRATION_INTERVAL = 5 * 60 * 1000;
-	
-	public CentralizedRLReasoner() {
-	}
-	
+
+	private String RESOURCEPOOL = "";
+
 	public void initialize(){
+		RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
 
 		/* Centralized Version of ReLED Controller */
 		controller = new HashMap<String, RLController>();
@@ -263,7 +266,7 @@ public class CentralizedRLReasoner {
 	private void terminateFlaggedContainersAndHosts(){
 		availabilityWatchdog.checkAvailablitiyOfContainer();
 		procNodeManager.removeContainerWhichAreFlaggedToShutdown();
-		resourceProvider.get().removeHostsWhichAreFlaggedToShutdown();
+		resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
 	}
 	
 	/**
@@ -406,7 +409,7 @@ public class CentralizedRLReasoner {
     	/* Start a new VM */
         if (candidateHost == null) {
         	candidateHost = resourceProvider.createContainerSkeleton(); 
-            return resourceProvider.get().startVM(candidateHost);
+            return resourceProvider.get(RESOURCEPOOL).startVM(candidateHost);
         } 
 
         return candidateHost;
@@ -468,7 +471,7 @@ public class CentralizedRLReasoner {
     	LOG.info(". Host " + hostToTurnOff.getName() + " marked for removal... ");
 		
     	/* Release resource */
-    	resourceProvider.get().markHostForRemoval(hostToTurnOff);
+    	resourceProvider.get(RESOURCEPOOL).markHostForRemoval(hostToTurnOff);
                 	
     }
 
@@ -550,7 +553,7 @@ public class CentralizedRLReasoner {
 	 		}
 	 	}
 	 	
-	 	return OperatorModelBuilder.create(operatorName, qosMetrics, containers);
+	 	return operatorModelBuilder.create(operatorName, qosMetrics, containers);
 	 	
 	 }
  	
