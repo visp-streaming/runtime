@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>at.tuwien.infosys</groupId>
-    <artifactId>visp</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <groupId>at.tuwien.infosys.visp</groupId>
+    <artifactId>runtime</artifactId>
+    <version>0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>visp</name>
@@ -168,8 +168,8 @@
         </dependency>
 
         <dependency>
-            <groupId>ac.at.tuwien.infosys</groupId>
-            <artifactId>vispCommonData</artifactId>
+            <groupId>ac.at.tuwien.infosys.visp</groupId>
+            <artifactId>common</artifactId>
             <version>0.1</version>
         </dependency>
 
@@ -195,7 +195,5 @@
             <url>http://dl.bintray.com/chochreiner/VISP</url>
         </repository>
     </repositories>
-
-
 
 </project>
