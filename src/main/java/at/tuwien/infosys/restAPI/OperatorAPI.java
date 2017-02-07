@@ -28,7 +28,7 @@ public class OperatorAPI {
 
         OperatorConfiguration op =  new OperatorConfiguration(operator);
         op.setPlannedResources(new OperatorConfigurationBootstrap(operator).getExpected());
-        op.setActualResources(resourceUsage.calculateActualUsageForOperator(operator));
+        op.setActualResources(resourceUsage.calculatelatestActualUsageForOperator(operator));
 
         //TODO add additional information from the topology
 

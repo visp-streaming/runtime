@@ -32,4 +32,11 @@ public class ResourceTriple {
         this.storage += storage;
     }
 
+
+    public void divideForMultipleRecordings(Integer counter) {
+        this.cores = cores / counter;
+        this.memory = memory / counter;
+        this.storage = storage / counter;
+    }
+
 }

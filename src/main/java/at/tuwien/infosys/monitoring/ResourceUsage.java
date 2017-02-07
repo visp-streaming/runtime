@@ -72,16 +72,32 @@ public class ResourceUsage {
         return rp;
     }
 
-    public ResourceTriple calculateActualUsageForOperator(String operator) {
+    public ResourceTriple calculatelatestActualUsageForOperator(String operator) {
         ResourceTriple result = new ResourceTriple();
-        for (DockerContainerMonitor dcm : dcmr.findByOperator(operator)) {
-            result.incrementCores((double) dcm.getCpuUsage());
-            result.incrementMemory((int) dcm.getMemoryUsage());
-            result.incrementStorage(0F);
-        }
+        DockerContainerMonitor dcm = dcmr.findFirstByOperatorOrderByTimestampDesc(operator);
+        result.setCores((double) dcm.getCpuUsage());
+        result.setMemory((int) dcm.getMemoryUsage());
+        result.setStorage(0F);
+
         //CPUstats = usage in % of the assigned shares (from actual resources)
         return result;
     }
 
+    public ResourceTriple calculateAverageUsageForOperator(String operator) {
+        ResourceTriple result = new ResourceTriple();
+        Integer counter = 0;
+
+        for (DockerContainerMonitor dcm : dcmr.findByOperator(operator)) {
+            result.incrementCores((double) dcm.getCpuUsage());
+            result.incrementMemory((int) dcm.getMemoryUsage());
+            result.incrementStorage(0F);
+            counter++;
+        }
+
+        //CPUstats = usage in % of the assigned shares (from actual resources)
+
+        result.divideForMultipleRecordings(counter);
+        return result;
+    }
 
 }
