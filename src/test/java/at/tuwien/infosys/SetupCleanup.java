@@ -70,6 +70,9 @@ public class SetupCleanup {
             pvm.setMemory(dh.getMemory());
             pvm.setStorage(dh.getStorage());
             pvm.setFlavour(dh.getFlavour());
+            //TODO configure
+            pvm.setCost(1.5);
+            pvm.setCpuFrequency(2400);
             pvmr.save(pvm);
         }
     }
