@@ -23,6 +23,12 @@ public class ResourceUsage {
     @Autowired
     private DockerContainerRepository dcr;
 
+
+    private Double cost;
+    private Integer cpuFrequency;
+    private Double availability;
+
+
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
@@ -31,6 +37,13 @@ public class ResourceUsage {
         ResourceTriple actual = new ResourceTriple();
 
         for (PooledVM pooledVM : pvmr.findByPoolname(resourcePoolName)) {
+            if (rp.getCost() == null) {
+                rp.setCost(pooledVM.getCost());
+            }
+            if (rp.getCpuFrequency() == null) {
+                rp.setCpuFrequency(pooledVM.getCpuFrequency());
+            }
+
             overall.incrementCores(pooledVM.getCores());
             overall.incrementMemory(pooledVM.getMemory());
             overall.incrementStorage(pooledVM.getStorage());

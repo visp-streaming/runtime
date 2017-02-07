@@ -10,9 +10,15 @@ public class ResourcePoolUsage {
     }
 
     private String name;
+    private Double cost;
+    private Integer cpuFrequency;
+    private Boolean availability;
 
     private ResourceTriple overallResources;
     private ResourceTriple plannedResources;
     private ResourceTriple actualResources;
 
+    public ResourcePoolUsage() {
+        this.availability = true;
+    }
 }
