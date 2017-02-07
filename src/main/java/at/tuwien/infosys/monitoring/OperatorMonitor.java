@@ -7,6 +7,8 @@ import at.tuwien.infosys.datasources.entities.DockerContainer;
 import at.tuwien.infosys.datasources.entities.DockerHost;
 import at.tuwien.infosys.datasources.entities.OperatorQoSMetrics;
 import entities.ProcessingNodeMetricsMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,7 +38,7 @@ public class OperatorMonitor {
     private DockerHostRepository dhr;
 
     @Autowired
-    private OperatorQoSMetricsRepository operatorRepository;
+    private OperatorQoSMetricsRepository operatorQosRepository;
 
     @Value("${visp.dataprovider.host}")
     private String dataProviderHost;
@@ -48,7 +50,7 @@ public class OperatorMonitor {
     private static final String CONNECTION_PROTOCOL = "http://";
     private static final String MONITOR_ENTRYPOINT = "/metrics";
 
-//    private static final Logger LOG = LoggerFactory.getLogger(ResourceMonitor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorMonitor.class);
 
     private long lastUpdate = 0;
 
@@ -71,8 +73,6 @@ public class OperatorMonitor {
 
             ProcessingNodeMetricsMessage message = null;
 
-            try {
-
                 DockerHost host = dhr.findFirstByName(container.getHost());
                 if (host == null)
                     continue;
@@ -81,10 +81,6 @@ public class OperatorMonitor {
                 String url = CONNECTION_PROTOCOL + hostUrl + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
                 RestTemplate restTemplate = new RestTemplate();
                 message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
-
-            } catch (Exception e) {
-
-            }
 
             if (message != null) {
                 stats.add(message);
@@ -152,7 +148,7 @@ public class OperatorMonitor {
                 msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) * 1000 / (double) delta;
             operator.setReceivedMessages(msgRecvPerUnitTime);
 
-            operatorRepository.save(operator);
+            operatorQosRepository.save(operator);
 
             allOperators.remove(operatorName);
         }
@@ -170,7 +166,7 @@ public class OperatorMonitor {
                 msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) * 1000 / (double) delta;
             operator.setReceivedMessages(msgRecvPerUnitTime);
 
-            operatorRepository.save(operator);
+            operatorQosRepository.save(operator);
 
         }
         lastUpdate = now;

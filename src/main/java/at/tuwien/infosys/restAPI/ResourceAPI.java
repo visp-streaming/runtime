@@ -1,6 +1,6 @@
-package at.tuwien.infosys.reporting.api;
+package at.tuwien.infosys.restAPI;
 
-import at.tuwien.infosys.entities.ResourcePool;
+import at.tuwien.infosys.entities.ResourcePoolUsage;
 import at.tuwien.infosys.monitoring.ResourceUsage;
 import at.tuwien.infosys.resourceManagement.ResourceProvider;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class ResourceAPI {
     }
 
     @RequestMapping(value = {"/getLoad/{pool}"}, method = RequestMethod.GET)
-    public ResourcePool getResourceAvailabilityForPool(@PathVariable String pool) {
+    public ResourcePoolUsage getResourceAvailabilityForPool(@PathVariable String pool) {
         //CPUstats = usage in % of the assigned shares (from actual resources)
         return resourceUsage.calculateUsageForPool(pool);
     }

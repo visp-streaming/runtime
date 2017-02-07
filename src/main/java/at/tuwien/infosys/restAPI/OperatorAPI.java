@@ -1,4 +1,4 @@
-package at.tuwien.infosys.reporting.api;
+package at.tuwien.infosys.restAPI;
 
 import at.tuwien.infosys.configuration.OperatorConfigurationBootstrap;
 import at.tuwien.infosys.entities.OperatorConfiguration;

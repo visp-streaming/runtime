@@ -34,7 +34,6 @@
         <!-- TODO: remove as soon as https://issues.apache.org/jira/browse/JCLOUDS-1160 is fixed -->
         <jadira.usertype.version>5.0.0.GA</jadira.usertype.version>
         <jackson.dataformat.cvs.version>2.7.0</jackson.dataformat.cvs.version>
-
     </properties>
 
     <dependencies>

@@ -6,7 +6,7 @@ import at.tuwien.infosys.datasources.PooledVMRepository;
 import at.tuwien.infosys.datasources.entities.DockerContainer;
 import at.tuwien.infosys.datasources.entities.DockerContainerMonitor;
 import at.tuwien.infosys.datasources.entities.PooledVM;
-import at.tuwien.infosys.entities.ResourcePool;
+import at.tuwien.infosys.entities.ResourcePoolUsage;
 import at.tuwien.infosys.entities.ResourceTriple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,9 +23,9 @@ public class ResourceUsage {
     @Autowired
     private DockerContainerRepository dcr;
 
-    public ResourcePool calculateUsageForPool(String resourcePoolName) {
+    public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
-        ResourcePool rp = new ResourcePool(resourcePoolName);
+        ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
         ResourceTriple overall = new ResourceTriple();
         ResourceTriple planned = new ResourceTriple();
         ResourceTriple actual = new ResourceTriple();
