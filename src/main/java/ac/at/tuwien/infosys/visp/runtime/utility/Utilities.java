@@ -69,6 +69,9 @@ public class Utilities {
     @Autowired
     private StringRedisTemplate template;
 
+    @Autowired
+    private ReportingCompressor compressor;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -128,6 +131,8 @@ public class Utilities {
     @PreDestroy
     public void exportData() {
         rsa.generateCSV();
+        compressor.zipIt();
+        compressor.cleanup();
     }
 
     private void resetPooledVMs() {
@@ -135,7 +140,6 @@ public class Utilities {
             if (dhr.findFirstByName(vm.getLinkedhost()) != null) {
                 rpc.stopDockerHost(dhr.findFirstByName(vm.getLinkedhost()));
             }
-
             vm.setLinkedhost(null);
             pvmr.save(vm);
         }

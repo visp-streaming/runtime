@@ -21,7 +21,6 @@ import java.util.List;
 @Service
 public class ReportingScalingActivities {
 
-
     @Autowired
     private ScalingActivityRepository sar;
 

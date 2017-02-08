@@ -1,17 +1,14 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner.rl;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
+import ac.at.tuwien.infosys.visp.runtime.datasources.*;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
+import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.*;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
@@ -21,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import reled.RLController;
 import reled.ReLEDParameters;
 import reled.learning.entity.Action;
@@ -29,28 +25,15 @@ import reled.learning.entity.ActionAvailable;
 import reled.model.Application;
 import reled.model.ApplicationSLA;
 import reled.model.Operator;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ApplicationQoSMetricsRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.OperatorQoSMetricsRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.OperatorReplicationReportRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ApplicationQoSMetrics;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.OperatorQoSMetrics;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.OperatorReplicationReport;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
-import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ApplicationModelBuilder;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LoadBalancingPlacementStrategy;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.OperatorModelBuilder;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.PlacementStrategy;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.RLParameterManager;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.SortedList;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class CentralizedRLReasoner {
@@ -393,7 +376,7 @@ public class CentralizedRLReasoner {
 	
 	/**
 	 * Determine the container placement (existing nodes or a new one) 
-	 * @param DockerContainer
+	 * @param container
 	 * @return DockerHost
 	 */
     private synchronized DockerHost determineContainerPlacement(DockerContainer container) {
@@ -610,7 +593,7 @@ public class CentralizedRLReasoner {
     	
     	String state = ctr.qStateAsString();
     	
-    	File f = new File("reporting/Qtable_" + operatorName);
+    	File f = new File("reporting/Qtable_" + operatorName + ".csv");
     	try {
     		if (!f.exists()) {
 				f.createNewFile();
@@ -637,7 +620,7 @@ public class CentralizedRLReasoner {
     	
 		String state = ctr.stateVisitsAsString();
 		
-		File f = new File("reporting/Visits_" + operatorName);
+		File f = new File("reporting/Visits_" + operatorName + ".csv");
 		try {
 			if (!f.exists()) {
 				f.createNewFile();
@@ -658,7 +641,7 @@ public class CentralizedRLReasoner {
 		
 		String output = System.currentTimeMillis() + ", " + reward + " \n";
 		
-		File f = new File("reporting/Reward_" + operatorName);
+		File f = new File("reporting/Reward_" + operatorName + ".csv");
 		try {
 			if (!f.exists()) {
 				f.createNewFile();
@@ -679,7 +662,7 @@ public class CentralizedRLReasoner {
 		
 		String output = System.currentTimeMillis() + ", " + actionCode + "\n";
 		
-		File f = new File("reporting/Action_" + operatorName);
+		File f = new File("reporting/Action_" + operatorName + ".csv");
 		try {
 			if (!f.exists()) {
 				f.createNewFile();
