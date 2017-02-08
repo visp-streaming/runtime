@@ -28,15 +28,41 @@ IEEE Internet Computing, Volume 19, Number 6, pages 54-59, 2015
 
 # Setup Requirements
 
+# run redis
+docker run -d --name redis -p 6379:6379 redis
+
+# run rabbitmq image
+docker run -d --hostname rabbitmq --name rabbitmq -e RABBITMQ_DEFAULT_USER=visp -e RABBITMQ_DEFAULT_PASS=visp -p 15672:15672 -p 5672:5672 rabbitmq:3-management 
+
+# run mysql image
+docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=visp -e MYSQL_DATABASE=visp -p 3306:3306 mysql
+
+
+
 ## Message Infrastructure
-Setup a RabbitMQ instance and set the URL from the RabbitMQ instance to *visp.infrastructurehost*  *spring.rabbitmq.host* in application.properties.
-Further create a user with the name *visp* and the password *visp*.
+Start a RabbitMQ instance:
+
+```
+docker run -d --hostname rabbitmq --name rabbitmq -e RABBITMQ_DEFAULT_USER=visp -e RABBITMQ_DEFAULT_PASS=visp -p 15672:15672 -p 5672:5672 rabbitmq:3-management 
+```
+
+Configure the properties: 
+```
+spring.rabbitmq.host = dockerhost where the docker command was executed
+```
 
 ## Shared Storage
-Setup a Redis instance on the same host as the Message Infrastructure.
+Start a Redis instance on the same host as the RabbitMQ:
+```
+docker run -d --name redis -p 6379:6379 redis
+```
 
 ## Data Backend
-Setup a Mysql database with username: *root*, password: *password* and a database: *visp* on the same machine as the VISP runtime
+Start a Mysql instance on the same host as the RabbitMQ:
+```
+docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=visp -e MYSQL_DATABASE=visp -p 3306:3306 mysql
+```
+
 
 ## Configure the Dockerhost image
 Set the id of an CoreOS image on an Openstack instance for the parameter *visp.dockerhost.image* in application.properties
