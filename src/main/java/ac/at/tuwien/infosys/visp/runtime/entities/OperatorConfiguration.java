@@ -7,9 +7,12 @@ public class OperatorConfiguration {
 
     public OperatorConfiguration(String name) {
         this.name = name;
+        //TODO make this dynamic
+        this.frequency = 2400;
     }
 
     private String name;
+    private Integer frequency;
 
     private ResourceTriple plannedResources;
     private ResourceTriple actualResources;

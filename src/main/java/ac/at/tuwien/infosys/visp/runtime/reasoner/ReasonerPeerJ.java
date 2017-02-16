@@ -103,6 +103,13 @@ public class ReasonerPeerJ {
         // Check whether any hosts reach the end of their BTU (within the last 5 % of their BTU)
         /////////////////////
 
+        /**
+         * TODO:
+         * - simulate downscaling
+         *   + check for minimal configuration for topology
+         *   + check if there are enough downscaling possibilities according to the utility fkt
+         *   + provide simulation for utility fkt to evaluate suitable values
+         */
 
         if (dhr.count() > 1) {
 

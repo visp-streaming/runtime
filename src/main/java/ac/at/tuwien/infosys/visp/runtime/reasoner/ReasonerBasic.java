@@ -3,15 +3,14 @@ package ac.at.tuwien.infosys.visp.runtime.reasoner;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,9 +61,6 @@ public class ReasonerBasic {
 
     @Value("${visp.reasoner}")
     private String reasoner;
-
-    @Autowired
-    private ScalingActivityRepository sar;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
