@@ -1,5 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
+import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
@@ -96,7 +97,7 @@ public class Monitor {
         }
 
 
-        if (pds.get(0).getDuration() * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
+        if (pds.get(0).getDuration() * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getExpectedDuration()) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -116,7 +117,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-        if (expectedDurationValue * relaxationfactor > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "expectedDuration"))) {
+        if (expectedDurationValue * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getExpectedDuration()) {
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
@@ -126,7 +127,7 @@ public class Monitor {
     }
 
     private ScalingAction upscalingQueue(String operator, Integer max) {
-        if (max > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
+        if (max > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getQueueThreshold()) {
             return ScalingAction.SCALEUP;
         }
 
@@ -145,7 +146,7 @@ public class Monitor {
 
         Double expectedDurationValue = regression.predict(6);
 
-        if (expectedDurationValue > Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(operator, "queueThreshold"))) {
+        if (expectedDurationValue > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getQueueThreshold()) {
             return ScalingAction.SCALEUP;
         }
 

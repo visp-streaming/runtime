@@ -1,5 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
@@ -226,7 +227,7 @@ public class ReasonerUtility {
 
 
             //calculate delayfactor
-            Integer expectedDuration = Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration"));
+            double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(entry.getKey())).getExpectedDuration();
             Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
             LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 

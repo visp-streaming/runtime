@@ -159,28 +159,9 @@ public class TopologyManagement {
         return operators;
     }
 
-    @Deprecated
-    public String getSpecificValueForProcessingOperator(String operator, String key) {
-        for (Operator op : parser.getTopology().values()) {
-            if (op instanceof ProcessingOperator) {
-                if (op.getName().equals(operator)) {
-                    ProcessingOperator pcOp = (ProcessingOperator) op;
-                    switch (key) {
-                        case "expectedDuration":
-                            return "" + (int) pcOp.getExpectedDuration(); // TODO please don't do that...
-                        case "queueThreshold":
-                            return "" + (int) pcOp.getQueueThreshold();
-                        default:
-                            throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
-                    }
-                }
-            }
-        }
-        LOG.error("value for key: " + key + " could not be found for operator: " + operator);
-        return "500";
+    public Operator getOperatorByIdentifier(String identifier) {
+        return parser.getTopology().get(identifier);
     }
-
-    
     
     public String getDownstreamOperators(String operator){
     
