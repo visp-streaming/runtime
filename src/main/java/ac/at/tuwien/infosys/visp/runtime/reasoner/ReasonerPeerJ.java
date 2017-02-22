@@ -1,27 +1,26 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceComparator;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -83,7 +82,7 @@ public class ReasonerPeerJ {
         RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
     }
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
         if (!reasoner.equals("peerj")) {

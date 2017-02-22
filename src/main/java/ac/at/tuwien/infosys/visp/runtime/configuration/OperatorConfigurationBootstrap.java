@@ -23,7 +23,7 @@ public class OperatorConfigurationBootstrap {
     private Double incommingToOutgoingRatio = 0.5;
 
     public String getImage(String operator) {
-        return "chochreiner/" + "vispprocessingnodes";
+        return "bknasmueller/" + "vispprocessingnodes";
     }
 
     public DockerContainer createDockerContainerConfiguration(String operator) {

@@ -1,16 +1,16 @@
 package ac.at.tuwien.infosys.visp.runtime.utility;
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.entities.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerBasic;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourcePoolConnector;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyParser;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
+import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +104,7 @@ public class Utilities {
     public void createInitialStatus() {
 
         LOG.info("Deleting old configurations");
-        parser.loadTopology("topologyConfiguration/" + topology + ".conf");
+        parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();

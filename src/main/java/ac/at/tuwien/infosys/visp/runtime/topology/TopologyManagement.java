@@ -1,8 +1,10 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
-import ac.at.tuwien.infosys.visp.runtime.entities.operators.Operator;
-import ac.at.tuwien.infosys.visp.runtime.entities.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
+import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import com.google.common.base.Joiner;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -37,6 +39,8 @@ public class TopologyManagement {
     public void createMapping(String infrastructureHost) {
         try {
 
+            // TODO: all these exchanges and queues must be created at the appropriate rabbitmq hosts
+
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(infrastructureHost);
             factory.setUsername(rabbitmqUsername);
@@ -67,7 +71,7 @@ public class TopologyManagement {
 
                 if (n.getSources()!=null) {
                     for (Operator source : n.getSources()) {
-                        String queueName = exchangeName + source.getName();
+                        String queueName = RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), exchangeName);
                         channel.queueDeclare(queueName, true, false, false, null);
                         channel.queueBind(queueName, source.getName(), source.getName());
                     }
@@ -125,7 +129,7 @@ public class TopologyManagement {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
-                        incomingQueues.append(op.getName()).append(source.getName()).append("_");
+                        incomingQueues.append(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName())).append("_");
                     }
                 }
             }
@@ -139,7 +143,7 @@ public class TopologyManagement {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
-                        incomingQueues.add(op.getName() + source.getName());
+                        incomingQueues.add(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName()));
                     }
                 }
             }
@@ -155,6 +159,7 @@ public class TopologyManagement {
         return operators;
     }
 
+    @Deprecated
     public String getSpecificValueForProcessingOperator(String operator, String key) {
         for (Operator op : parser.getTopology().values()) {
             if (op instanceof ProcessingOperator) {
@@ -162,9 +167,9 @@ public class TopologyManagement {
                     ProcessingOperator pcOp = (ProcessingOperator) op;
                     switch (key) {
                         case "expectedDuration":
-                            return pcOp.getExpectedDuration();
+                            return "" + (int) pcOp.getExpectedDuration(); // TODO please don't do that...
                         case "queueThreshold":
-                            return pcOp.getQueueThreshold();
+                            return "" + (int) pcOp.getQueueThreshold();
                         default:
                             throw new RuntimeException("value for key: " + key + " could not be found for operator: " + operator);
                     }

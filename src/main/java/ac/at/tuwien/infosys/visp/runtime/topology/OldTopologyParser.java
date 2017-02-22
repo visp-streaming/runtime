@@ -1,8 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
-import ac.at.tuwien.infosys.visp.runtime.entities.operators.*;
-import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
+import ac.at.tuwien.infosys.visp.common.operators.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,8 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
-public class TopologyParser {
+@Deprecated
+public class OldTopologyParser {
 
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
@@ -23,7 +23,7 @@ public class TopologyParser {
 
     private Map<String, Operator> topology = new LinkedHashMap<>();
 
-    private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OldTopologyParser.class);
 
     public Map<String, Operator> getTopology() {
         return topology;
@@ -49,6 +49,10 @@ public class TopologyParser {
     }
 
     private void enrichTopology() {
+        /**
+         * (My guess): transforms the sources string into an actual list of
+         * operators that is then set for each operator.
+         */
 
         for (Operator operator : topology.values()) {
             List<Operator> realOperators = new ArrayList<>();
@@ -58,7 +62,7 @@ public class TopologyParser {
             }
 
             operator.setSources(realOperators);
-            operator.setMessageBrokerHost(infrastructureHost); // TODO get rid of this during deployment
+            operator.setMessageBrokerHost(infrastructureHost); // TODO get rid of this during deployment. Momentan läuft nur 1 rabbitmq instance; ersetze durch IP im topology file
             topology.put(operator.getName(), operator);
         }
 
@@ -120,7 +124,9 @@ public class TopologyParser {
                     sink.setDestination(data[1].trim().replace("\"", ""));
                     break;
                 case "inputFormat":
-                    sink.setInputFormat(data[1].trim().replace("\"", ""));
+                    List<String> list = new ArrayList<>();
+                    list.add(data[1].trim().replace("\"", ""));
+                    sink.setInputFormat(list);
                     break;
                 case "type":
                     sink.setType(data[1].trim().replace("\"", ""));
@@ -154,11 +160,13 @@ public class TopologyParser {
                     source.setAllowedLocations(data[1].trim().replace("\"", ""));
                     break;
                 case "inputFormat":
-                    source.setInputFormat(data[1].trim().replace("\"", ""));
+                    List<String> list = new ArrayList<>();
+                    list.add(data[1].trim().replace("\"", ""));
+                    source.setInputFormat(list);
                     break;
-                case "mechanism":
-                    source.setMechanism(data[1].trim().replace("\"", ""));
-                    break;
+//                case "mechanism":
+//                    source.setMechanism(data[1].trim().replace("\"", ""));
+//                    break;
                 case "type":
                     source.setType(data[1].trim().replace("\"", ""));
                     break;
@@ -194,7 +202,9 @@ public class TopologyParser {
                     operator.setAllowedLocations(data[1].trim().replace("\"", ""));
                     break;
                 case "inputFormat":
-                    operator.setInputFormat(data[1].trim().replace("\"", ""));
+                    List<String> list = new ArrayList<>();
+                    list.add(data[1].trim().replace("\"", ""));
+                    operator.setInputFormat(list);
                     break;
                 case "type":
                     operator.setType(data[1].trim().replace("\"", ""));
@@ -203,24 +213,24 @@ public class TopologyParser {
                     operator.setOutputFormat(data[1].trim().replace("\"", ""));
                     break;
                 case "scalingThreshold":
-                    operator.setScalingThreshold(data[1].trim().replace("\"", ""));
+                    //operator.setScalingThreshold(data[1].trim().replace("\"", ""));
                     break;
-                case "expectedDuration":
-                    operator.setExpectedDuration(data[1].trim().replace("\"", ""));
-                    break;
-                case "queueThreshold":
-                    operator.setQueueThreshold(data[1].trim().replace("\"", ""));
-                    break;
+                //case "expectedDuration":
+                //    operator.setExpectedDuration(data[1].trim().replace("\"", ""));
+                //    break;
+                //case "queueThreshold":
+                //    operator.setQueueThreshold(data[1].trim().replace("\"", ""));
+                //    break;
             }
         }
 
-        if (operator.getExpectedDuration().isEmpty()) {
-            operator.setExpectedDuration("500");
-        }
+        //if (operator.getExpectedDuration().isEmpty()) {
+        //    operator.setExpectedDuration("500");
+        // }
 
-        if (operator.getQueueThreshold().isEmpty()) {
-            operator.setQueueThreshold("100");
-        }
+        //if (operator.getQueueThreshold().isEmpty()) {
+        //    operator.setQueueThreshold("100");
+        //}
 
         throw new RuntimeException("Could not parse topology due to syntaktic error");
     }
@@ -244,13 +254,15 @@ public class TopologyParser {
 
             switch (data[0].trim()) {
                 case "inputFormat":
-                    service.setInputFormat(data[1].trim().replace("\"", ""));
+                    List<String> list = new ArrayList<>();
+                    list.add(data[1].trim().replace("\"", ""));
+                    service.setInputFormat(list);
                     break;
                 case "type":
                     service.setType(data[1].trim().replace("\"", ""));
                     break;
-                case "location":
-                    service.setLocation(data[1].trim().replace("\"", ""));
+                case "concreteLocation":
+                    service.setConcreteLocation(data[1].trim().replace("\"", ""));
                     break;
                 case "outputFormat":
                     service.setOutputFormat(data[1].trim().replace("\"", ""));
