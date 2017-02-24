@@ -2,9 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
@@ -27,16 +25,10 @@ public class ManualOperatorManagement {
     private ProcessingNodeManagement pcm;
 
     @Autowired
-    private DockerHostRepository dhr;
-
-    @Autowired
     private ResourceUsage resourceUsage;
 
     @Autowired
     private ReasonerUtility reasonerUtility;
-
-    @Autowired
-    private ResourceProvider resourceProvider;
 
     @Value("${visp.reasoner}")
     private String reasoner;
@@ -57,25 +49,21 @@ public class ManualOperatorManagement {
 
 
                 switch (op.getSize()) {
-                    case SMALL:
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        break;
+                    case SMALL: pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op); break;
                     case MEDIUM:
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        break;
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op); break;
                     case LARGE:
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                         break;
-                    case UNKNOWN:
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
-                        break;
+                    case UNKNOWN: pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op); break;
                     default:
-                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                         break;
+
                 }
             }
         } catch (
@@ -108,20 +96,5 @@ public class ManualOperatorManagement {
         return true;
     }
 
-    private DockerHost selectSuitableDockerHost(Operator op) throws Exception {
-        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
-
-        for (DockerHost dh : dhr.findByResourcepool(op.getConcreteLocation().getResourcePool())) {
-            if (reasonerUtility.checkDeployment(dc, dh)) {
-                return dh;
-            }
-        }
-        DockerHost dh = resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
-        if (dh != null) {
-            return dh;
-        }
-
-        throw new Exception("not enough resources available");
-    }
 
 }

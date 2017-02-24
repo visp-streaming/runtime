@@ -20,7 +20,7 @@ import java.util.List;
 
 @RequestMapping("/vispconfiguration")
 @RestController
-public class VISPInstanceConfiguration {
+public class VISPInstanceConfigurationAPI {
 
     @Autowired
     private VISPConnectionRepository vcr;

@@ -158,6 +158,23 @@ public class TopologyManagement {
         return operators;
     }
 
+    public List<Operator> getOperators() {
+        List<Operator> operators = new ArrayList<>();
+        for (Operator op : parser.getTopology().values()) {
+            operators.add(op);
+        }
+        return operators;
+    }
+
+    public List<Operator> getOperatorsForAConcreteLocation(String location) {
+        List<Operator> operators = new ArrayList<>();
+        for (Operator op : parser.getTopology().values()) {
+            if (op.getConcreteLocation().getIpAddress().equals(location)) {
+                operators.add(op);
+            }
+        }
+        return operators;
+    }
 
     public Operator getOperatorByIdentifier(String identifier) {
         return parser.getTopology().get(identifier);

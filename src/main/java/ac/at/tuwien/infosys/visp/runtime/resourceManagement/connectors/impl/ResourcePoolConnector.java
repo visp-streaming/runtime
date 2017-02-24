@@ -104,7 +104,7 @@ public class ResourcePoolConnector extends ResourceConnector {
         try {
             runningContainer = docker.listContainers(DockerClient.ListContainersParam.allContainers());
         } catch (DockerException | InterruptedException e) {
-            LOG.error("containers cloud not be fetched ", e);
+            LOG.error("containers could not be fetched ", e);
         }
         for (Container container : runningContainer) {
             try {

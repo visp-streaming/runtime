@@ -1,16 +1,19 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +43,12 @@ public class ReasonerUtility {
 
     @Autowired
     private TopologyManagement topologyMgmt;
+
+    @Autowired
+    private OperatorConfigurationBootstrap opConfig;
+
+    @Autowired
+    private ResourceProvider resourceProvider;
 
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
@@ -353,6 +362,28 @@ public class ReasonerUtility {
     	return null;
     	
     }
+
+
+    /**
+     * simple selection mechanism to select the next best dockerhost for a current VISP instance considering all resources pools, which are assigne to this instance
+     *
+     */
+    public DockerHost selectSuitableDockerHost(Operator op) throws Exception {
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+
+        for (DockerHost dh : dhr.findByResourcepool(op.getConcreteLocation().getResourcePool())) {
+            if (checkDeployment(dc, dh)) {
+                return dh;
+            }
+        }
+        DockerHost dh =  resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
+        if (dh != null) {
+            return dh;
+        }
+
+        throw new Exception("not enough resources available");
+    }
+
 
 
 }
