@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -85,7 +84,7 @@ public class ReasonerPeerJ {
         RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
     }
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
         if (!reasoner.equals("peerj")) {

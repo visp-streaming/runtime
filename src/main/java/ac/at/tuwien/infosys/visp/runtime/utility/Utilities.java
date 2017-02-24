@@ -3,9 +3,8 @@ package ac.at.tuwien.infosys.visp.runtime.utility;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourcePoolProvider;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
@@ -29,9 +28,6 @@ public class Utilities {
 
     @Autowired
     private TopologyManagement topologyMgmt;
-
-    @Autowired
-    private ProcessingNodeManagement processingNodeManagement;
 
     @Autowired
     private TopologyParser parser;
@@ -82,7 +78,7 @@ public class Utilities {
     private ResourcePoolConnector rpc;
 
     @Autowired
-    private ResourcePoolProvider rpp;
+    private ManualOperatorManagement rpp;
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
@@ -97,8 +93,6 @@ public class Utilities {
 
     @PostConstruct
     public void createInitialStatus() {
-
-
         LOG.info("Deleting old configurations");
         parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();

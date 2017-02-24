@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class ResourcePoolProvider {
+public class ManualOperatorManagement {
 
     @Autowired
     private OperatorConfigurationBootstrap opConfig;
@@ -41,8 +41,7 @@ public class ResourcePoolProvider {
     @Value("${visp.reasoner}")
     private String reasoner;
 
-    private static final Logger LOG = LoggerFactory.getLogger(ResourcePoolProvider.class);
-
+    private static final Logger LOG = LoggerFactory.getLogger(ManualOperatorManagement.class);
 
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
@@ -102,7 +101,7 @@ public class ResourcePoolProvider {
             }
         }
         DockerHost dh =  resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
-        if (dh!=null) {
+        if (dh != null) {
             return dh;
         }
 
