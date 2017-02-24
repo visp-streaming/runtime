@@ -51,24 +51,40 @@ public class ManualOperatorManagement {
     public synchronized void addOperator(Operator op) {
 
         try {
-            if (op.getSize()!= null) {
+            if (op.getSize() == null) {
+                pcm.scaleup(selectSuitableDockerHost(op), op);
+            } else {
+
+
                 switch (op.getSize()) {
-                    case SMALL: pcm.scaleup(selectSuitableDockerHost(op), op); break;
+                    case SMALL:
+                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        break;
                     case MEDIUM:
                         pcm.scaleup(selectSuitableDockerHost(op), op);
-                        pcm.scaleup(selectSuitableDockerHost(op), op); break;
+                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        break;
                     case LARGE:
                         pcm.scaleup(selectSuitableDockerHost(op), op);
                         pcm.scaleup(selectSuitableDockerHost(op), op);
                         pcm.scaleup(selectSuitableDockerHost(op), op);
                         pcm.scaleup(selectSuitableDockerHost(op), op);
                         break;
-                    case UNKNOWN: pcm.scaleup(selectSuitableDockerHost(op), op); break;
+                    case UNKNOWN:
+                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        break;
+                    default:
+                        pcm.scaleup(selectSuitableDockerHost(op), op);
+                        break;
                 }
             }
-        } catch (Exception e) {
+        } catch (
+                Exception e)
+
+        {
             LOG.error(e.getLocalizedMessage());
         }
+
     }
 
     public synchronized void removeOperators(Operator op) {
@@ -100,7 +116,7 @@ public class ManualOperatorManagement {
                 return dh;
             }
         }
-        DockerHost dh =  resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
+        DockerHost dh = resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
         if (dh != null) {
             return dh;
         }
