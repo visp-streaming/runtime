@@ -18,6 +18,8 @@ public class OperatorConfigurationBootstrap {
     }
 
     private String name;
+
+    //TODO replace this with actual resource usage and this should be only a fallback
     private ResourceTriple expected = new ResourceTriple(0.5, 500,1F);
 
     private Double incommingToOutgoingRatio = 0.5;

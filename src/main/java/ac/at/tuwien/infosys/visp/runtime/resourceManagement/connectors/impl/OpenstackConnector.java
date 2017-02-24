@@ -1,10 +1,11 @@
-package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
+package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -135,7 +136,7 @@ public class OpenstackConnector extends ResourceConnector {
             uri = freeIP.getFloatingIpAddress();
         }
 
-        dh.setResourceProvider("openstack");
+        dh.setResourcepool("openstack");
         dh.setName(server.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);

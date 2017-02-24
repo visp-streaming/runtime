@@ -4,7 +4,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.OpenstackConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,6 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
@@ -32,6 +34,9 @@ public class ProcessingNodeManagement {
     @Autowired
     private ScalingActivityRepository sar;
 
+    @Autowired
+    private DockerHostRepository dhr;
+
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
 
@@ -45,8 +50,30 @@ public class ProcessingNodeManagement {
         }
     }
 
-    public Boolean scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
+    public Boolean scaleup(DockerHost dh, Operator op) {
+        try {
+            int count = 0;
+            int maxTries = 5;
+            while(true) {
+                try {
+                    dcm.startContainer(dh, op);
+                    break;
+                } catch (InterruptedException | DockerException e) {
+                    LOG.warn("Could not start a docker container - trying again.", e);
+                    if (++count == maxTries) throw e;
+                }
+            }
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), op.getType(), "scaleup", dh.getName()));
+        } catch (InterruptedException | DockerException e) {
+            LOG.error("Could not start a docker container.", e);
+            return false;
+        }
+        LOG.info("VISP - Scale UP " + op.getType() + " on host " + dh.getName());
+        return true;
+    }
 
+    @Deprecated
+    public Boolean scaleup(DockerContainer dc, DockerHost dh, String infrastructureHost) {
         try {
             int count = 0;
             int maxTries = 5;
@@ -66,6 +93,24 @@ public class ProcessingNodeManagement {
         }
         LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
         return true;
+    }
+
+    public void removeAll(Operator operator) {
+        List<DockerContainer> dcs = dcr.findByOperator(operator.getName());
+
+        for (DockerContainer dc : dcs) {
+            if (dhr.findFirstByName(dc.getHost()).getResourcepool().equals(operator.getConcreteLocation().getResourcePool())) {
+                if (dc.getStatus() == null) {
+                    dc.setStatus("running");
+                }
+
+                if (dc.getStatus().equals("stopping")) {
+                    continue;
+                }
+
+                triggerShutdown(dc);
+            }
+        }
     }
 
     public void scaleDown(String operator) {

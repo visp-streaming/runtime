@@ -4,7 +4,7 @@ import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.OpenstackConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;

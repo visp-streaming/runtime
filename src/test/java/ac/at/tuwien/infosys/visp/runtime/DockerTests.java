@@ -6,7 +6,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.Before;
@@ -70,7 +70,7 @@ public class DockerTests {
     @Ignore
     @Test
     public void initializeTopology() throws DockerException, InterruptedException {
-        utility.initializeTopology("128.130.172.225");
+        utility.initializeTopology();
     }
 
 

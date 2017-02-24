@@ -50,6 +50,8 @@ public class ReasonerUtility {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerUtility.class);
 
+    //TODO combine with resource monitor
+
     public ResourceAvailability calculateFreeresources(List<ResourceAvailability> resources) {
         ResourceAvailability all = new ResourceAvailability();
         all.setAmountOfContainer(0);
@@ -71,6 +73,39 @@ public class ReasonerUtility {
 
         return all;
     }
+
+    public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
+        ResourceAvailability ra = calculateFreeResourcesforHost(dh);
+
+        if (Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1) {
+            return false;
+        }
+        return true;
+    }
+
+
+
+    public ResourceAvailability calculateFreeResourcesforHost(DockerHost dh) {
+
+        ResourceAvailability rc = new ResourceAvailability(dh, 0, 0.0, 0, 0.0F);
+
+        for (DockerContainer dc : dcr.findAll()) {
+            rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
+            rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
+            rc.setMemory(rc.getMemory() + dc.getMemory());
+            rc.setStorage(rc.getStorage() + dc.getStorage());
+        }
+
+        ResourceAvailability availability = new ResourceAvailability();
+        availability.setHost(dh);
+        availability.setAmountOfContainer(rc.getAmountOfContainer());
+        availability.setCpuCores(dh.getCores() - rc.getCpuCores());
+        availability.setMemory(dh.getMemory() - rc.getMemory());
+        availability.setStorage(dh.getStorage() - rc.getStorage());
+
+        return availability;
+    }
+
 
     public List<ResourceAvailability> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
         Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
@@ -164,6 +199,7 @@ public class ReasonerUtility {
         LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") finished with host (" + selectedHost +"). ####");
         return selectedHost;
     }
+
 
 
     public String selectOperatorTobeScaledDown() {

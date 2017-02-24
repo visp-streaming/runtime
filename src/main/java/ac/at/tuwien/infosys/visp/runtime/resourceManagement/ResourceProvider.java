@@ -1,11 +1,16 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,21 +18,27 @@ import java.util.Map;
 public class ResourceProvider {
 
     @Autowired
+    protected PooledVMRepository pvmr;
+
+    @Autowired
     protected OpenstackConnector openstackConnector;
 
     @Autowired
     protected ResourcePoolConnector resourcePoolConnector;
 
+    @Value("${visp.computational.resources.openstack}")
+    private Boolean openstackUsage;
+
     private Map<String, String> resourceProviders = new HashMap<>();
 
-    @Autowired
-    public ResourceProvider(@Value("${visp.computational.resources.openstack}") Boolean openstackUsage, @Value("${visp.computational.resources.pools}") String pools) {
+    @PostConstruct
+    public void init() {
 
         if (openstackUsage) {
             resourceProviders.put("openstack", "openstack");
         }
 
-        for (String pool : pools.split(",")) {
+        for (String pool : pvmr.findDistinctPoolnames()) {
             resourceProviders.put(pool, "pool");
         }
     }

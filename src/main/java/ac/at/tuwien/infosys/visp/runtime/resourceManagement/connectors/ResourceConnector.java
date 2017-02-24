@@ -1,7 +1,8 @@
-package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
+package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors;
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;

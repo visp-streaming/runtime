@@ -1,20 +1,19 @@
 package ac.at.tuwien.infosys.visp.runtime.utility;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
-import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerBasic;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourcePoolProvider;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourcePoolConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +21,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Service
+@DependsOn("resourceProvider")
 public class Utilities {
 
     @Autowired
@@ -35,9 +35,6 @@ public class Utilities {
 
     @Autowired
     private TopologyParser parser;
-
-    @Autowired
-    private OperatorConfigurationBootstrap opConfig;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -85,23 +82,22 @@ public class Utilities {
     private ResourcePoolConnector rpc;
 
     @Autowired
-    private ReasonerBasic basicReasoner;
+    private ResourcePoolProvider rpp;
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-    public void initializeTopology(String infrastructureHost) {
+    public void initializeTopology() {
         for (Operator op : parser.getTopology().values()) {
             if (op.getName().contains("source")) {
                 continue;
             }
-            DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
-
-            processingNodeManagement.scaleup(dc, basicReasoner.selectSuitableDockerHost(dc, null), infrastructureHost);
+            rpp.addOperator(op);
         }
     }
 
     @PostConstruct
     public void createInitialStatus() {
+
 
         LOG.info("Deleting old configurations");
         parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
@@ -125,7 +121,7 @@ public class Utilities {
         LOG.info("Cleanup Completed");
 
         topologyMgmt.createMapping(infrastructureHost);
-        initializeTopology(infrastructureHost);
+        initializeTopology();
     }
 
     @PreDestroy

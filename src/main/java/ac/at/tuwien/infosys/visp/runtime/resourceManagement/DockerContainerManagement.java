@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -41,6 +42,9 @@ public class DockerContainerManagement {
     @Autowired
     private DockerHostRepository dhr;
 
+    @Autowired
+    private OperatorConfigurationBootstrap opConfig;
+
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
 
@@ -50,7 +54,90 @@ public class DockerContainerManagement {
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
+    public void startContainer(DockerHost dh, Operator op) throws DockerException, InterruptedException {
+        /* Connect to docker server of the host */
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+
+        /* Update the list of available docker images */
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(dc.getOperator()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+            List<String> availableImages = dh.getAvailableImages();
+            availableImages.add(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+            dh.setAvailableImages(availableImages);
+            dhr.save(dh);
+        }
+
+        /* Configure environment variables */
+        List<String> environmentVariables = new ArrayList<>();
+        environmentVariables.add("SPRING_RABBITMQ_HOST=" + op.getMessageBrokerHost());
+        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + op.getMessageBrokerHost());
+        environmentVariables.add("SPRING_REDIS_HOST=" + op.getMessageBrokerHost());
+        environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
+        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
+        environmentVariables.add("ROLE=" + op.getType());
+        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(op.getName()));
+
+        //TODO set correct environment variables - especially for hosts
+
+
+        /* Configure docker container */
+        Double vmCores = dh.getCores();
+        Double containerCores = dc.getCpuCores();
+
+        long containerMemory = (long) dc.getMemory().doubleValue() * 1024 * 1024;
+        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
+
+        /* Bind container port (processingNodeServerPort) to an available host port */
+        String hostPort = getAvailablePortOnHost(dh);
+        if (hostPort == null)
+            throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
+
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        portBindings.put(processingNodeServerPort, Lists.newArrayList(PortBinding.of("0.0.0.0", hostPort)));
+
+        final HostConfig hostConfig = HostConfig.builder()
+                .cpuShares(cpuShares)
+                .memoryReservation(containerMemory)
+                .portBindings(portBindings)
+                .networkMode("bridge")
+                .build();
+
+        final ContainerConfig containerConfig = ContainerConfig.builder()
+                .hostConfig(hostConfig)
+                .image(operatorConfigurationBootstrap.getImage(dc.getOperator()))
+                .exposedPorts(processingNodeServerPort)
+                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
+                .env(environmentVariables)
+                .build();
+
+        /* Start docker container */
+        final ContainerCreation creation = docker.createContainer(containerConfig);
+        final String id = creation.id();
+        docker.startContainer(id);
+
+        /* Save docker container information on repository */
+        dc.setContainerid(id);
+        dc.setImage(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+        dc.setHost(dh.getName());
+        dc.setMonitoringPort(hostPort);
+        dc.setStatus("running");
+        dc.setTerminationTime(null);
+        dcr.save(dc);
+
+        /* Update the set of used port on docker host */
+        List<String> usedPorts = dh.getUsedPorts();
+        usedPorts.add(hostPort);
+        dh.setUsedPorts(usedPorts);
+        dhr.save(dh);
+
+        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + dc.getOperator() + " on the host: " + dh.getName() + " has been started.");
+
+    }
+
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
+    @Deprecated
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();

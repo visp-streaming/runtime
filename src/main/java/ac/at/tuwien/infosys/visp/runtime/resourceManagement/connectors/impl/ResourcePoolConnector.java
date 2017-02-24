@@ -1,4 +1,4 @@
-package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
+package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
@@ -6,6 +6,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -51,6 +52,12 @@ public class ResourcePoolConnector extends ResourceConnector {
     }
 
     public DockerHost startVM(DockerHost dh) {
+
+        if (dh == null) {
+            dh = new DockerHost("additionaldockerhost");
+            dh.setFlavour("m2.medium");
+        }
+
         PooledVM availableVM = pvmr.findFirstByPoolnameAndLinkedhostIsNull(ressourcePoolName);
 
         if (availableVM == null) {
@@ -58,7 +65,7 @@ public class ResourcePoolConnector extends ResourceConnector {
             throw new RuntimeException("There are too little VMs in the resourcePool.");
         }
 
-        dh.setResourceProvider(ressourcePoolName);
+        dh.setResourcepool(ressourcePoolName);
         dh.setCores(availableVM.getCores());
         dh.setMemory(availableVM.getMemory());
         dh.setStorage(availableVM.getStorage());

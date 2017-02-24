@@ -23,12 +23,6 @@ public class ResourceUsage {
     @Autowired
     private DockerContainerRepository dcr;
 
-
-    private Double cost;
-    private Integer cpuFrequency;
-    private Double availability;
-
-
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);

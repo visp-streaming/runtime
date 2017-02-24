@@ -2,7 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime;
 
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
