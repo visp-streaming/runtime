@@ -66,7 +66,7 @@ public class TopologyAPI {
         }
     }
 
-    @RequestMapping("/")
+    @RequestMapping("/uploa")
     public String index(@RequestParam(value="name", defaultValue="World") String name) {
         /**
          * this controller is just for demonstrating that the file upload also works manually
