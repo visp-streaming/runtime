@@ -57,7 +57,8 @@ public class Monitor {
         Integer min = 0;
 
         for (String queue : queues) {
-            Integer queueCount = getQueueCount(queue, operator.getMessageBrokerHost());
+            //TODO test if this is actually working and whether they always use the real host for monitoring
+            Integer queueCount = getQueueCount(queue, operator.getConcreteLocation().getIpAddress());
             if (queueCount < min) {
                 min = queueCount;
             }

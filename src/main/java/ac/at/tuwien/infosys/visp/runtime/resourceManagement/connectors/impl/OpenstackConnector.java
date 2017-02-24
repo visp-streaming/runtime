@@ -86,6 +86,11 @@ public class OpenstackConnector extends ResourceConnector {
     public DockerHost startVM(DockerHost dh) {
         setup();
 
+        if (dh == null) {
+            dh = new DockerHost("additionaldockerhost");
+            dh.setFlavour("m2.medium");
+        }
+
         String cloudInit = "";
         try {
             cloudInit = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("docker-config/cloud-init"), "UTF-8");

@@ -1,5 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -22,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,26 +66,18 @@ public class ReasonerBTU {
     @Value("${visp.btu}")
     private Integer btu;
 
-    @Value("${visp.infrastructurehost}")
-    private String infrastructureHost;
-
     @Value("${visp.reasoner}")
     private String reasoner;
+
+    @Value("${visp.ip}")
+    private String vispLocation;
 
     @Autowired
     private ScalingActivityRepository sar;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBTU.class);
 
-    private String RESOURCEPOOL = "";
-
-    @PostConstruct
-    public void init() {
-        //get first resourcepool
-        RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
-    }
-
-    //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
         if (!reasoner.equals("btu")) {
@@ -94,7 +87,10 @@ public class ReasonerBTU {
         availabilityWatchdog.checkAvailablitiyOfContainer();
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
-        resourceProvider.get(RESOURCEPOOL).removeHostsWhichAreFlaggedToShutdown();
+
+        for (String key : resourceProvider.getResourceProviders().keySet()) {
+            resourceProvider.get(key).removeHostsWhichAreFlaggedToShutdown();
+        }
 
         LOG.info("VISP - Start Reasoner");
 
@@ -146,7 +142,7 @@ public class ReasonerBTU {
                             continue;
                         }
 
-                        DockerHost selectedHost = selectSuitableDockerHost(dc, dh);
+                        DockerHost selectedHost = selectSuitableDockerHost(topologyMgmt.getOperatorByIdentifier(dc.getOperator()), dh);
                         if (selectedHost.equals(dh)) {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 dh.setBTUend((btuEnd.plusSeconds(btu)));
@@ -156,14 +152,15 @@ public class ReasonerBTU {
                                 return;
                         } else {
                             //Migrate container
-                            DockerContainer dcNew = opConfig.createDockerContainerConfiguration(dc.getOperator());
-                            if (pcm.scaleup(dcNew, selectSuitableDockerHost(dcNew, dh), infrastructureHost)) {
+                            Operator op = topologyMgmt.getOperatorByIdentifier(dc.getOperator());
+                            if (pcm.scaleup(selectSuitableDockerHost(op, dh), op)) {
                                 pcm.triggerShutdown(dc);
                                 sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
                             }
                         }
                     }
-                    resourceProvider.get(RESOURCEPOOL).markHostForRemoval(dh);
+
+                    resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
                 }
             }
         }
@@ -175,13 +172,13 @@ public class ReasonerBTU {
         LOG.info("VISP - Start container scaling");
 
 
-        for (String operator : topologyMgmt.getOperatorsAsList()) {
-            ScalingAction action = monitor.analyze(operator, infrastructureHost);
+        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(vispLocation)) {
+            ScalingAction action = monitor.analyze(op);
 
             if (action.equals(ScalingAction.SCALEUP)) {
                 //TODO consider critical path of topology for scaling down and up
-                DockerContainer dc = opConfig.createDockerContainerConfiguration(operator);
-                pcm.scaleup(dc, selectSuitableDockerHost(dc, null), infrastructureHost);
+
+                pcm.scaleup(selectSuitableDockerHost(op, null), op);
             }
         }
         LOG.info("VISP - Finished container scaling");
@@ -189,8 +186,11 @@ public class ReasonerBTU {
         LOG.info("VISP - Finished Reasoner");
     }
 
-    public synchronized DockerHost selectSuitableDockerHost(DockerContainer dc, DockerHost blackListedHost) {
 
+
+    public synchronized DockerHost selectSuitableDockerHost(Operator op, DockerHost blackListedHost) {
+
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
         DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
         if (host == null) {
@@ -208,10 +208,7 @@ public class ReasonerBTU {
                 return blackListedHost;
             }
 
-            //TODO move this somewhere else - reasoner should not be in charge of deciding the size of the VM
-            DockerHost dh = new DockerHost("additionaldockerhost");
-            dh.setFlavour("m2.medium");
-            return resourceProvider.get(RESOURCEPOOL).startVM(dh);
+            return resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
         } else {
             return host;
         }
