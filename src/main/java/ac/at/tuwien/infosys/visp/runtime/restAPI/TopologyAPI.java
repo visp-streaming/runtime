@@ -25,9 +25,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
 @RestController
-public class TopologyController {
+public class TopologyAPI {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TopologyController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TopologyAPI.class);
 
     @Autowired
     TopologyUpdateHandler topologyUpdateHandler;
