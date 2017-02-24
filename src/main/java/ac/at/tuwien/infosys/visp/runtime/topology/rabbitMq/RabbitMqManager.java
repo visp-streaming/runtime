@@ -5,6 +5,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import com.rabbitmq.client.Channel;
@@ -36,6 +37,9 @@ public class RabbitMqManager {
 
     @Autowired
     private DockerContainerRepository dcr;
+
+    @Autowired
+    private ManualOperatorManagement rpp;
 
     @Value("${spring.rabbitmq.username}")
     private String rabbitmqUsername;
@@ -188,6 +192,7 @@ public class RabbitMqManager {
 
     private void handleAddOperator(TopologyUpdate update) {
         LOG.info("Handling add operator update");
+        rpp.addOperator(update.getAffectedOperator());
         for(Operator source : update.getAffectedOperator().getSources()) {
             // for each source, add message flow to this operator
             // TODO: check if the sources already exist!
