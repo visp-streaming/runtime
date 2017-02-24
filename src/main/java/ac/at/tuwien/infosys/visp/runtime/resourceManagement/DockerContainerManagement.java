@@ -54,6 +54,9 @@ public class DockerContainerManagement {
     @Value("${spring.redis.host}'")
     private String redisHost;
 
+    @Value("${spring.rabbitmq.host}")
+    private String rabbitMqHost;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
@@ -74,16 +77,18 @@ public class DockerContainerManagement {
 
         /* Configure environment variables */
         List<String> environmentVariables = new ArrayList<>();
-        environmentVariables.add("SPRING_RABBITMQ_HOST=" + op.getMessageBrokerHost());
-        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + op.getMessageBrokerHost());
+        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + rabbitMqHost); // TODO: check if this is always the right host
         environmentVariables.add("SPRING_REDIS_HOST=" + redisHost);
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());
         environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(op.getName()));
 
+        LOG.info("Printing env variables");
         //TODO set correct environment variables - especially for hosts
-
+        for(String ev : environmentVariables) {
+            LOG.info(ev);
+        }
 
         /* Configure docker container */
         Double vmCores = dh.getCores();
