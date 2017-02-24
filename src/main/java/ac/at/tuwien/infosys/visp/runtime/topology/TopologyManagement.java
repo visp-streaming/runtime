@@ -2,7 +2,6 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
-import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import com.google.common.base.Joiner;
@@ -158,6 +157,7 @@ public class TopologyManagement {
         }
         return operators;
     }
+
 
     public Operator getOperatorByIdentifier(String identifier) {
         return parser.getTopology().get(identifier);

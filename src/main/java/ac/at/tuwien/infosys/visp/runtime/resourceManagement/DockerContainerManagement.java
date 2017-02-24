@@ -51,6 +51,9 @@ public class DockerContainerManagement {
     @Value("${visp.node.port.available}'")
     private String encodedHostNodeAvailablePorts;
 
+    @Value("${spring.redis.host}'")
+    private String redisHost;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
@@ -73,7 +76,7 @@ public class DockerContainerManagement {
         List<String> environmentVariables = new ArrayList<>();
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + op.getMessageBrokerHost());
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + op.getMessageBrokerHost());
-        environmentVariables.add("SPRING_REDIS_HOST=" + op.getMessageBrokerHost());
+        environmentVariables.add("SPRING_REDIS_HOST=" + redisHost);
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());
