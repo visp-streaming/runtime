@@ -30,7 +30,7 @@ import java.util.List;
 
 @Service
 @DependsOn("resourceProvider")
-public class ReasonerPeerJ {
+public class ReasonerBTU {
 
     @Autowired
     private TopologyManagement topologyMgmt;
@@ -74,7 +74,7 @@ public class ReasonerPeerJ {
     @Autowired
     private ScalingActivityRepository sar;
 
-    private static final Logger LOG = LoggerFactory.getLogger(ReasonerPeerJ.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReasonerBTU.class);
 
     private String RESOURCEPOOL = "";
 
@@ -87,7 +87,7 @@ public class ReasonerPeerJ {
     //@Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
-        if (!reasoner.equals("peerj")) {
+        if (!reasoner.equals("btu")) {
             return;
         }
 
