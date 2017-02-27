@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/main">
+<head></head>
+
+<body>
+<th:block layout:fragment="content">
+
+    <div class="message" th:if="${message != null}">
+        <div class="panel panel-warning">
+            <div class="panel-heading">
+            </div>
+            <div class="panel-body">
+                <span th:text="${message}"></span>
+            </div>
+        </div>
+   </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Utility Operations</div>
+        <div class="panel-body">
+            <a class="btn btn-success" th:href="${'/pooledvms/addpooledvm'}">Add new pooled VM</a>
+            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Kill all pooled VMs</a>
+        </div>
+    </div>
+
+    <th:block th:unless="${#arrays.length(pools) == 0}">
+
+        <div class="panel panel-default">
+            <div class="panel-heading">Deployed Pooled VMs
+            </div>
+            <div class="panel-body">
+                <table class="table table-hover nohead">
+                    <tbody>
+                        <tr>
+                            <th class="vertmiddle col-md-3">Name</th>
+                            <th class="vertmiddle col-md-3">Pool</th>
+                            <th class="vertmiddle col-md-3">URL</th>
+                            <th class="vertmiddle col-md-2">Flavor</th>
+                            <th class="vertmiddle col-md-1">
+                                <div class="center-block">
+                                    Actions
+                                </div>
+                            </th>
+                        </tr>
+                        <tr th:each="pool : ${pools}">
+                            <td class="vertmiddle col-md-3" th:text="${pool.getName()}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${pool.getPoolname()}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${pool.getUrl()}"></td>
+                            <td class="vertmiddle col-md-2" th:text="${pool.getFlavour()}"></td>
+                            <td class="vertmiddle col-md-1">
+                                <div class="pull-right">
+                                    <a class="btn btn-danger" th:href="${'/pooledvms/kill/' + pool.getId()}">Kill</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <div class="emptystate" th:if="${#arrays.length(pools) == 0}">
+        <div class="emptystate-text">There are currently no pooled VMs running.</div>
+    </div>
+
+</th:block>
+
+</body>
+</html>

@@ -134,6 +134,11 @@ public class OpenstackConnector extends ResourceConnector {
                 freeIP = os.compute().floatingIps().allocateIP("cloud");
             }
 
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                //TODO remove if openstack behaves again
+            }
             ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(server, freeIP.getFloatingIpAddress());
             if (!ipresponse.isSuccess()) {
                 LOG.error("Dockerhost could not be started", ipresponse.getFault());

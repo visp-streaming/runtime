@@ -22,7 +22,6 @@
 
             <div class="col-xs-6 col-sm-3 sidebar-offcanvas" id="sidebar" role="navigation">
                 <ul class="nav" id="nav">
-                    <!--/*@thymesVar id="viewName" type="java.lang.String"*/-->
 
                     <li th:each="entry : ${@navigation.navEntries}"
                         th:classappend="${viewName == entry.viewName} ? 'active'">

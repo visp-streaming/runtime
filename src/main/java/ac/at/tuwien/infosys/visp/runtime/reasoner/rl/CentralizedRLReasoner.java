@@ -114,7 +114,10 @@ public class CentralizedRLReasoner {
 	private String RESOURCEPOOL = "";
 
 	public void initialize(){
-		RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+		if (!resourceProvider.getResourceProviders().entrySet().isEmpty()) {
+			RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+		}
+
 
 		/* Centralized Version of ReLED Controller */
 		controller = new HashMap<String, RLController>();

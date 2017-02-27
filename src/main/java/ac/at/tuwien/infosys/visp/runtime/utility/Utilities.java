@@ -16,6 +16,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Service
@@ -90,7 +91,7 @@ public class Utilities {
         }
     }
 
-    //@PostConstruct
+    @PostConstruct
     public void createInitialStatus() {
         LOG.info("Deleting old configurations");
         parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");

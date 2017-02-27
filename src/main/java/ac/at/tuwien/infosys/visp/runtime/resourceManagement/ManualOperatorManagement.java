@@ -44,7 +44,7 @@ public class ManualOperatorManagement {
 
         try {
             if (op.getSize() == null) {
-                pcm.scaleup(selectSuitableDockerHost(op), op);
+                pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
             } else {
 
 
@@ -66,10 +66,7 @@ public class ManualOperatorManagement {
 
                 }
             }
-        } catch (
-                Exception e)
-
-        {
+        } catch (Exception e) {
             LOG.error(e.getLocalizedMessage());
         }
 
