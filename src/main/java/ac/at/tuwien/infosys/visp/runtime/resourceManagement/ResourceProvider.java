@@ -69,4 +69,9 @@ public class ResourceProvider {
         return resourceProviders;
     }
 
+    public void updateResourceProvider() {
+            init();
+    }
+
+
 }

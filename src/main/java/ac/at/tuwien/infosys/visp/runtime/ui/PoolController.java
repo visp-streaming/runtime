@@ -5,6 +5,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.ui.entities.CreatePooledvmForm;
 import org.quartz.SchedulerException;
@@ -32,6 +33,9 @@ public class PoolController {
 
     @Autowired
     private OpenstackConnector opc;
+
+    @Autowired
+    private ResourceProvider rp;
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -81,10 +85,10 @@ public class PoolController {
         pvm.setCpuFrequency(2400);
         pvmr.save(pvm);
 
-
         model.addAttribute("message", "A new pooledVM has beeen started.");
         model.addAttribute("pools", pvmr.findAll());
 
+        rp.updateResourceProvider();
         return "pooledvms";
     }
 
@@ -101,6 +105,7 @@ public class PoolController {
         }
 
         model.addAttribute("pools", pvmr.findAll());
+        rp.updateResourceProvider();
         return "pooledvms";
     }
 
@@ -119,6 +124,7 @@ public class PoolController {
 
         model.addAttribute("message", "The pooled VMs have been deleted.");
         model.addAttribute("pools", pvmr.findAll());
+        rp.updateResourceProvider();
         return "pooledvms";
     }
 
