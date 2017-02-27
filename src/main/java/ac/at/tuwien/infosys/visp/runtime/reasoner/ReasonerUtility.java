@@ -98,7 +98,7 @@ public class ReasonerUtility {
 
         ResourceAvailability rc = new ResourceAvailability(dh, 0, 0.0, 0, 0.0F);
 
-        for (DockerContainer dc : dcr.findAll()) {
+        for (DockerContainer dc : dcr.findByHost(dh.getName())) {
             rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
             rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
             rc.setMemory(rc.getMemory() + dc.getMemory());
