@@ -1,18 +1,19 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.common.ProcessingNodeMetricsMessage;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.OperatorQoSMetricsRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.OperatorQoSMetrics;
-import ac.at.tuwien.infosys.visp.common.ProcessingNodeMetricsMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -80,7 +81,11 @@ public class OperatorMonitor {
 
                 String url = CONNECTION_PROTOCOL + hostUrl + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
                 RestTemplate restTemplate = new RestTemplate();
-                message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+                try {
+                    message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+                } catch (ResourceAccessException e) {
+                    LOG.error("Could not access metrics endpoint");
+                }
 
             if (message != null) {
                 stats.add(message);
