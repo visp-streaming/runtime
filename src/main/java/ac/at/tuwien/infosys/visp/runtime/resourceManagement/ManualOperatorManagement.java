@@ -46,8 +46,6 @@ public class ManualOperatorManagement {
             if (op.getSize() == null) {
                 pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
             } else {
-
-
                 switch (op.getSize()) {
                     case SMALL: pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op); break;
                     case MEDIUM:
