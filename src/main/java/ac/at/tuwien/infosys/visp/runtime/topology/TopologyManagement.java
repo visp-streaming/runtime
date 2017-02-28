@@ -105,9 +105,11 @@ public class TopologyManagement {
             for (Operator n : parser.getTopology().values()) {
                 channel.exchangeDelete(n.getName());
 
-                if (n.getSources()!=null) {
+                if (n.getSources() != null) {
                     for (Operator source : n.getSources()) {
-                            channel.queueDelete(n.getName() + source.getName());
+                        String queueName = RabbitMqManager.getQueueName(infrastructureHost, source.getName(), n.getName());
+                        LOG.info("Deleting queue " + queueName);
+                        channel.queueDelete(queueName);
                     }
                 }
             }
@@ -119,6 +121,8 @@ public class TopologyManagement {
             LOG.error("Could not create mapping.", e);
         } catch (TimeoutException e) {
             LOG.error("Could not create mapping.", e);
+        } catch (Exception e) {
+            LOG.error(e.getLocalizedMessage());
         }
     }
 
