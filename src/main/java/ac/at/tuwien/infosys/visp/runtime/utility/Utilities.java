@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.LinkedHashMap;
 
 @Service
 @DependsOn("resourceProvider")
@@ -115,6 +116,7 @@ public class Utilities {
         LOG.info("Cleanup Completed");
 
         topologyMgmt.createMapping(infrastructureHost);
+        parser.setTopology(new LinkedHashMap<>());
         //initializeTopology();
     }
 
@@ -134,5 +136,4 @@ public class Utilities {
             pvmr.save(vm);
         }
     }
-
 }

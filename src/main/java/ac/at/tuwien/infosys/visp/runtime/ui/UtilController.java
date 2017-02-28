@@ -30,14 +30,16 @@ public class UtilController {
         return "util";
     }
 
-    @RequestMapping("/util/reinitialize")
+    @RequestMapping("/util/clear")
     public String reinitialize(Model model) throws SchedulerException {
 
         utilities.createInitialStatus();
 
-        model.addAttribute("message", "The topology has been reinitialized");
+        model.addAttribute("message", "The topology has been cleared");
         return "util";
     }
+
+
 
 
 }
