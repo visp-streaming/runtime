@@ -11,7 +11,8 @@ public class Navigation {
     public List<NavEntry> getNavEntries() {
         return Arrays.asList(
                 new NavEntry("/", "about", "About"),
-                new NavEntry("/pooledvms", "pools", "Resource Pools")
+                new NavEntry("/pooledvms", "pools", "Resource Pools"),
+                new NavEntry("/changeTopology", "changeTopology", "Change Topology")
                 );
                 //new NavEntry("/configuration", "configuration", "Configuration"));
     }

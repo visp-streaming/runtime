@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/main">
+<head/>
+
+<body>
+<th:block layout:fragment="content">
+    <div class="jumbotron">
+        Upload a topology file to change the current topology at runtime.
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Upload Topology File</div>
+        <div class="panel-body">
+            <form action="/uploadTopology" method="POST" enctype="multipart/form-data">
+                <input type="file" class="form-control" />
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        </div>
+    </div>
+
+</th:block>
+
+</body>
+</html>
