@@ -51,7 +51,7 @@ public class OldTopologyParser {
     private void enrichTopology() {
         /**
          * (My guess): transforms the sources string into an actual list of
-         * operators that is then set for each operator.
+         * operators that is then set for each operatorType.
          */
 
         for (Operator operator : topology.values()) {
@@ -213,23 +213,23 @@ public class OldTopologyParser {
                     operator.setOutputFormat(data[1].trim().replace("\"", ""));
                     break;
                 case "scalingThreshold":
-                    //operator.setScalingThreshold(data[1].trim().replace("\"", ""));
+                    //operatorType.setScalingThreshold(data[1].trim().replace("\"", ""));
                     break;
                 //case "expectedDuration":
-                //    operator.setExpectedDuration(data[1].trim().replace("\"", ""));
+                //    operatorType.setExpectedDuration(data[1].trim().replace("\"", ""));
                 //    break;
                 //case "queueThreshold":
-                //    operator.setQueueThreshold(data[1].trim().replace("\"", ""));
+                //    operatorType.setQueueThreshold(data[1].trim().replace("\"", ""));
                 //    break;
             }
         }
 
-        //if (operator.getExpectedDuration().isEmpty()) {
-        //    operator.setExpectedDuration("500");
+        //if (operatorType.getExpectedDuration().isEmpty()) {
+        //    operatorType.setExpectedDuration("500");
         // }
 
-        //if (operator.getQueueThreshold().isEmpty()) {
-        //    operator.setQueueThreshold("100");
+        //if (operatorType.getQueueThreshold().isEmpty()) {
+        //    operatorType.setQueueThreshold("100");
         //}
 
         throw new RuntimeException("Could not parse topology due to syntaktic error");

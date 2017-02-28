@@ -77,7 +77,7 @@ public class RabbitMqManager {
                                String fromInfrastructureHost, String toInfrastructureHost)
             throws IOException, TimeoutException {
         /**
-         * add a message flow from operator FROM to operator TO
+         * add a message flow from operatorType FROM to operatorType TO
          */
         ChannelFactory channelFactory = new ChannelFactory(fromInfrastructureHost, toInfrastructureHost).invoke();
         Channel toChannel = channelFactory.getToChannel();
@@ -112,12 +112,7 @@ public class RabbitMqManager {
     }
 
     private void sendDockerSignalForUpdate(String toOperatorId, String updateCommand) throws DockerException, InterruptedException {
-        List<DockerContainer> dcs = dcr.findByOperator(toOperatorId);
-        List<DockerContainer> allContainers = (List<DockerContainer>) dcr.findAll();
-        LOG.info("Found the following containers:");
-        for(DockerContainer d : allContainers) {
-            LOG.info(d.toString());
-        }
+        List<DockerContainer> dcs = dcr.findByOperatorName(toOperatorId);
         if(dcs.size() <= 0) {
             throw new RuntimeException("Could not find docker containers for operator " + toOperatorId);
         }
@@ -188,7 +183,7 @@ public class RabbitMqManager {
     }
 
     private void handleRemoveOperator(TopologyUpdate update) {
-        LOG.info("Handling remove operator update");
+        LOG.info("Handling remove operatorType update");
         for (Operator source : update.getAffectedOperator().getSources()) {
             LOG.info("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
             try {
@@ -201,10 +196,10 @@ public class RabbitMqManager {
     }
 
     private void handleAddOperator(TopologyUpdate update) {
-        LOG.info("Handling add operator update");
+        LOG.info("Handling add operatorType update");
         rpp.addOperator(update.getAffectedOperator());
         for(Operator source : update.getAffectedOperator().getSources()) {
-            // for each source, add message flow to this operator
+            // for each source, add message flow to this operatorType
             // TODO: check if the sources already exist!
             try {
                 LOG.info("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
@@ -217,7 +212,7 @@ public class RabbitMqManager {
     }
 
     private void handleUpdateOperator(TopologyUpdate update) {
-        LOG.info("Handling update operator update");
+        LOG.info("Handling update operatorType update");
         switch (update.getUpdateType()) {
             case UPDATE_SOURCE:
                 handleSourceUpdate(update);
@@ -235,7 +230,7 @@ public class RabbitMqManager {
         List<Operator> oldSources = sourcesUpdate.getOldSources();
         for (Operator sourceEntry : newSources) {
             if (!oldSources.contains(sourceEntry)) {
-                // add new flow from the new source to our target operator
+                // add new flow from the new source to our target operatorType
                 try {
                     LOG.info("Adding message flow between operators " + sourceEntry.getName() + " and " + update.getAffectedOperatorId());
                     addMessageFlow(sourceEntry.getName(), update.getAffectedOperatorId(), sourceEntry.getConcreteLocation().getIpAddress(),

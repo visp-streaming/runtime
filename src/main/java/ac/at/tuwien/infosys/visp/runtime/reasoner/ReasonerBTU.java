@@ -142,7 +142,18 @@ public class ReasonerBTU {
                             continue;
                         }
 
-                        DockerHost selectedHost = selectSuitableDockerHost(topologyMgmt.getOperatorByIdentifier(dc.getOperator()), dh);
+                        Operator operator = topologyMgmt.getOperatorByIdentifier(dc.getOperatorType());
+
+                        if (operator==null) {
+                            LOG.error("Operator is null");
+                        }
+
+                        if (operator.getName()==null) {
+                            LOG.error("Operator is null");
+                        }
+
+
+                        DockerHost selectedHost = selectSuitableDockerHost(operator, dh);
                         if (selectedHost.equals(dh)) {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 dh.setBTUend((btuEnd.plusSeconds(btu)));
@@ -152,10 +163,10 @@ public class ReasonerBTU {
                                 return;
                         } else {
                             //Migrate container
-                            Operator op = topologyMgmt.getOperatorByIdentifier(dc.getOperator());
+                            Operator op = topologyMgmt.getOperatorByIdentifier(dc.getOperatorName());
                             if (pcm.scaleup(selectSuitableDockerHost(op, dh), op)) {
                                 pcm.triggerShutdown(dc);
-                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "migration", dc.getHost()));
+                                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "migration", dc.getHost()));
                             }
                         }
                     }
@@ -190,12 +201,17 @@ public class ReasonerBTU {
 
     public synchronized DockerHost selectSuitableDockerHost(Operator op, DockerHost blackListedHost) {
 
-        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
+        if (op.getName()==null) {
+            LOG.error("op name = null");
+        }
+
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
         DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
         if (host == null) {
             String scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
             while (scaledownoperator != null) {
+                //TODO user operator name for scaledown
                 pcm.scaleDown(scaledownoperator);
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
                 if (host != null) {

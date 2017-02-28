@@ -77,11 +77,11 @@ public class DockerTests {
     @Test
     public void scalingTest() {
         pcm.scaleup(dc, dh, "128.130.172.225");
-        for (DockerContainer dc : dcr.findByOperator("speed")) {
+        for (DockerContainer dc : dcr.findByOperatorName("speed")) {
             LOG.info(dc.toString());
         }
         pcm.scaleDown("speed");
-        for (DockerContainer dc : dcr.findByOperator("speed")) {
+        for (DockerContainer dc : dcr.findByOperatorName("speed")) {
             LOG.info(dc.toString());
         }
     }
@@ -93,7 +93,7 @@ public class DockerTests {
         pcm.scaleup(opConf.createDockerContainerConfiguration("step1"), dh, "128.130.172.225");
         pcm.scaleup(opConf.createDockerContainerConfiguration("step1"), dh, "128.130.172.225");
 
-        List<DockerContainer> containers = dcr.findByOperator("step1");
+        List<DockerContainer> containers = dcr.findByOperatorName("step1");
         assertEquals(containers.size(), 3);
 
         pcm.scaleDown("step1");
@@ -105,7 +105,7 @@ public class DockerTests {
 
             Thread.sleep(10000);
 
-            containers = dcr.findByOperator("step1");
+            containers = dcr.findByOperatorName("step1");
 
 
             if (containers.size() > 2) {

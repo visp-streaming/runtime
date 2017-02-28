@@ -80,7 +80,7 @@ public class TopologyUpdateTest {
     public void test_changeLocationOfOneOperator_migrationIsPerformed() {
         List<TopologyUpdate> updatesToPerform = getUpdatesForFiles("topologyUpdateTest_01.conf", "topologyUpdateTest_02.conf");
 
-        // in 02.conf, operator "step1" has a different allowedLocation (192.168.0.2)
+        // in 02.conf, operatorType "step1" has a different allowedLocation (192.168.0.2)
 
         Assert.assertTrue(updatesToPerform.contains(new TopologyUpdate("192.168.0.1", TopologyUpdate.Action.REMOVE_OPERATOR, step1)));
         Assert.assertTrue(updatesToPerform.contains(new TopologyUpdate("192.168.0.2", TopologyUpdate.Action.ADD_OPERATOR, step1)));

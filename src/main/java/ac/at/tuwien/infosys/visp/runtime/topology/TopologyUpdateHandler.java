@@ -79,18 +79,18 @@ public class TopologyUpdateHandler {
          */
         List<TopologyUpdate> returnList = new ArrayList<TopologyUpdate>();
 
-        // general assumption: operator names are unique throughout _both_ files
+        // general assumption: operatorType names are unique throughout _both_ files
         // (if two operators have the same name in both files, it must be the same one)
 
         for (Map.Entry<String, Operator> entry : oldTopology.entrySet()) {
             String oldOperatorName = entry.getKey();
             Operator oldOperator = entry.getValue();
             if (!newTopology.containsKey(oldOperatorName)) {
-                // operator no longer existing, remove it
+                // operatorType no longer existing, remove it
                 LOG.info("delete 1");
                 returnList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
             } else {
-                // operator is still here, check if we need to update
+                // operatorType is still here, check if we need to update
                 updateOperator(returnList, oldOperator, newTopology.get(oldOperatorName));
             }
         }
@@ -98,7 +98,7 @@ public class TopologyUpdateHandler {
             String newOperatorName = entry.getKey();
             Operator newOperator = entry.getValue();
             if (!oldTopology.containsKey(newOperatorName)) {
-                // operator is new, create it
+                // operatorType is new, create it
                 LOG.info("add 1");
                 returnList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
             } else {
@@ -118,7 +118,7 @@ public class TopologyUpdateHandler {
          * checks whether there are differences between the two operators and adds the according updates if there are
          */
         if (!oldOperator.getConcreteLocation().equals(newOperator.getConcreteLocation())) {
-            // operator is migrated
+            // operatorType is migrated
             LOG.info("delete/add 2");
             updateList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
             updateList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));

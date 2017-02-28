@@ -64,13 +64,13 @@ public class DockerContainerManagement {
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
-        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
 
         /* Update the list of available docker images */
-        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(dc.getOperator()))) {
-            docker.pull(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
             List<String> availableImages = dh.getAvailableImages();
-            availableImages.add(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+            availableImages.add(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
             dh.setAvailableImages(availableImages);
             dhr.save(dh);
         }
@@ -114,7 +114,7 @@ public class DockerContainerManagement {
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(operatorConfigurationBootstrap.getImage(dc.getOperator()))
+                .image(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))
                 .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
@@ -127,7 +127,7 @@ public class DockerContainerManagement {
 
         /* Save docker container information on repository */
         dc.setContainerid(id);
-        dc.setImage(operatorConfigurationBootstrap.getImage(dc.getOperator()));
+        dc.setImage(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
         dc.setHost(dh.getName());
         dc.setMonitoringPort(hostPort);
         dc.setStatus("running");
@@ -140,7 +140,7 @@ public class DockerContainerManagement {
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + dc.getOperator() + " on the host: " + dh.getName() + " has been started.");
+        LOG.info("VISP - A new container with the ID: " + id + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dh.getName() + " has been started.");
 
     }
 
@@ -151,10 +151,10 @@ public class DockerContainerManagement {
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         /* Update the list of available docker images */
-        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(container.getOperator()))) {
-            docker.pull(operatorConfigurationBootstrap.getImage(container.getOperator()));
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(container.getOperatorType()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
             List<String> availableImages = dh.getAvailableImages();
-            availableImages.add(operatorConfigurationBootstrap.getImage(container.getOperator()));
+            availableImages.add(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
             dh.setAvailableImages(availableImages);
             dhr.save(dh);
         }
@@ -164,10 +164,10 @@ public class DockerContainerManagement {
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_REDIS_HOST=" + infrastructureHost);
-        environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperator());
-        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
-        environmentVariables.add("ROLE=" + container.getOperator());
-        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperator()));        
+        environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperatorType());
+        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperatorType()));
+        environmentVariables.add("ROLE=" + container.getOperatorType());
+        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperatorType()));
 
         /* Configure docker container */
         Double vmCores = dh.getCores();
@@ -193,7 +193,7 @@ public class DockerContainerManagement {
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(operatorConfigurationBootstrap.getImage(container.getOperator()))
+                .image(operatorConfigurationBootstrap.getImage(container.getOperatorType()))
                 .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
@@ -206,7 +206,7 @@ public class DockerContainerManagement {
         
         /* Save docker container information on repository */
         container.setContainerid(id);
-        container.setImage(operatorConfigurationBootstrap.getImage(container.getOperator()));
+        container.setImage(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
         container.setHost(dh.getName());
         container.setMonitoringPort(hostPort);
         container.setStatus("running");
@@ -219,7 +219,7 @@ public class DockerContainerManagement {
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName() + " has been started.");
+        LOG.info("VISP - A new container with the ID: " + id + " for the operatorType: " + container.getOperatorType() + " on the host: " + dh.getName() + " has been started.");
     }
 
     public void removeContainer(DockerContainer dc) {
@@ -267,7 +267,7 @@ public class DockerContainerManagement {
 
         dcr.delete(dc);
 
-        LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");
+        LOG.info("VISP - The container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + " was removed.");
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
@@ -282,7 +282,7 @@ public class DockerContainerManagement {
         final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
         final LogStream output = docker.execStart(execId.id());
         String result = output.readFully();
-        LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + "with the result: " + result);
+        LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
         return result;
     }
 

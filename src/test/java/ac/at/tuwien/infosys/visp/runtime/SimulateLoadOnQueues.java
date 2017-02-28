@@ -28,10 +28,10 @@ public class SimulateLoadOnQueues {
 
         for (String operator : topologyMgmt.getOperatorsAsList()) {
 
-            //sendMessage(operator, 0);
-            //sendMessage(operator, 1);
-            //sendMessage(operator, 10);
-            //sendMessage(operator, 100);
+            //sendMessage(operatorType, 0);
+            //sendMessage(operatorType, 1);
+            //sendMessage(operatorType, 10);
+            //sendMessage(operatorType, 100);
         }
     }
 

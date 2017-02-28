@@ -13,7 +13,7 @@ import reled.model.ResourcePool;
 import java.util.List;
 
 /**
- * OperatorModelBuilder create an operator model (instance of 
+ * OperatorModelBuilder create an operatorType model (instance of
  * Operator) that is managed by the reinforcement learning 
  * reasoner
  */
@@ -28,7 +28,7 @@ public class OperatorModelBuilder {
 
 		Operator operator = new Operator(operatorName);
 		
-		/* Retrieve Containers where the operator replica are instantiated */
+		/* Retrieve Containers where the operatorType replica are instantiated */
 		ResourcePool resourcePool = new ResourcePool();
 		if (!(containers == null || containers.isEmpty())){
 			for (DockerContainer container : containers){
@@ -45,7 +45,7 @@ public class OperatorModelBuilder {
 		}
 		operator.setDeployment(resourcePool);
 		
-		/* Retrieve QoS Metrics related to the operator */
+		/* Retrieve QoS Metrics related to the operatorType */
 		operator.setProcessedMessagesPerUnitTime(qosMetrics.getProcessedMessages());
 		operator.setReceivedMessagesPerUnitTime(qosMetrics.getReceivedMessages());
 	    	

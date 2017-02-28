@@ -46,8 +46,6 @@ public class ManualOperatorManagement {
             if (op.getSize() == null) {
                 pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
             } else {
-
-
                 switch (op.getSize()) {
                     case SMALL: pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op); break;
                     case MEDIUM:
@@ -80,7 +78,7 @@ public class ManualOperatorManagement {
         ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
 
         for (Operator op : ops) {
-            DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
             try {
                 usage.decrementCores(dc.getCpuCores());
                 usage.decrementMemory(dc.getMemory());
