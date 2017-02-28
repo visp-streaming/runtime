@@ -10,9 +10,20 @@
         <div class="panel-heading">Apply new topology</div>
         <div class="panel-body">
             <form action="/uploadTopologyGUI" method="POST" enctype="multipart/form-data">
-                <span><input type="file" name="file" class="form-control" /></span>
-                <span><button type="submit" class="btn btn-primary">Upload</button></span>
+                <div class="input-group">
+                    <input type="file" name="file" class="form-control"/>
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </span>
+                </div>
             </form>
+
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Current Topology</div>
+        <div class="panel-body">
+            <img th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/>
         </div>
     </div>
 
