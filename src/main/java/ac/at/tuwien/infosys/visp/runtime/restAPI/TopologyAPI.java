@@ -105,11 +105,8 @@ public class TopologyAPI {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
             System.out.println(fileContent);
-            File topologyFile = topologyUpdateHandler.saveIncomingTopologyFile(fileContent);
-            List<TopologyUpdate> updates = topologyUpdateHandler.computeUpdatesFromNewTopologyFile();
-            // TODO: wait for green light from master node
-            parser.loadTopologyFromFileSystem(topologyFile.getAbsolutePath());
-            rabbitMqManager.performUpdates(updates);
+            TopologyUpdateHandler.UpdateResult result = topologyUpdateHandler.handleUpdate(fileContent);
+
         }
         catch (Exception e) {
             return new ResponseEntity<>(BAD_REQUEST);

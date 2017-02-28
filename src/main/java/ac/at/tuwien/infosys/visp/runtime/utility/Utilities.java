@@ -115,7 +115,7 @@ public class Utilities {
         LOG.info("Cleanup Completed");
 
         topologyMgmt.createMapping(infrastructureHost);
-        initializeTopology();
+        //initializeTopology();
     }
 
     @PreDestroy

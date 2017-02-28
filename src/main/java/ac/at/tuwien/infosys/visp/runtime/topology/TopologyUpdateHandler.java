@@ -3,6 +3,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
+import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,10 @@ public class TopologyUpdateHandler {
 
     @Autowired
     TopologyParser topologyParser;
+
+    @Autowired
+    RabbitMqManager rabbitMqManager;
+
 
     public TopologyUpdateHandler() {
         incomingTopologyFilePath = null;
@@ -164,4 +169,23 @@ public class TopologyUpdateHandler {
         return oldSources.equals(newSources);
     }
 
+    public UpdateResult handleUpdate(String fileContent) {
+        File topologyFile = saveIncomingTopologyFile(fileContent);
+        List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
+        // TODO: wait for green light from master node
+        topologyParser.loadTopologyFromFileSystem(topologyFile.getAbsolutePath());
+        rabbitMqManager.performUpdates(updates);
+
+        return new UpdateResult(updates, topologyParser.getCurrentGraphvizPngFile());
+    }
+
+    public class UpdateResult {
+        public UpdateResult(List<TopologyUpdate> updatesPerformed, String pathToGraphviz) {
+            this.updatesPerformed = updatesPerformed;
+            this.pathToGraphviz = pathToGraphviz;
+        }
+
+        public List<TopologyUpdate> updatesPerformed;
+        public String pathToGraphviz;
+    }
 }

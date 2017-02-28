@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/main">
+<head/>
+
+<body>
+<th:block layout:fragment="content">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Update Successful!</div>
+        <div class="panel-body">
+            <p>The following updates were executed:</p>
+            <div th:each="update : ${updateResult.updatesPerformed}">
+                <div class="alert"
+                     th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +
+                     (#strings.contains(update.action,'UPDATE_OPERATOR') ? ' alert-info' : '') +
+                     (#strings.contains(update.action,'REMOVE_OPERATOR') ? ' alert-danger' : '')}">
+                    <strong th:text="${update.action}"></strong>
+                    <span>  </span>
+                    <span th:text="${update.affectedOperatorId}"></span><span> at host </span>
+                    <span th:text="${update.affectedHost}"></span>
+                </div>
+            </div>
+            <h3>The following topology is now in place:</h3>
+            <img  th:src="@{'data:image/png;base64,'+${graphvizImage}}" />
+
+        </div>
+    </div>
+
+</th:block>
+
+</body>
+</html>
