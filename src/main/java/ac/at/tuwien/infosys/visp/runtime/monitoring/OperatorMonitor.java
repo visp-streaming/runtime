@@ -20,11 +20,11 @@ import java.util.*;
 
 /**
  * The OperatorMonitor retrieves the statistics related
- * to each operator of the topology.
+ * to each operatorType of the topology.
  * <p>
  * It needs to collect the sum of emitted events and the
- * amount of processed event by each operator instance.
- * Afterwards, aggregates the statistics per operator.
+ * amount of processed event by each operatorType instance.
+ * Afterwards, aggregates the statistics per operatorType.
  * <p>
  * Note: to avoid collecting data from multiple or not consistent
  * window, this components adopts a PULL-approach.
@@ -99,10 +99,10 @@ public class OperatorMonitor {
             stats.add(srcStats);
     	
     	/* Process collected stats to obtain: 
-    	 *  - processed messages per operator
-    	 *  - received messages per operator
+    	 *  - processed messages per operatorType
+    	 *  - received messages per operatorType
     	 *  
-    	 *  Note that a container runs an operator instance
+    	 *  Note that a container runs an operatorType instance
     	 */
         for (ProcessingNodeMetricsMessage msg : stats) {
 

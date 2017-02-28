@@ -175,7 +175,7 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") started. ####");
+        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") started. ####");
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
@@ -205,14 +205,14 @@ public class ReasonerUtility {
             }
         }
 
-        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") finished with host (" + selectedHost +"). ####");
+        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") finished with host (" + selectedHost +"). ####");
         return selectedHost;
     }
 
 
 
     public String selectOperatorTobeScaledDown() {
-        LOG.info("##### select operator to be scaled down initialized. ####");
+        LOG.info("##### select operatorType to be scaled down initialized. ####");
         String selectedOperator = null;
 
         //get all Instances
@@ -222,7 +222,7 @@ public class ReasonerUtility {
 
         // select all instances that have more than one instances
         for (String operator : tmgmt.getOperatorsAsList()) {
-            Integer amount = dcr.findByOperator(operator).size();
+            Integer amount = dcr.findByOperatorName(operator).size();
             if (amount < 2) {
                 continue;
             }
@@ -299,7 +299,7 @@ public class ReasonerUtility {
         }
 
 
-        LOG.info("##### select operator to be scaled down finished. ####");
+        LOG.info("##### select operatorType to be scaled down finished. ####");
         return selectedOperator;
     }
 
@@ -369,7 +369,7 @@ public class ReasonerUtility {
      *
      */
     public DockerHost selectSuitableDockerHost(Operator op) throws Exception {
-        DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
 
         for (DockerHost dh : dhr.findByResourcepool(op.getConcreteLocation().getResourcePool())) {
             if (checkDeployment(dc, dh)) {

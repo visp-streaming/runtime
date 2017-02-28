@@ -43,7 +43,7 @@ public class ProcessingNodeManagement {
     public void removeContainerWhichAreFlaggedToShutdown() {
         for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.info("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperator() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
+            LOG.info("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperatorType() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
             if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
                 dcm.removeContainer(dc);
             }
@@ -86,17 +86,17 @@ public class ProcessingNodeManagement {
                     if (++count == maxTries) throw e;
                 }
             }
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaleup", dh.getName()));
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaleup", dh.getName()));
         } catch (InterruptedException | DockerException e) {
             LOG.error("Could not start a docker container.", e);
             return false;
         }
-        LOG.info("VISP - Scale UP " + dc.getOperator() + " on host " + dh.getName());
+        LOG.info("VISP - Scale UP " + dc.getOperatorType() + " on host " + dh.getName());
         return true;
     }
 
     public void removeAll(Operator operator) {
-        List<DockerContainer> dcs = dcr.findByOperator(operator.getName());
+        List<DockerContainer> dcs = dcr.findByOperatorName(operator.getName());
 
         for (DockerContainer dc : dcs) {
             if (dhr.findFirstByName(dc.getHost()).getResourcepool().equals(operator.getConcreteLocation().getResourcePool())) {
@@ -114,7 +114,7 @@ public class ProcessingNodeManagement {
     }
 
     public void scaleDown(String operator) {
-        List<DockerContainer> operators = dcr.findByOperator(operator);
+        List<DockerContainer> operators = dcr.findByOperatorName(operator);
 
         if (operators.size() < 2) {
             return;
@@ -142,8 +142,8 @@ public class ProcessingNodeManagement {
 
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperator(), "scaledown", dc.getHost()));
-            LOG.info("VISP - Scale DOWN " + dc.getOperator() + "-" + dc.getContainerid());
+            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
+            LOG.info("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
 
         } catch (InterruptedException | DockerException e) {
             LOG.error("Could not trigger scaledown operation.", e);

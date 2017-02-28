@@ -78,7 +78,7 @@ public class ManualOperatorManagement {
         ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
 
         for (Operator op : ops) {
-            DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getType());
+            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
             try {
                 usage.decrementCores(dc.getCpuCores());
                 usage.decrementMemory(dc.getMemory());

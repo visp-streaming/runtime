@@ -67,7 +67,7 @@ public class ResourceMonitor {
         ContainerStats stats;
 
         DockerContainerMonitor oldDcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
-        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperator());
+        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperatorType());
 
         try {
             stats = docker.stats(dc.getContainerid());

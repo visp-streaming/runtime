@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.configuration;
 
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceTriple;
 import lombok.Data;
@@ -29,7 +30,11 @@ public class OperatorConfigurationBootstrap {
     }
 
     public DockerContainer createDockerContainerConfiguration(String operator) {
-        return new DockerContainer(operator, expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
+        return new DockerContainer(operator, operator, expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
+    }
+
+    public DockerContainer createDockerContainerConfiguration(Operator operator) {
+        return new DockerContainer(operator.getType(), operator.getName(), expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
     }
 
 }
