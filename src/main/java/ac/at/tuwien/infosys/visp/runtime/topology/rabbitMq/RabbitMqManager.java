@@ -100,6 +100,8 @@ public class RabbitMqManager {
             LOG.error(e.getLocalizedMessage());
         } catch (DockerException e) {
             LOG.error(e.getLocalizedMessage());
+        } catch (Exception e) {
+            LOG.error(e.getLocalizedMessage());
         } finally {
             toChannel.close();
             if (!toInfrastructureHost.equals(fromInfrastructureHost)) {
@@ -111,6 +113,9 @@ public class RabbitMqManager {
 
     private void sendDockerSignalForUpdate(String toOperatorId, String updateCommand) throws DockerException, InterruptedException {
         List<DockerContainer> dcs = dcr.findByOperator(toOperatorId);
+        if(dcs.size() <= 0) {
+            throw new RuntimeException("Could not find docker containers for operator " + toOperatorId);
+        }
         for (DockerContainer dc : dcs) {
             String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate";
             dcm.executeCommand(dc, command);
