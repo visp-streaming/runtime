@@ -74,7 +74,7 @@ public class ManualOperatorManagement {
         pcm.removeAll(op);
     }
 
-    public Boolean testDeploment(String resourcepool, List<Operator> ops) {
+    public Boolean testDeployment(String resourcepool, List<Operator> ops) {
         ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
 
         for (Operator op : ops) {
