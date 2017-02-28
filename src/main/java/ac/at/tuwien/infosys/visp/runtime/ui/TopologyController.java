@@ -51,11 +51,16 @@ public class TopologyController {
 
     @RequestMapping("/changeTopology")
     public String index(Model model) throws SchedulerException {
-        try {
-            String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(topologyParser.getCurrentGraphvizPngFile())));
-            model.addAttribute("currentTopologyImage", graphvizImage);
-        } catch (IOException e) {
-            LOG.error("Unable to load graphviz image", e);
+        if(topologyParser.getTopology().size() == 0) {
+            model.addAttribute("emptyTopology", true);
+        } else {
+            model.addAttribute("emptyTopology", false);
+            try {
+                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(topologyParser.getCurrentGraphvizPngFile())));
+                model.addAttribute("currentTopologyImage", graphvizImage);
+            } catch (Exception e) {
+                LOG.error("Unable to load graphviz image", e);
+            }
         }
         return "changeTopology";
     }

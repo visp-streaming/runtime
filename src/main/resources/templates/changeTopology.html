@@ -23,7 +23,11 @@
     <div class="panel panel-default">
         <div class="panel-heading">Current Topology</div>
         <div class="panel-body">
-            <img th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/>
+            <img th:if="${!emptyTopology}" th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/>
+            <div th:if="${emptyTopology}" class="alert alert-info">
+                <strong>Info: </strong>
+                <span>Topology is currently empty.</span>
+            </div>
         </div>
     </div>
 
