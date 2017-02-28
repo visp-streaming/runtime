@@ -185,6 +185,14 @@ public class TopologyUpdateHandler {
             this.pathToGraphviz = pathToGraphviz;
         }
 
+        @Override
+        public String toString() {
+            return "UpdateResult{" +
+                    "updatesPerformed=" + updatesPerformed +
+                    ", pathToGraphviz='" + pathToGraphviz + '\'' +
+                    '}';
+        }
+
         public List<TopologyUpdate> updatesPerformed;
         public String pathToGraphviz;
     }
