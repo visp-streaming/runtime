@@ -169,14 +169,48 @@ public class TopologyUpdateHandler {
         return oldSources.equals(newSources);
     }
 
-    public UpdateResult handleUpdate(String fileContent) {
+    public boolean testDeploymentByFile(String fileContent) {
         File topologyFile = saveIncomingTopologyFile(fileContent);
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
-        // TODO: wait for green light from master node
+        List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+
+        return true; // TODO fix
+    }
+
+    public UpdateResult handleUpdateFromUser(String fileContent) {
+        /**
+         * this method is called by the user in the web ui
+         * it must make sure that each involved VISP runtime is
+         * properly informed about the changes through a multi-phase
+         * commit mechanism
+         */
+        File topologyFile = saveIncomingTopologyFile(fileContent);
+        List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
+        List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+
+        for(String runtime : involvedRuntimes) {
+            // TODO: rest call to instances
+        }
+
+
         topologyParser.loadTopologyFromFileSystem(topologyFile.getAbsolutePath());
         rabbitMqManager.performUpdates(updates);
 
         return new UpdateResult(updates, topologyParser.getCurrentGraphvizPngFile());
+    }
+
+    private List<String> getInvolvedRuntimes(List<TopologyUpdate> updates) {
+        /**
+         * returns all runtimes involved in the updates
+         */
+        List<String> involvedRuntimes = new ArrayList<>();
+        for(TopologyUpdate update : updates) {
+            String runtime = update.getAffectedHost();
+            if(!involvedRuntimes.contains(runtime)) {
+                involvedRuntimes.add(runtime);
+            }
+        }
+        return involvedRuntimes;
     }
 
     public class UpdateResult {

@@ -1,7 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
 
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
@@ -14,14 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
 @RestController
@@ -66,21 +64,21 @@ public class TopologyAPI {
         }
     }
 
-    @RequestMapping("/uploadTopologyFile")
-    public String index(@RequestParam(value="name", defaultValue="World") String name) {
-        /**
-         * this controller is just for demonstrating that the file upload also works manually
-         * in practice, the file will be sent by another VISP instance and not by the user
-         */
-        return "<html>\n" +
-                "<body>\n" +
-                "  <form action=\"/uploadTopology\" method=\"POST\" enctype=\"multipart/form-data\">\n" +
-                "    <input type=\"file\" name=\"file\">\n" +
-                "    <input type=\"submit\" value=\"Upload\"> \n" +
-                "  </form>\n" +
-                "</body>\n" +
-                "</html>";
-    }
+//    @RequestMapping("/uploadTopologyFile")
+//    public String index(@RequestParam(value="name", defaultValue="World") String name) {
+//        /**
+//         * this controller is just for demonstrating that the file upload also works manually
+//         * in practice, the file will be sent by another VISP instance and not by the user
+//         */
+//        return "<html>\n" +
+//                "<body>\n" +
+//                "  <form action=\"/testDeploymentForTopologyFile\" method=\"POST\" enctype=\"multipart/form-data\">\n" +
+//                "    <input type=\"file\" name=\"file\">\n" +
+//                "    <input type=\"submit\" value=\"Upload\"> \n" +
+//                "  </form>\n" +
+//                "</body>\n" +
+//                "</html>";
+//    }
 
     @RequestMapping("/getTopology")
     public String getTopology() throws IOException {
@@ -92,27 +90,27 @@ public class TopologyAPI {
         return new String(encoded, Charset.defaultCharset());
     }
 
-    @RequestMapping(value = "/uploadTopology", method = RequestMethod.POST)
+    @RequestMapping(value = "/uploadTopology", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
-    public ResponseEntity<?> uploadTopology(
+    public Map<String, String> testDeploymentForTopologyFile(
             @RequestParam("file") MultipartFile file) {
         /**
-         * this method is used to upload an updated topology description file
-         * it is forwarded to the service class where it will cause a topology update
+         * this method is called from another VISP runtime instance
+         * the current instance checks whether it can perform the suggested
+         * updates or not
          */
 
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
-            System.out.println(fileContent);
-            TopologyUpdateHandler.UpdateResult result = topologyUpdateHandler.handleUpdate(fileContent);
-
+            TopologyUpdateHandler.UpdateResult result = topologyUpdateHandler.handleUpdateFromUser(fileContent);
+            // TODO: big refactoring needed: topologyParser, topologyManagement and topologyUpdateHandler have similar functionalities; divide into stateful and stateless class
         }
         catch (Exception e) {
-            return new ResponseEntity<>(BAD_REQUEST);
+            return Collections.singletonMap("errorMessage", e.getLocalizedMessage());
         }
 
-        return new ResponseEntity<>(OK);
+        return Collections.singletonMap("errorMessage", "none");
     }
 
 
