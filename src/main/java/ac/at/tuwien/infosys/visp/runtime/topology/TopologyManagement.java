@@ -64,18 +64,20 @@ public class TopologyManagement {
             channel.queueBind("applicationmetrics", "applicationmetrics", "applicationmetrics");
             
 
-            for (Operator n : parser.getTopology().values()) {
-                String exchangeName = n.getName();
-                channel.exchangeDeclare(exchangeName, "fanout", true);
+            // remove because it is done on topology upload
 
-                if (n.getSources()!=null) {
-                    for (Operator source : n.getSources()) {
-                        String queueName = RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), exchangeName);
-                        channel.queueDeclare(queueName, true, false, false, null);
-                        channel.queueBind(queueName, source.getName(), source.getName());
-                    }
-                }
-            }
+//            for (Operator n : parser.getTopology().values()) {
+//                String exchangeName = n.getName();
+//                channel.exchangeDeclare(exchangeName, "fanout", true);
+//
+//                if (n.getSources()!=null) {
+//                    for (Operator source : n.getSources()) {
+//                        String queueName = RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), exchangeName);
+//                        channel.queueDeclare(queueName, true, false, false, null);
+//                        channel.queueBind(queueName, source.getName(), source.getName());
+//                    }
+//                }
+//            }
 
             channel.close();
             connection.close();

@@ -74,21 +74,24 @@ public class ManualOperatorManagement {
         pcm.removeAll(op);
     }
 
-    public Boolean testDeployment(String resourcepool, List<Operator> ops) {
-        ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
-
-        for (Operator op : ops) {
-            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
-            try {
-                usage.decrementCores(dc.getCpuCores());
-                usage.decrementMemory(dc.getMemory());
-                usage.decrementStorage(Float.valueOf(dc.getStorage()));
-            } catch (Exception e) {
-                LOG.warn(e.getLocalizedMessage());
-                return false;
-            }
-        }
+    public Boolean testDeployment(List<Operator> ops) {
         return true;
+        // TODO: for each resource pool
+        //List<> resourcePools = ResourceProvider
+//        ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
+//
+//        for (Operator op : ops) {
+//            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
+//            try {
+//                usage.decrementCores(dc.getCpuCores());
+//                usage.decrementMemory(dc.getMemory());
+//                usage.decrementStorage(Float.valueOf(dc.getStorage()));
+//            } catch (Exception e) {
+//                LOG.warn(e.getLocalizedMessage());
+//                return false;
+//            }
+//        }
+//        return true;
     }
 
 
