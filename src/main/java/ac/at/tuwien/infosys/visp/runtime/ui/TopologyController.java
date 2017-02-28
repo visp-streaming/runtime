@@ -59,12 +59,14 @@ public class TopologyController {
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
-            System.out.println(fileContent);
             TopologyUpdateHandler.UpdateResult result = topologyUpdateHandler.handleUpdate(fileContent);
-            String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(result.pathToGraphviz)));
-            //String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File("/tmp/graphviz.png")));
             model.addAttribute("updateResult", result);
-            model.addAttribute("graphvizImage", graphvizImage);
+            if (result.pathToGraphviz != null) {
+                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(result.pathToGraphviz)));
+                model.addAttribute("graphvizImage", graphvizImage);
+            } else {
+                model.addAttribute("graphvizAvailable", false);
+            }
         }
         catch (Exception e) {
             LOG.error(e.getLocalizedMessage());
