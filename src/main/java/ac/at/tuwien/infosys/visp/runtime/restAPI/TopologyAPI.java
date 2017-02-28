@@ -66,7 +66,7 @@ public class TopologyAPI {
         }
     }
 
-    @RequestMapping("/uploa")
+    @RequestMapping("/uploadTopologyFile")
     public String index(@RequestParam(value="name", defaultValue="World") String name) {
         /**
          * this controller is just for demonstrating that the file upload also works manually
@@ -107,8 +107,9 @@ public class TopologyAPI {
             System.out.println(fileContent);
             File topologyFile = topologyUpdateHandler.saveIncomingTopologyFile(fileContent);
             List<TopologyUpdate> updates = topologyUpdateHandler.computeUpdatesFromNewTopologyFile();
-            rabbitMqManager.performUpdates(updates);
+            // TODO: wait for green light from master node
             parser.loadTopologyFromFileSystem(topologyFile.getAbsolutePath());
+            rabbitMqManager.performUpdates(updates);
         }
         catch (Exception e) {
             return new ResponseEntity<>(BAD_REQUEST);

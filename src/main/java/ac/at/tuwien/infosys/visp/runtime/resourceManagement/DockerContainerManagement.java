@@ -271,8 +271,12 @@ public class DockerContainerManagement {
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
+        LOG.info("in executeCommand for cmd: " + cmd);
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
+        if(dh == null) {
+            throw new RuntimeException("Could not find dockerhost by name: " + dc.getHost());
+        }
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
