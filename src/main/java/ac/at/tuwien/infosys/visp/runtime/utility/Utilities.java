@@ -94,7 +94,7 @@ public class Utilities {
     @PostConstruct
     public void createInitialStatus() {
         LOG.info("Deleting old configurations");
-        parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
+        //parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
