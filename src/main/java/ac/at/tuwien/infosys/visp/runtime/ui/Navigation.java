@@ -12,7 +12,9 @@ public class Navigation {
         return Arrays.asList(
                 new NavEntry("/", "about", "About"),
                 new NavEntry("/util", "util", "Utility Operations"),
-                new NavEntry("/pooledvms", "pools", "Resource Pools")
+                new NavEntry("/pooledvms", "pools", "Resource Pools"),
+                new NavEntry("/pooledvms", "pools", "Resource Pools"),
+                new NavEntry("/changeTopology", "changeTopology", "Change Topology")
                 );
                 //new NavEntry("/configuration", "configuration", "Configuration"));
     }
