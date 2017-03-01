@@ -30,6 +30,9 @@ public class TopologyUpdateHandler {
     TopologyParser topologyParser;
 
     @Autowired
+    TopologyManagement topologyManagement;
+
+    @Autowired
     RabbitMqManager rabbitMqManager;
 
 
@@ -39,14 +42,12 @@ public class TopologyUpdateHandler {
     }
 
     public File saveIncomingTopologyFile(String fileContent) {
-        System.out.println("Inside TopologyUpdateHandler::saveIncomingTopologyFile");
         try {
             File temp = File.createTempFile("updatedTopology", ".txt");
             BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
             bw.write(fileContent);
             bw.close();
             incomingTopologyFilePath = temp.getAbsolutePath();
-            System.out.println("Saved new topology file to: " + incomingTopologyFilePath);
             return new File(incomingTopologyFilePath);
         } catch (IOException e) {
             throw new RuntimeException("Could not write topology to temporary file", e);
@@ -58,17 +59,15 @@ public class TopologyUpdateHandler {
          * this uses the antlr parser to actually process the new topology file and generate
          * a topology hashmap
          */
-        TopologyParser parserForNewTopology = new TopologyParser();
-        parserForNewTopology.loadTopologyFromFileSystem(incomingTopologyFilePath);
-        Map<String, Operator> incomingTopology = parserForNewTopology.getTopology();
+        TopologyParser.ParseResult incomingTopology = topologyParser.parseTopologyFromFileSystem(incomingTopologyFilePath);
         LOG.info("Incoming topology contains the following entries:");
-        for (Map.Entry<String, Operator> entry : incomingTopology.entrySet()) {
+        for (Map.Entry<String, Operator> entry : incomingTopology.topology.entrySet()) {
             String name = entry.getKey();
             Operator operator = entry.getValue();
             LOG.info(operator.toString());
         }
 
-        List<TopologyUpdate> updates = updateTopology(topologyParser.getTopology(), parserForNewTopology.getTopology());
+        List<TopologyUpdate> updates = updateTopology(topologyManagement.getTopology(), incomingTopology.topology);
         LOG.info("Have to perform the following updates:");
         for (TopologyUpdate update : updates) {
             LOG.info(update.toString());
@@ -112,7 +111,7 @@ public class TopologyUpdateHandler {
         }
 
         // sort updates in the order ADD - REMOVE - UPDATE
-        // this prevents cases where operators are added as souce that do not exist yet
+        // this prevents cases where operators are added as source that do not exist yet
         returnList.sort(Comparator.comparingInt(t -> t.getAction().ordinal()));
 
         return returnList;
@@ -193,10 +192,21 @@ public class TopologyUpdateHandler {
         }
 
 
-        topologyParser.loadTopologyFromFileSystem(topologyFile.getAbsolutePath());
+        TopologyParser.ParseResult parseResult = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath());
+        topologyManagement.setTopology(parseResult.topology);
+        topologyManagement.setDotFile(parseResult.dotFile);
+        LOG.info("set dotfile for future usage to " + parseResult.dotFile);
         rabbitMqManager.performUpdates(updates);
+        String pngPath;
+        try {
+            pngPath = topologyManagement.getGraphvizPng();
+        } catch (IOException e) {
+            LOG.error(e.getLocalizedMessage());
+            pngPath = null;
+        }
 
-        return new UpdateResult(updates, topologyParser.getCurrentGraphvizPngFile());
+
+        return new UpdateResult(updates, pngPath);
     }
 
     private List<String> getInvolvedRuntimes(List<TopologyUpdate> updates) {

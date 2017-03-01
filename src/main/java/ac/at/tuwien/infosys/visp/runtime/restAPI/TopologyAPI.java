@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
 
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
@@ -35,6 +36,9 @@ public class TopologyAPI {
 
     @Autowired
     private TopologyParser parser;
+
+    @Autowired
+    private TopologyManagement topologyManagement;
 
     @RequestMapping("/addMessageFlow")
     public String addMessageFlow() {
@@ -85,7 +89,7 @@ public class TopologyAPI {
         /**
          * returns the currently active topology as a VISP topology description language file
          */
-        String topologyFile = parser.generateTopologyFile();
+        String topologyFile = parser.generateTopologyFile(topologyManagement.getTopology());
         byte[] encoded = Files.readAllBytes(Paths.get(topologyFile));
         return new String(encoded, Charset.defaultCharset());
     }

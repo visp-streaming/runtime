@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
@@ -32,17 +33,20 @@ public class TopologyController {
     @Autowired
     TopologyParser topologyParser;
 
+    @Autowired
+    TopologyManagement topologyManagement;
+
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
 
     @RequestMapping("/changeTopology")
     public String index(Model model) throws SchedulerException {
-        if(topologyParser.getTopology().size() == 0) {
+        if(topologyManagement.getTopology().size() == 0) {
             model.addAttribute("emptyTopology", true);
         } else {
             model.addAttribute("emptyTopology", false);
             try {
-                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(topologyParser.getCurrentGraphvizPngFile())));
+                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(topologyManagement.getGraphvizPng())));
                 model.addAttribute("currentTopologyImage", graphvizImage);
             } catch (Exception e) {
                 LOG.error("Unable to load graphviz image", e);

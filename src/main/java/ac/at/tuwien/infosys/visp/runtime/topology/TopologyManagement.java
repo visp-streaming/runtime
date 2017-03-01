@@ -14,15 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.InputStreamReader;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 @Service
 public class TopologyManagement {
+    /**
+     * this class is used to manage the topology of a specific VISP runtime
+     */
 
     @Value("${spring.rabbitmq.username}")
     private String rabbitmqUsername;
@@ -30,10 +33,19 @@ public class TopologyManagement {
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
 
-    @Autowired
-    private TopologyParser parser;
+    private String dotFile;
+
+    private Map<String, Operator> topology = new LinkedHashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyManagement.class);
+
+    public Map<String, Operator> getTopology() {
+        return topology;
+    }
+
+    public void setTopology(Map<String, Operator> topology) {
+        this.topology = topology;
+    }
 
     public void createMapping(String infrastructureHost) {
         try {
@@ -62,22 +74,6 @@ public class TopologyManagement {
             channel.exchangeDeclare("applicationmetrics", "fanout", true);
             channel.queueDeclare("applicationmetrics", true, false, false, null);
             channel.queueBind("applicationmetrics", "applicationmetrics", "applicationmetrics");
-            
-
-            // remove because it is done on topology upload
-
-//            for (Operator n : parser.getTopology().values()) {
-//                String exchangeName = n.getName();
-//                channel.exchangeDeclare(exchangeName, "fanout", true);
-//
-//                if (n.getSources()!=null) {
-//                    for (Operator source : n.getSources()) {
-//                        String queueName = RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), exchangeName);
-//                        channel.queueDeclare(queueName, true, false, false, null);
-//                        channel.queueBind(queueName, source.getName(), source.getName());
-//                    }
-//                }
-//            }
 
             channel.close();
             connection.close();
@@ -104,7 +100,7 @@ public class TopologyManagement {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
-            for (Operator n : parser.getTopology().values()) {
+            for (Operator n : topology.values()) {
                 channel.exchangeDelete(n.getName());
 
                 if (n.getSources() != null) {
@@ -130,7 +126,7 @@ public class TopologyManagement {
 
     public String getIncomingQueues(String operator) {
         StringBuilder incomingQueues = new StringBuilder();
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topology.values()) {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
@@ -144,7 +140,7 @@ public class TopologyManagement {
 
     public List<String> getIncomingQueuesAsList(String operator) {
         List<String> incomingQueues = new ArrayList<>();
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topology.values()) {
             if (op.getName().equals(operator)) {
                 if (op.getSources()!=null) {
                     for (Operator source : op.getSources()) {
@@ -158,7 +154,7 @@ public class TopologyManagement {
 
     public List<String> getOperatorsAsList() {
         List<String> operators = new ArrayList<>();
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topology.values()) {
             operators.add(op.getName());
         }
         return operators;
@@ -166,7 +162,7 @@ public class TopologyManagement {
 
     public List<Operator> getOperators() {
         List<Operator> operators = new ArrayList<>();
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topology.values()) {
             operators.add(op);
         }
         return operators;
@@ -174,7 +170,7 @@ public class TopologyManagement {
 
     public List<Operator> getOperatorsForAConcreteLocation(String location) {
         List<Operator> operators = new ArrayList<>();
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topology.values()) {
             if (op.getConcreteLocation().getIpAddress().equals(location)) {
                 operators.add(op);
             }
@@ -183,14 +179,14 @@ public class TopologyManagement {
     }
 
     public Operator getOperatorByIdentifier(String identifier) {
-        return parser.getTopology().get(identifier);
+        return topology.get(identifier);
     }
     
     public String getDownstreamOperators(String operator){
     
     	Set<String> ops = new HashSet<String>();
     	
-        for (Operator n : parser.getTopology().values()) {
+        for (Operator n : topology.values()) {
 
         	if (n.getSources() == null)
             	continue;
@@ -204,5 +200,47 @@ public class TopologyManagement {
 
         return Joiner.on(',').join(ops);
    
+    }
+
+    public String getGraphvizPng() throws IOException {
+        File tempGraphvizPngOut = File.createTempFile("graphviz", ".png");
+        LOG.info("png file: " + tempGraphvizPngOut);
+        try {
+            ProcessBuilder builder = new ProcessBuilder("/usr/bin/dot", "-Tpng", getDotFile());
+            builder.redirectOutput(tempGraphvizPngOut);
+            Process pr = builder.start(); // may throw IOException
+
+            BufferedReader stdInput = new BufferedReader(new
+                    InputStreamReader(pr.getInputStream()));
+
+            BufferedReader stdError = new BufferedReader(new
+                    InputStreamReader(pr.getErrorStream()));
+
+//            logger.info("Here is the standard output of the command:\n");
+//            String s = null;
+//            while ((s = stdInput.readLine()) != null) {
+//                logger.info(s);
+//            }
+//
+//            logger.info("Here is the standard error of the command (if any):\n");
+//            while ((s = stdError.readLine()) != null) {
+//                logger.info(s);
+//            }
+
+            pr.waitFor();
+            LOG.info("exit value: " + pr.exitValue());
+            return tempGraphvizPngOut.getAbsolutePath();
+        } catch (Exception e) {
+            LOG.error("Graphviz could not create PNG file", e);
+            return null;
+        }
+    }
+
+    public String getDotFile() {
+        return dotFile;
+    }
+
+    public void setDotFile(String dotFile) {
+        this.dotFile = dotFile;
     }
 }

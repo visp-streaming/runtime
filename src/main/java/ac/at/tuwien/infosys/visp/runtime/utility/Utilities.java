@@ -66,6 +66,9 @@ public class Utilities {
     @Autowired
     private ReportingCompressor compressor;
 
+    @Autowired
+    private TopologyManagement topologyManagement;
+
     @Value("${visp.infrastructurehost}")
     private String infrastructureHost;
 
@@ -84,7 +87,7 @@ public class Utilities {
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     public void initializeTopology() {
-        for (Operator op : parser.getTopology().values()) {
+        for (Operator op : topologyManagement.getTopology().values()) {
             if (op.getName().contains("source")) {
                 continue;
             }
@@ -95,7 +98,7 @@ public class Utilities {
     @PostConstruct
     public void createInitialStatus() {
         LOG.info("Deleting old configurations");
-        //parser.loadTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
+        //parser.parseTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
@@ -116,7 +119,7 @@ public class Utilities {
         LOG.info("Cleanup Completed");
 
         topologyMgmt.createMapping(infrastructureHost);
-        parser.setTopology(new LinkedHashMap<>());
+        topologyManagement.setTopology(new LinkedHashMap<>());
         //initializeTopology();
     }
 

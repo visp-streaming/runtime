@@ -26,16 +26,12 @@ public class TopologyUpdateTest {
 
     private TopologyPair getTopologiesFromFiles(String file1, String file2) {
         TopologyParser parser = new TopologyParser();
-        parser.loadTopologyFromClasspath(file1);
-        Map<String, Operator> oldTopology = parser.getTopology();
-
-        TopologyParser parser2 = new TopologyParser();
-        parser2.loadTopologyFromClasspath(file2);
-        Map<String, Operator> newTopology = parser2.getTopology();
+        TopologyParser.ParseResult oldTopology = parser.parseTopologyFromClasspath(file1);
+        TopologyParser.ParseResult newTopology = parser.parseTopologyFromClasspath(file2);
 
         TopologyPair pair = new TopologyPair();
-        pair.oldTopology = oldTopology;
-        pair.newTopology = newTopology;
+        pair.oldTopology = oldTopology.topology;
+        pair.newTopology = newTopology.topology;
 
         return pair;
 
