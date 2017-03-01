@@ -8,7 +8,12 @@
 
     <div class="panel panel-default">
         <div class="panel-heading">Update Successful!</div>
-        <div class="panel-body">
+        <div class="panel-body" th:if="${updatesPerformed == null}">
+            <div class="alert alert-danger">
+                <strong>Error</strong> Could not process updates - please check the logs.
+            </div>
+        </div>
+        <div class="panel-body" th:if="${updatesPerformed != null}">
             <p>The following updates were executed:</p>
             <div th:each="update : ${updateResult.updatesPerformed}">
                 <div class="alert"
