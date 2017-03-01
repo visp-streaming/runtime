@@ -39,6 +39,12 @@ public class TopologyManagement {
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyManagement.class);
 
+    /**
+     * path to the deploymentfile that will be executed after the deployment has been tested
+     */
+    private File testDeploymentFile;
+    private int testDeploymentHash;
+
     public Map<String, Operator> getTopology() {
         return topology;
     }
@@ -242,5 +248,23 @@ public class TopologyManagement {
 
     public void setDotFile(String dotFile) {
         this.dotFile = dotFile;
+    }
+
+    public void saveTestDeploymentFile(File topologyFile, int hashcode) {
+        /**
+         * this method is called by the handling of a REST-call coming from another VISP instance.
+         * It stores the topology-file for later deployment
+         */
+
+        this.testDeploymentFile = topologyFile;
+        this.testDeploymentHash = hashcode;
+    }
+
+    public File getTestDeploymentFile() {
+        return testDeploymentFile;
+    }
+
+    public int getTestDeploymentHash() {
+        return testDeploymentHash;
     }
 }

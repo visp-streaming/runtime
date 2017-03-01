@@ -2,19 +2,22 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class TopologyUpdateHandler {
@@ -34,6 +37,8 @@ public class TopologyUpdateHandler {
 
     @Autowired
     RabbitMqManager rabbitMqManager;
+
+    private ReentrantLock lock = new ReentrantLock();
 
 
     public TopologyUpdateHandler() {
@@ -169,29 +174,88 @@ public class TopologyUpdateHandler {
     }
 
     public boolean testDeploymentByFile(String fileContent) {
-        File topologyFile = saveIncomingTopologyFile(fileContent);
-        List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
-        List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+        this.lock.lock();
+        try {
+            File topologyFile = saveIncomingTopologyFile(fileContent);
+            topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
+            List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
+            List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+        } finally {
+            this.lock.unlock();
+        }
 
-        return true; // TODO fix
+        return false; // TODO fix
     }
 
-    public UpdateResult handleUpdateFromUser(String fileContent) {
+    public UpdateResult handleUpdateFromUser(String fileContent) throws UnsupportedEncodingException {
         /**
          * this method is called by the user in the web ui
          * it must make sure that each involved VISP runtime is
          * properly informed about the changes through a multi-phase
          * commit mechanism
          */
+        int hash = fileContent.hashCode();
         File topologyFile = saveIncomingTopologyFile(fileContent);
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
-        List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+        //List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+        List<String> involvedRuntimes = new ArrayList<>();
+        involvedRuntimes.add("127.0.0.1");
 
-        for(String runtime : involvedRuntimes) {
-            // TODO: rest call to instances
+        boolean allInvolvedRuntimesAgree = true;
+        List<String> contactedRuntimes = new ArrayList<>();
+        for (String runtime : involvedRuntimes) {
+            // TODO: make for loop parallel
+            TestDeploymentDTO result = sendRestRequest(fileContent, "http://" + runtime + ":8080/testDeploymentForTopologyFile");
+            contactedRuntimes.add(runtime);
+            if(!result.isDeploymentPossible()) {
+                allInvolvedRuntimesAgree = false;
+                break;
+            }
         }
 
+        String pngPath = null;
 
+        UpdateResult updateResult = new UpdateResult(updates, null);
+
+        if(allInvolvedRuntimesAgree) {
+            if(contactedRuntimes.size() != involvedRuntimes.size()) {
+                throw new RuntimeException("Exception: number of involved and contacted runtimes must agree in case of commit");
+            }
+            sendCommitToRuntimes(contactedRuntimes, hash);
+            pngPath = executeUpdateFromUser(topologyFile, updates);
+            updateResult.distributedUpdateSuccessful = true;
+        } else {
+            updateResult.distributedUpdateSuccessful = false;
+            sendAbortSignalToRuntimes(contactedRuntimes, hash);
+        }
+        updateResult.pngPath = pngPath;
+
+        return updateResult;
+    }
+
+    private void sendAbortSignalToRuntimes(List<String> contactedRuntimes, int hash) {
+        LOG.info("Sending abort signal to " + contactedRuntimes.size() + " runtimes");
+        for(String runtime : contactedRuntimes) {
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "http://" + runtime + ":8080/abortTopologyUpdate?hash=" + hash;
+            LOG.info("sending request to url: " + url);
+            Map<String, Object> abortResult = restTemplate.getForObject(url, Map.class);
+            LOG.info("runtime " + runtime + " replied " + abortResult.get("errorMessage"));
+        }
+    }
+
+    private void sendCommitToRuntimes(List<String> contactedRuntimes, int hash) {
+        LOG.info("Sending commit signal to " + contactedRuntimes.size() + " runtimes");
+        for(String runtime : contactedRuntimes) {
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
+            LOG.info("sending request to url: " + url);
+            Map<String, Object> commitResult = restTemplate.getForObject(url, Map.class);
+            LOG.info("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
+        }
+    }
+
+    private String executeUpdateFromUser(File topologyFile, List<TopologyUpdate> updates) {
         TopologyParser.ParseResult parseResult = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath());
         topologyManagement.setTopology(parseResult.topology);
         topologyManagement.setDotFile(parseResult.dotFile);
@@ -205,8 +269,25 @@ public class TopologyUpdateHandler {
             pngPath = null;
         }
 
+        return pngPath;
+    }
 
-        return new UpdateResult(updates, pngPath);
+    private TestDeploymentDTO sendRestRequest(final String fileContent, String url) throws UnsupportedEncodingException {
+        RestTemplate restTemplate = new RestTemplate();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        final String filename="topology.txt";
+        map.add("name", filename);
+        map.add("filename", filename);
+        ByteArrayResource contentsAsResource = new ByteArrayResource(fileContent.getBytes("UTF-8")){
+            @Override
+            public String getFilename(){
+                return filename;
+            }
+        };
+        map.add("file", contentsAsResource);
+        TestDeploymentDTO testDeploymentDTO = restTemplate.postForObject(url, map, TestDeploymentDTO.class);
+        LOG.info(testDeploymentDTO.toString());
+        return testDeploymentDTO;
     }
 
     private List<String> getInvolvedRuntimes(List<TopologyUpdate> updates) {
@@ -214,9 +295,9 @@ public class TopologyUpdateHandler {
          * returns all runtimes involved in the updates
          */
         List<String> involvedRuntimes = new ArrayList<>();
-        for(TopologyUpdate update : updates) {
+        for (TopologyUpdate update : updates) {
             String runtime = update.getAffectedHost();
-            if(!involvedRuntimes.contains(runtime)) {
+            if (!involvedRuntimes.contains(runtime)) {
                 involvedRuntimes.add(runtime);
             }
         }
@@ -224,20 +305,21 @@ public class TopologyUpdateHandler {
     }
 
     public class UpdateResult {
-        public UpdateResult(List<TopologyUpdate> updatesPerformed, String pathToGraphviz) {
+        public UpdateResult(List<TopologyUpdate> updatesPerformed, String pngPath) {
             this.updatesPerformed = updatesPerformed;
-            this.pathToGraphviz = pathToGraphviz;
+            this.pngPath = pngPath;
         }
 
         @Override
         public String toString() {
             return "UpdateResult{" +
                     "updatesPerformed=" + updatesPerformed +
-                    ", pathToGraphviz='" + pathToGraphviz + '\'' +
+                    ", pngPath='" + pngPath + '\'' +
                     '}';
         }
 
         public List<TopologyUpdate> updatesPerformed;
-        public String pathToGraphviz;
+        public String pngPath;
+        public boolean distributedUpdateSuccessful;
     }
 }

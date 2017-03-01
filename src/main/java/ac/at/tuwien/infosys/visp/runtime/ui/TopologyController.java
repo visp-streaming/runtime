@@ -5,7 +5,6 @@ import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.quartz.SchedulerException;
@@ -46,7 +45,7 @@ public class TopologyController {
         } else {
             model.addAttribute("emptyTopology", false);
             try {
-                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(topologyManagement.getGraphvizPng())));
+                String graphvizImage = new String(org.apache.commons.codec.binary.Base64.encodeBase64(FileUtils.readFileToByteArray(new File(topologyManagement.getGraphvizPng()))));
                 model.addAttribute("currentTopologyImage", graphvizImage);
             } catch (Exception e) {
                 LOG.error("Unable to load graphviz image", e);
@@ -67,15 +66,16 @@ public class TopologyController {
             String fileContent = IOUtils.toString(stream, "UTF-8");
             TopologyUpdateHandler.UpdateResult result = topologyUpdateHandler.handleUpdateFromUser(fileContent);
             model.addAttribute("updateResult", result);
-            if (result.pathToGraphviz != null) {
-                String graphvizImage = Base64.encode(FileUtils.readFileToByteArray(new File(result.pathToGraphviz)));
+            if (result.pngPath != null) {
+                String graphvizImage = new String(org.apache.commons.codec.binary.Base64.encodeBase64(FileUtils.readFileToByteArray(new File(result.pngPath))));
                 model.addAttribute("graphvizImage", graphvizImage);
             } else {
                 model.addAttribute("graphvizAvailable", false);
             }
         }
         catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
+            LOG.error(e.getStackTrace().toString());
+            LOG.error(e.toString(), e);
         }
 
         return "afterTopologyUpdate";
