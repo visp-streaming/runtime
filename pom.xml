@@ -172,11 +172,6 @@
             <version>${webjars.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
         <!-- External Elasticity Controller -->
         <dependency>
             <groupId>it.uniroma2</groupId>
@@ -234,7 +229,7 @@
         <repository>
             <id>infosys</id>
             <name>infosys-maven-releases</name>
-            <url>http://lilith.infosys.tuwien.ac.at:8081/artifactory/libs-release-local</url>
+            <url>https://repo.infosys.tuwien.ac.at/artifactory/libs-release</url>
         </repository>
     </repositories>
 
