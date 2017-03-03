@@ -50,7 +50,7 @@ public class ReasonerBasic {
     @Value("${visp.reasoner}")
     private String reasoner;
 
-    @Value("${visp.ip}")
+    @Value("${visp.runtime.ip}")
     private String vispLocation;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);

@@ -69,7 +69,7 @@ public class ReasonerBTU {
     @Value("${visp.reasoner}")
     private String reasoner;
 
-    @Value("${visp.ip}")
+    @Value("${visp.runtime.ip}")
     private String vispLocation;
 
     @Autowired

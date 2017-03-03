@@ -12,6 +12,7 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,12 +35,15 @@ public class PoolController {
     @Autowired
     private ResourceProvider rp;
 
-    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
+    @Value("${visp.runtime.ip}")
+    private String runtimeip;
 
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/pooledvms")
     public String index(Model model) throws SchedulerException {
 
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
         model.addAttribute("pools", pvmr.findAll());
         return "pooledvms";
     }
@@ -53,7 +57,7 @@ public class PoolController {
         model.addAttribute("cost", 1.5);
         model.addAttribute(form);
 
-        model.addAttribute("message", null);
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
         return "createPooledvm";
     }
 
@@ -77,6 +81,7 @@ public class PoolController {
         pvm.setCpuFrequency(2400);
         pvmr.save(pvm);
 
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
         model.addAttribute("message", "A new pooledVM has beeen started.");
         model.addAttribute("pools", pvmr.findAll());
 
@@ -96,6 +101,7 @@ public class PoolController {
             model.addAttribute("message", "The pooled VM has been deleted.");
         }
 
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
         model.addAttribute("pools", pvmr.findAll());
         rp.updateResourceProvider();
         return "pooledvms";
@@ -114,6 +120,7 @@ public class PoolController {
             }
         }
 
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
         model.addAttribute("message", "The pooled VMs have been deleted.");
         model.addAttribute("pools", pvmr.findAll());
         rp.updateResourceProvider();

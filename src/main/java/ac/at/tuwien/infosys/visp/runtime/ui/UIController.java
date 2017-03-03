@@ -10,13 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/")
 public class UIController {
 
-	@Value("${spring.rabbitmq.host}")
-	private String rabbitMQHost;
+	@Value("${visp.runtime.ip}")
+	private String runtimeip;
 
 	@RequestMapping("/")
 	public String index(Model model) {
 
-		model.addAttribute("rabbitmqMonitoring", "http://" + rabbitMQHost + ":15672");
+		model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+		model.addAttribute("rabbitmqMonitoring", "http://" + runtimeip + ":15672");
 		return "about";
 	}
 
