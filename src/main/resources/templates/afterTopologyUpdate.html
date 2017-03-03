@@ -29,7 +29,9 @@
                     <span th:text="${update.affectedHost}"></span>
                 </div>
             </div>
-            <h3>The following topology is now in place:</h3>
+            <h3>
+                <!--The following topology is now in place:-->
+            </h3>
             <script th:inline="javascript">
                 /*<![CDATA[*/
 
@@ -46,8 +48,8 @@
 </th:block>
 
 <script type="text/javascript">
-    image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
-    document.body.appendChild(image);
+    //image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
+    //document.body.appendChild(image);
 </script>
 
 </body>

@@ -114,6 +114,7 @@ public class TopologyManagement {
                         String queueName = RabbitMqManager.getQueueName(infrastructureHost, source.getName(), n.getName());
                         LOG.info("Deleting queue " + queueName);
                         channel.queueDelete(queueName);
+                        // TODO: check why this is not executed
                     }
                 }
             }

@@ -70,6 +70,10 @@ public class RabbitMqManager {
     }
 
     public Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
+        LOG.info("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
+        if(infrastructureHost.equals(ownIp)) {
+            infrastructureHost = rabbitMqHost;
+        }
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(infrastructureHost);
         factory.setUsername(rabbitmqUsername);
@@ -80,23 +84,37 @@ public class RabbitMqManager {
         return channel;
     }
 
-    public void declareExchanges(List<TopologyUpdate> updates) throws IOException, TimeoutException {
+    public void declareExchanges(List<TopologyUpdate> updates)  {
         if (updates.size() == 0) {
             return;
         }
 
-        ChannelFactory channelFactory = new ChannelFactory(ownIp, null).invoke();
+        ChannelFactory channelFactory = null;
+        try {
+            channelFactory = new ChannelFactory(ownIp, null).invoke();
+        } catch (Exception e) {
+            LOG.error("Could not declare exchange because connection to rmq could not be established", e);
+            return;
+        }
         Channel fromChannel = channelFactory.getFromChannel();
         for (TopologyUpdate update : updates) {
             if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
                 continue;
             }
             String exchangeName = update.getAffectedOperator().getName();
-            fromChannel.exchangeDeclare(exchangeName, "fanout", true);
+            try {
+                fromChannel.exchangeDeclare(exchangeName, "fanout", true);
+            } catch (IOException e) {
+                LOG.error("Could not declare exchange " + exchangeName);
+            }
 
             LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + ownIp);
         }
-        fromChannel.close();
+        try {
+            fromChannel.close();
+        } catch (Exception e) {
+            LOG.error("Could not close channel", e);
+        }
     }
 
 
@@ -107,13 +125,13 @@ public class RabbitMqManager {
          */
 
 
-        if (fromInfrastructureHost.equals(ownIp)) {
-            fromInfrastructureHost = rabbitMqHost;
-        }
-
-        if (toInfrastructureHost.equals(ownIp)) {
-            toInfrastructureHost = rabbitMqHost;
-        }
+//        if (fromInfrastructureHost.equals(ownIp)) {
+//            fromInfrastructureHost = rabbitMqHost;
+//        }
+//
+//        if (toInfrastructureHost.equals(ownIp)) {
+//            toInfrastructureHost = rabbitMqHost;
+//        }
 
         LOG.info("Adding message flow from " + fromInfrastructureHost + "/" + fromOperatorId + " to " + toInfrastructureHost + "/" + toOperatorId);
         ChannelFactory channelFactory = null;
@@ -188,6 +206,8 @@ public class RabbitMqManager {
 
             // this should stop the exchange sending messages to the queue
             fromChannel.queueUnbind(queueName, exchangeName, exchangeName);
+
+            // TODO: delete queues
             LOG.info("!unbinding queue " + queueName + " on exchange " + exchangeName + " on host " + fromInfrastructureHost);
 
             sendDockerSignalForUpdate(toOperatorId, "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);

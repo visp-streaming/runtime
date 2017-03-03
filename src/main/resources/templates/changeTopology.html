@@ -34,12 +34,15 @@
     </div>
 
 </th:block>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
-    document.body.appendChild(image);
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
+        document.body.appendChild(image);
 
-    /*]]>*/
-</script>
+        /*]]>*/
+    </script>
+</th:block>
+
 </body>
 </html>
