@@ -52,9 +52,10 @@ public class PoolController {
     public String run(Model model) {
 
         CreatePooledvmForm form = new CreatePooledvmForm();
+        form.setCost(1.5);
+        form.setFlavour("m2.medium");
 
         model.addAttribute("flavours", opc.getFlavours());
-        model.addAttribute("cost", 1.5);
         model.addAttribute(form);
 
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
