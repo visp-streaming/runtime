@@ -57,6 +57,9 @@ public class DockerContainerManagement {
     @Value("${spring.rabbitmq.host}")
     private String rabbitMqHost;
 
+    @Value("${visp.runtime.ip}")
+    private String ownIp;
+
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
@@ -77,7 +80,8 @@ public class DockerContainerManagement {
 
         /* Configure environment variables */
         List<String> environmentVariables = new ArrayList<>();
-        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + rabbitMqHost); // TODO: check if this is always the right host
+        String outgoingHost = op.getConcreteLocation().getIpAddress().equals(rabbitMqHost) ? ownIp : op.getConcreteLocation().getIpAddress(); // generalized deployment
+        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost); // TODO: check if this is always the right host
         environmentVariables.add("SPRING_REDIS_HOST=" + redisHost);
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
@@ -147,6 +151,7 @@ public class DockerContainerManagement {
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
     @Deprecated
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
+        LOG.error("!! WARNING !! - this method is deprecated and the wrong outgoing host is set since no operator information is available");
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 

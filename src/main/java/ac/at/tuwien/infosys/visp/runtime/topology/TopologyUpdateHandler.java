@@ -9,6 +9,7 @@ import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -17,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
@@ -37,6 +39,9 @@ public class TopologyUpdateHandler {
 
     @Autowired
     RabbitMqManager rabbitMqManager;
+
+    @Value("${visp.runtime.ip}")
+    private String vispRuntimeOwnIp;
 
     private ReentrantLock lock = new ReentrantLock();
 
@@ -74,7 +79,7 @@ public class TopologyUpdateHandler {
 
         List<TopologyUpdate> updates = updateTopology(topologyManagement.getTopology(), incomingTopology.topology);
         LOG.info("Have to perform the following updates:");
-        for (TopologyUpdate update : updates) {
+        for (TopologyUpdate update : filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp)) {
             LOG.info(update.toString());
         }
 
@@ -180,11 +185,12 @@ public class TopologyUpdateHandler {
             topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
             List<String> involvedRuntimes = getInvolvedRuntimes(updates);
+            // TODO: only check updates where own IP is affected
         } finally {
             this.lock.unlock();
         }
-
-        return false; // TODO fix
+        LOG.info("testDeployment is possible!");
+        return true; // TODO fix
     }
 
     public UpdateResult handleUpdateFromUser(String fileContent) throws UnsupportedEncodingException {
@@ -197,9 +203,7 @@ public class TopologyUpdateHandler {
         int hash = fileContent.hashCode();
         File topologyFile = saveIncomingTopologyFile(fileContent);
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
-        //List<String> involvedRuntimes = getInvolvedRuntimes(updates);
-        List<String> involvedRuntimes = new ArrayList<>();
-        involvedRuntimes.add("127.0.0.1");
+        List<String> involvedRuntimes = getInvolvedRuntimes(updates);
 
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
@@ -207,7 +211,7 @@ public class TopologyUpdateHandler {
             // TODO: make for loop parallel
             TestDeploymentDTO result = sendRestRequest(fileContent, "http://" + runtime + ":8080/testDeploymentForTopologyFile");
             contactedRuntimes.add(runtime);
-            if(!result.isDeploymentPossible()) {
+            if (!result.isDeploymentPossible()) {
                 allInvolvedRuntimesAgree = false;
                 break;
             }
@@ -215,15 +219,16 @@ public class TopologyUpdateHandler {
 
         String pngPath = null;
 
-        UpdateResult updateResult = new UpdateResult(updates, null);
+        UpdateResult updateResult = new UpdateResult(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp), null);
 
-        if(allInvolvedRuntimesAgree) {
-            if(contactedRuntimes.size() != involvedRuntimes.size()) {
+        if (allInvolvedRuntimesAgree) {
+            if (contactedRuntimes.size() != involvedRuntimes.size()) {
                 throw new RuntimeException("Exception: number of involved and contacted runtimes must agree in case of commit");
             }
             sendCommitToRuntimes(contactedRuntimes, hash);
-            pngPath = executeUpdateFromUser(topologyFile, updates);
+            pngPath = executeUpdate(topologyFile, updates);
             updateResult.distributedUpdateSuccessful = true;
+            updateResult.pngPath = pngPath;
         } else {
             updateResult.distributedUpdateSuccessful = false;
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
@@ -235,7 +240,7 @@ public class TopologyUpdateHandler {
 
     private void sendAbortSignalToRuntimes(List<String> contactedRuntimes, int hash) {
         LOG.info("Sending abort signal to " + contactedRuntimes.size() + " runtimes");
-        for(String runtime : contactedRuntimes) {
+        for (String runtime : contactedRuntimes) {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/abortTopologyUpdate?hash=" + hash;
             LOG.info("sending request to url: " + url);
@@ -246,7 +251,7 @@ public class TopologyUpdateHandler {
 
     private void sendCommitToRuntimes(List<String> contactedRuntimes, int hash) {
         LOG.info("Sending commit signal to " + contactedRuntimes.size() + " runtimes");
-        for(String runtime : contactedRuntimes) {
+        for (String runtime : contactedRuntimes) {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
             LOG.info("sending request to url: " + url);
@@ -255,32 +260,46 @@ public class TopologyUpdateHandler {
         }
     }
 
-    private String executeUpdateFromUser(File topologyFile, List<TopologyUpdate> updates) {
+    private String executeUpdate(File topologyFile, List<TopologyUpdate> updates) {
         TopologyParser.ParseResult parseResult = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath());
         topologyManagement.setTopology(parseResult.topology);
         topologyManagement.setDotFile(parseResult.dotFile);
         LOG.info("set dotfile for future usage to " + parseResult.dotFile);
-        rabbitMqManager.performUpdates(updates);
+
         String pngPath;
         try {
+            rabbitMqManager.performUpdates(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp));
             pngPath = topologyManagement.getGraphvizPng();
-        } catch (IOException e) {
-            LOG.error(e.getLocalizedMessage());
+        } catch (Exception e) {
+            LOG.error("could not perform updates", e);
             pngPath = null;
         }
 
         return pngPath;
     }
 
+    public List<TopologyUpdate> filterUpdatesByOwnRuntime(List<TopologyUpdate> updates, String vispRuntimeOwnIp) {
+        List<TopologyUpdate> returnList = new ArrayList<>();
+        for (TopologyUpdate update : updates) {
+            if (update.getAffectedHost().equals(vispRuntimeOwnIp)) {
+                returnList.add(update);
+            } else {
+                LOG.info("do not execute update on this host: " + update);
+            }
+        }
+
+        return returnList;
+    }
+
     private TestDeploymentDTO sendRestRequest(final String fileContent, String url) throws UnsupportedEncodingException {
         RestTemplate restTemplate = new RestTemplate();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        final String filename="topology.txt";
+        final String filename = "topology.txt";
         map.add("name", filename);
         map.add("filename", filename);
-        ByteArrayResource contentsAsResource = new ByteArrayResource(fileContent.getBytes("UTF-8")){
+        ByteArrayResource contentsAsResource = new ByteArrayResource(fileContent.getBytes("UTF-8")) {
             @Override
-            public String getFilename(){
+            public String getFilename() {
                 return filename;
             }
         };
@@ -297,11 +316,25 @@ public class TopologyUpdateHandler {
         List<String> involvedRuntimes = new ArrayList<>();
         for (TopologyUpdate update : updates) {
             String runtime = update.getAffectedHost();
+            if (runtime.equals(vispRuntimeOwnIp)) {
+                // the own runtime is not queried via REST
+                LOG.info("Skipping own runtime with IP " + vispRuntimeOwnIp);
+                continue;
+            }
             if (!involvedRuntimes.contains(runtime)) {
                 involvedRuntimes.add(runtime);
             }
         }
         return involvedRuntimes;
+    }
+
+    public void commitUpdate(int localHash) {
+        LOG.info("Commiting update with localHash " + localHash);
+        // TODO: check if hashes match
+        executeUpdate(topologyManagement.getTestDeploymentFile(),
+                updateTopology(topologyManagement.getTopology(),
+                        topologyParser.parseTopologyFromFileSystem(
+                                topologyManagement.getTestDeploymentFile().getAbsolutePath()).topology));
     }
 
     public class UpdateResult {

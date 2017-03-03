@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="layout/main">
+
 <head/>
 
 <body>
@@ -23,7 +24,8 @@
     <div class="panel panel-default">
         <div class="panel-heading">Current Topology</div>
         <div class="panel-body">
-            <img th:if="${!emptyTopology}" th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/>
+            <!--<img th:if="${!emptyTopology}" th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/> -->
+
             <div th:if="${emptyTopology}" class="alert alert-info">
                 <strong>Info: </strong>
                 <span>Topology is currently empty.</span>
@@ -32,6 +34,12 @@
     </div>
 
 </th:block>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
+    document.body.appendChild(image);
 
+    /*]]>*/
+</script>
 </body>
 </html>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="layout/main">
+<script type="text/javascript" th:src="@{/js/viz.js}"></script>
+
 <head/>
 
 <body>
@@ -28,12 +30,25 @@
                 </div>
             </div>
             <h3>The following topology is now in place:</h3>
-            <img th:src="@{'data:image/png;base64,'+${graphvizImage}}"/>
+            <script th:inline="javascript">
+                /*<![CDATA[*/
+
+                var dotContent = [[${dotContent}]];
+                console.log(dotContent);
+
+                /*]]>*/
+            </script>
+            <div id="graphvizImage"></div>
 
         </div>
     </div>
 
 </th:block>
+
+<script type="text/javascript">
+    image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
+    document.body.appendChild(image);
+</script>
 
 </body>
 </html>

@@ -147,6 +147,8 @@ public class TopologyAPI {
         if(localHash != Integer.parseInt(hash)) {
             LOG.warn("Warning - transmitted hash does not fit locally stored hash - will NOT commit");
             errorMessage = "invalid hash";
+        } else {
+            topologyUpdateHandler.commitUpdate(localHash);
         }
 
         jsonData.put("action", "commit");
