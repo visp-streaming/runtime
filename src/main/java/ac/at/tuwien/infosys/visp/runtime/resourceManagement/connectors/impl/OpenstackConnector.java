@@ -2,8 +2,8 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -80,6 +82,16 @@ public class OpenstackConnector extends ResourceConnector {
 
         LOG.info("VISP - Successfully connected to " + OPENSTACK_AUTH_URL + " on tenant " + OPENSTACK_TENANT_NAME + " with user " + OPENSTACK_USERNAME);
     }
+
+    public List<String> getFlavours() {
+        setup();
+        List<String> flavours = new ArrayList<>();
+        for (Flavor flavour : os.compute().flavors().list()) {
+            flavours.add(flavour.getName());
+        }
+        return flavours;
+    }
+
 
 
     @Override

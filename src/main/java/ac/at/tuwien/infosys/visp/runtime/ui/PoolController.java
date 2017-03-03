@@ -19,9 +19,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Controller
 public class PoolController {
 
@@ -52,12 +49,7 @@ public class PoolController {
 
         CreatePooledvmForm form = new CreatePooledvmForm();
 
-        //TODO fetch them from openstack
-        List<String> flavours = new ArrayList<>();
-        flavours.add("m2.medium");
-        flavours.add("m1.medium");
-
-        model.addAttribute("flavours", flavours);
+        model.addAttribute("flavours", opc.getFlavours());
         model.addAttribute("cost", 1.5);
         model.addAttribute(form);
 
