@@ -209,43 +209,10 @@ public class TopologyManagement {
    
     }
 
-    public String getGraphvizPng() throws IOException {
-        File tempGraphvizPngOut = File.createTempFile("graphviz", ".png");
-        LOG.info("png file: " + tempGraphvizPngOut);
-        try {
-            ProcessBuilder builder = new ProcessBuilder("/usr/bin/dot", "-Tpng", getDotFile());
-            builder.redirectOutput(tempGraphvizPngOut);
-            Process pr = builder.start(); // may throw IOException
-
-            BufferedReader stdInput = new BufferedReader(new
-                    InputStreamReader(pr.getInputStream()));
-
-            BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(pr.getErrorStream()));
-
-//            logger.info("Here is the standard output of the command:\n");
-//            String s = null;
-//            while ((s = stdInput.readLine()) != null) {
-//                logger.info(s);
-//            }
-//
-//            logger.info("Here is the standard error of the command (if any):\n");
-//            while ((s = stdError.readLine()) != null) {
-//                logger.info(s);
-//            }
-
-            pr.waitFor();
-            LOG.info("exit value: " + pr.exitValue());
-            return tempGraphvizPngOut.getAbsolutePath();
-        } catch (Exception e) {
-            LOG.error("Graphviz could not create PNG file", e);
-            return null;
-        }
-    }
-
-    public String getDotFile() {
+    public String getDotfile() {
         return dotFile;
     }
+
 
     public void setDotFile(String dotFile) {
         this.dotFile = dotFile;

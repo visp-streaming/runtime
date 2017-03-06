@@ -47,7 +47,7 @@ public class RabbitMqManager {
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
 
-    @Value("${spring.rabbitmq.host}")
+    @Value("${visp.infrastructure.ip}")
     private String rabbitMqHost;
 
 

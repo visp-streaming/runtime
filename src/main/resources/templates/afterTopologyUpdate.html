@@ -15,42 +15,48 @@
                 <strong>Error</strong> Could not process updates - please check the logs.
             </div>
         </div>
-        <div th:if="${updateResult != null}" class="panel-heading">Update Successful!</div>
+        <div th:if="${updateResult != null}" class="panel-heading">Update Results:</div>
         <div th:if="${updateResult != null}" class="panel-body">
-            <p>The following updates were executed:</p>
-            <div th:each="update : ${updateResult.updatesPerformed}">
-                <div class="alert"
-                     th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +
+            <div th:if="${updateResult.errorMessage == ''}">
+                <p>The following updates were executed:</p>
+                <div th:each="update : ${updateResult.updatesPerformed}">
+                    <div class="alert"
+                         th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +
                      (#strings.contains(update.action,'UPDATE_OPERATOR') ? ' alert-info' : '') +
                      (#strings.contains(update.action,'REMOVE_OPERATOR') ? ' alert-danger' : '')}">
-                    <strong th:text="${update.action}"></strong>
-                    <span>  </span>
-                    <span th:text="${update.affectedOperatorId}"></span><span> at host </span>
-                    <span th:text="${update.affectedHost}"></span>
+                        <strong th:text="${update.action}"></strong>
+                        <span>  </span>
+                        <span th:text="${update.affectedOperatorId}"></span><span> at host </span>
+                        <span th:text="${update.affectedHost}"></span>
+                    </div>
+                </div>
+                <h3>The following topology is now in place: </h3>
+                <div id="topologyFigure"></div>
+            </div>
+            <div th:if="${updateResult.errorMessage != ''}">
+                <div class="alert alert-danger">
+                    <strong>Error</strong> <span th:text="${updateResult.errorMessage}"></span>.
                 </div>
             </div>
-            <h3>
-                <!--The following topology is now in place:-->
-            </h3>
-            <script th:inline="javascript">
-                /*<![CDATA[*/
-
-                var dotContent = [[${dotContent}]];
-                console.log(dotContent);
-
-                /*]]>*/
-            </script>
-            <div id="graphvizImage"></div>
-
         </div>
     </div>
 
 </th:block>
 
-<script type="text/javascript">
-    //image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
-    //document.body.appendChild(image);
-</script>
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var dotContent = [[${dotContent}]];
+        console.log("dotContent: ");
+        console.log(dotContent);
+        if(dotContent) {
+            image = Viz(dotContent, { format: "png-image-element" });
+            document.getElementById("topologyFigure").appendChild(image);
+        }
+
+        /*]]>*/
+    </script>
+</th:block>
 
 </body>
 </html>

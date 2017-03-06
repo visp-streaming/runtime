@@ -5,6 +5,7 @@ import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
+import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.UpdateResult;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
@@ -205,6 +205,19 @@ public class TopologyUpdateHandler {
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
         List<String> involvedRuntimes = getInvolvedRuntimes(updates);
 
+        List<String> offlineRuntimes = getOfflineRuntimeInstances(involvedRuntimes);
+
+        boolean allInvolvedRuntimesAreAvailable = offlineRuntimes.size() == 0;
+
+        if (!allInvolvedRuntimesAreAvailable) {
+            String errorMessage = "Critical error - one or more VISP runtime instances are not available: [" + String.join(", ", offlineRuntimes) + "]";
+            LOG.error(errorMessage);
+            UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.SUCCESSFUL);
+            result.setStatus(UpdateResult.UpdateStatus.RUNTIMES_NOT_AVAILABLE);
+            result.setErrorMessage(errorMessage);
+            return result;
+        }
+
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
         for (String runtime : involvedRuntimes) {
@@ -219,7 +232,7 @@ public class TopologyUpdateHandler {
 
         String pngPath = null;
 
-        UpdateResult updateResult = new UpdateResult(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp), null);
+        UpdateResult updateResult = new UpdateResult(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp), null, UpdateResult.UpdateStatus.SUCCESSFUL);
 
         if (allInvolvedRuntimesAgree) {
             if (contactedRuntimes.size() != involvedRuntimes.size()) {
@@ -228,14 +241,43 @@ public class TopologyUpdateHandler {
             sendCommitToRuntimes(contactedRuntimes, hash);
             pngPath = executeUpdate(topologyFile, updates);
             updateResult.distributedUpdateSuccessful = true;
-            updateResult.pngPath = pngPath;
+            updateResult.dotPath = pngPath;
         } else {
             updateResult.distributedUpdateSuccessful = false;
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
+            updateResult.setStatus(UpdateResult.UpdateStatus.DEPLOYMENT_NOT_POSSIBLE);
+            updateResult.setDotPath(null);
         }
-        updateResult.pngPath = pngPath;
+        updateResult.dotPath = pngPath;
 
         return updateResult;
+    }
+
+    private List<String> getOfflineRuntimeInstances(List<String> involvedRuntimes) {
+        /**
+         * quickly checks if each runtime instance is currently online
+         */
+
+        List<String> offlineInstances = new ArrayList<>();
+        for (String runtime : involvedRuntimes) {
+            boolean isOnline = false;
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                String url = "http://" + runtime + ":8080/checkStatus";
+                Map<String, Object> abortResult = restTemplate.getForObject(url, Map.class);
+                String status = (String) abortResult.get("onlineStatus");
+                if (status.equals("online")) {
+                    isOnline = true;
+                }
+            } catch (Exception e) {
+                isOnline = false;
+            }
+            if (!isOnline) {
+                offlineInstances.add(runtime);
+            }
+        }
+
+        return offlineInstances;
     }
 
     private void sendAbortSignalToRuntimes(List<String> contactedRuntimes, int hash) {
@@ -269,7 +311,7 @@ public class TopologyUpdateHandler {
         String pngPath;
         try {
             rabbitMqManager.performUpdates(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp));
-            pngPath = topologyManagement.getGraphvizPng();
+            pngPath = topologyManagement.getDotfile();
         } catch (Exception e) {
             LOG.error("could not perform updates", e);
             pngPath = null;
@@ -337,22 +379,5 @@ public class TopologyUpdateHandler {
                                 topologyManagement.getTestDeploymentFile().getAbsolutePath()).topology));
     }
 
-    public class UpdateResult {
-        public UpdateResult(List<TopologyUpdate> updatesPerformed, String pngPath) {
-            this.updatesPerformed = updatesPerformed;
-            this.pngPath = pngPath;
-        }
 
-        @Override
-        public String toString() {
-            return "UpdateResult{" +
-                    "updatesPerformed=" + updatesPerformed +
-                    ", pngPath='" + pngPath + '\'' +
-                    '}';
-        }
-
-        public List<TopologyUpdate> updatesPerformed;
-        public String pngPath;
-        public boolean distributedUpdateSuccessful;
-    }
 }

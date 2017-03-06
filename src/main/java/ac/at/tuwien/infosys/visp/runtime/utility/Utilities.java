@@ -69,8 +69,8 @@ public class Utilities {
     @Autowired
     private TopologyManagement topologyManagement;
 
-    @Value("${visp.infrastructurehost}")
-    private String infrastructureHost;
+    @Value("${visp.infrastructure.ip}")
+    private String infrastructureIp;
 
     @Value("${visp.topology}")
     private String topology;
@@ -114,11 +114,11 @@ public class Utilities {
         sar.deleteAll();
 
         template.getConnectionFactory().getConnection().flushAll();
-        topologyMgmt.cleanup(infrastructureHost);
+        topologyMgmt.cleanup(infrastructureIp);
 
         LOG.info("Cleanup Completed");
 
-        topologyMgmt.createMapping(infrastructureHost);
+        topologyMgmt.createMapping(infrastructureIp);
         topologyManagement.setTopology(new LinkedHashMap<>());
         //initializeTopology();
     }

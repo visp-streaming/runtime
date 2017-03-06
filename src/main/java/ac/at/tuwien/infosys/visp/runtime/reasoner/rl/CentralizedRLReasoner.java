@@ -91,8 +91,8 @@ public class CentralizedRLReasoner {
     @Autowired
     private Monitor rabbitMQMonitor;
     
-    @Value("${visp.infrastructurehost}")
-    private String infrastructureHost;
+    @Value("${visp.infrastructure.ip}")
+    private String infrastructureIp;
     
     @Value("${reasoner.evaluate.afterrounds}")
     private Integer waitForReconfigurationEffects;
@@ -215,7 +215,7 @@ public class CentralizedRLReasoner {
 				/* DEBUG: Save RL information */
 				saveQ(operatorName);
 				saveStateVisits(operatorName);
-				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureHost);
+				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureIp);
 				
 		    	/* Do not scale pinned or cooling-down operators */
 				if (!canReconfigure(operatorName))
@@ -363,7 +363,7 @@ public class CentralizedRLReasoner {
 				 * - launch the container */
 				DockerContainer container = operatorConfig.createDockerContainerConfiguration(operatorName);
 				DockerHost host = determineContainerPlacement(container);
-				procNodeManager.scaleup(container, host, infrastructureHost);
+				procNodeManager.scaleup(container, host, infrastructureIp);
 
 				/* Track scaling activity */
 				/* Action already tracked in procNodeManager.scaleUp() */
@@ -447,7 +447,7 @@ public class CentralizedRLReasoner {
     		/* Relocate Container */
     		DockerHost destinationHost = relocationMap.get(container);
     		procNodeManager.triggerShutdown(container);
-    		procNodeManager.scaleup(container, destinationHost, infrastructureHost);
+    		procNodeManager.scaleup(container, destinationHost, infrastructureIp);
     		
     		/* Track consolidation activity */
     		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperatorType(), "consolidation", container.getHost()));

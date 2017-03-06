@@ -24,8 +24,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">Current Topology</div>
         <div class="panel-body">
-            <!--<img th:if="${!emptyTopology}" th:src="@{'data:image/png;base64,'+${currentTopologyImage}}"/> -->
-
+            <div id="topologyFigure"></div>
             <div th:if="${emptyTopology}" class="alert alert-info">
                 <strong>Info: </strong>
                 <span>Topology is currently empty.</span>
@@ -34,11 +33,17 @@
     </div>
 
 </th:block>
+
 <th:block layout:fragment="script">
     <script th:inline="javascript">
         /*<![CDATA[*/
-        image = Viz("digraph { a -> b; }", { engine: "neato",  format: "png-image-element" });
-        document.body.appendChild(image);
+        var dotContent = [[${dotContent}]];
+        console.log("dotContent: ");
+        console.log(dotContent);
+        if(dotContent) {
+            image = Viz(dotContent, { format: "png-image-element" });
+            document.getElementById("topologyFigure").appendChild(image);
+        }
 
         /*]]>*/
     </script>

@@ -51,10 +51,10 @@ public class DockerContainerManagement {
     @Value("${visp.node.port.available}'")
     private String encodedHostNodeAvailablePorts;
 
-    @Value("${spring.redis.host}'")
+    @Value("${visp.infrastructure.ip}'")
     private String redisHost;
 
-    @Value("${spring.rabbitmq.host}")
+    @Value("${visp.infrastructure.ip}")
     private String rabbitMqHost;
 
     @Value("${visp.runtime.ip}")

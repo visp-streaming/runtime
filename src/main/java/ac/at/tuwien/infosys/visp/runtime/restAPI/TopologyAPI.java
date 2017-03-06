@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -21,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.springframework.http.HttpStatus.OK;
 
@@ -41,33 +43,14 @@ public class TopologyAPI {
     @Autowired
     private TopologyManagement topologyManagement;
 
-//    @RequestMapping("/addMessageFlow")
-//    public String addMessageFlow() {
-//        /**
-//         * this method changes some aspect about the rabbitmq configuration at runtime
-//         * it is used to test whether the newly built adaption features actually work
-//         */
-//
-//        try {
-//            rabbitMqManager.addMessageFlow("step1", "step4", "128.130.172.226", "128.130.172.226");
-//            return "Done!";
-//
-//        } catch (Exception e) {
-//            return e.getLocalizedMessage();
-//        }
-//
-//    }
-//
-//    @RequestMapping("/removeMessageFlow")
-//    public String removeMessageFlow() {
-//        try {
-//            rabbitMqManager.removeMessageFlow("step1", "step4", "128.130.172.226", "128.130.172.226");
-//            return "Done!";
-//
-//        } catch (Exception e) {
-//            return e.getLocalizedMessage();
-//        }
-//    }
+    @RequestMapping("/checkStatus")
+    @ResponseBody
+    public Map<String, Object> checkOnlineStatus(HttpServletRequest request) {
+        Map<String, Object> jsonData = new HashMap<>();
+        jsonData.put("onlineStatus", "online");
+        LOG.info("Online request from IP " + request.getRemoteAddr());
+        return jsonData;
+    }
 
     @RequestMapping("/getTopology")
     public String getTopology() throws IOException {
