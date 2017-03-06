@@ -18,7 +18,8 @@
         <div th:if="${updateResult != null}" class="panel-heading">Update Results:</div>
         <div th:if="${updateResult != null}" class="panel-body">
             <div th:if="${updateResult.errorMessage == ''}">
-                <p>The following updates were executed:</p>
+                <p th:if="${updateResult.updatesPerformed.size() == 0}">The topology does not need to be changed.</p>
+                <p th:if="${updateResult.updatesPerformed.size() != 0}">The following updates were executed:</p>
                 <div th:each="update : ${updateResult.updatesPerformed}">
                     <div class="alert"
                          th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +

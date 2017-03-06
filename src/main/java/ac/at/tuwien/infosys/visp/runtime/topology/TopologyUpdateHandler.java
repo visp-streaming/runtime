@@ -242,6 +242,7 @@ public class TopologyUpdateHandler {
             pngPath = executeUpdate(topologyFile, updates);
             updateResult.distributedUpdateSuccessful = true;
             updateResult.dotPath = pngPath;
+            updateResult.setUpdatesPerformed(updates);
         } else {
             updateResult.distributedUpdateSuccessful = false;
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
