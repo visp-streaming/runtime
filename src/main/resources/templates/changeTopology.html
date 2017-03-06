@@ -7,20 +7,32 @@
 <body>
 <th:block layout:fragment="content">
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Apply new topology</div>
-        <div class="panel-body">
-            <form action="/uploadTopologyGUI" method="POST" enctype="multipart/form-data">
-                <div class="input-group">
-                    <input type="file" name="file" class="form-control"/>
-                    <span class="input-group-btn">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="panel panel-default">
+                <div class="panel-heading">Apply new Topology</div>
+                <div class="panel-body text-center">
+                    <form action="/topology/uploadTopologyGUI" method="POST" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control"/>
+                            <span class="input-group-btn">
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </span>
+                        </div>
+                    </form>
                 </div>
-            </form>
-
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">Utility Operations</div>
+                <div class="panel-body text-center">
+                    <span><a class="btn btn-danger" th:href="${'/topology/clear'}">Clear Topology</a></span>
+                </div>
+            </div>
         </div>
     </div>
+
     <div class="panel panel-default">
         <div class="panel-heading">Current Topology</div>
         <div class="panel-body">
@@ -38,10 +50,8 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         var dotContent = [[${dotContent}]];
-        console.log("dotContent: ");
-        console.log(dotContent);
-        if(dotContent) {
-            image = Viz(dotContent, { format: "png-image-element" });
+        if (dotContent) {
+            image = Viz(dotContent, {format: "png-image-element"});
             document.getElementById("topologyFigure").appendChild(image);
         }
 

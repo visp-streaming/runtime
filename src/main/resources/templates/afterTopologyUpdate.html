@@ -48,8 +48,6 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         var dotContent = [[${dotContent}]];
-        console.log("dotContent: ");
-        console.log(dotContent);
         if(dotContent) {
             image = Viz(dotContent, { format: "png-image-element" });
             document.getElementById("topologyFigure").appendChild(image);

@@ -1,12 +1,10 @@
 package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.UpdateResult;
-import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
-import org.apache.commons.io.FileUtils;
+import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
 import org.apache.commons.io.IOUtils;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -15,11 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,29 +26,23 @@ import java.nio.file.Paths;
 @Controller
 public class TopologyController {
 
+    @Autowired
+    private TopologyUpdateHandler topologyUpdateHandler;
 
     @Autowired
-    private ResourceProvider rp;
+    private TopologyManagement topologyManagement;
 
     @Autowired
-    TopologyUpdateHandler topologyUpdateHandler;
-
-    @Autowired
-    TopologyParser topologyParser;
-
-    @Autowired
-    TopologyManagement topologyManagement;
+    private Utilities utilities;
 
     @Value("${visp.runtime.ip}")
     private String runtimeip;
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    @RequestMapping("/changeTopology")
+    @RequestMapping("/topology")
     public String index(Model model) throws SchedulerException {
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
-        //model.addAttribute("dotContent", "digraph {         \"step1\" -> \"step2\"                 \"step2\" [style=filled, fontname=\"helvetica\", shape=box, fillcolor=skyblue, label=<step2<BR />         <FONT POINT-SIZE=\"10\">128.130.172.181/openstackpool</FONT>>]         \"step2\" -> \"log\"                 \"log\" [style=filled, fontname=\"helvetica\", shape=box, fillcolor=springgreen, label=<log<BR />         <FONT POINT-SIZE=\"10\">128.130.172.181/openstackpool</FONT>>]         \"source\" -> \"step1\"                 \"step1\" [style=filled, fontname=\"helvetica\", shape=box, fillcolor=skyblue, label=<step1<BR />         <FONT POINT-SIZE=\"10\">128.130.172.222/openstackpool</FONT>>]                 \"source\" [style=filled, fontname=\"helvetica\", shape=box, fillcolor=beige, label=<source<BR />         <FONT POINT-SIZE=\"10\">128.130.172.181/openstackpool</FONT>>]          }");
-
 
         if(topologyManagement.getTopology().size() == 0) {
             model.addAttribute("emptyTopology", true);
@@ -71,7 +64,7 @@ public class TopologyController {
         return dotContent;
     }
 
-    @RequestMapping(value = "/uploadTopologyGUI", method = RequestMethod.POST)
+    @RequestMapping(value = "/topology/uploadTopologyGUI", method = RequestMethod.POST)
     public String uploadTopology(Model model,
             @RequestParam("file") MultipartFile file) {
         /**
@@ -91,13 +84,23 @@ public class TopologyController {
             }
         }
         catch (Exception e) {
-            LOG.error(e.getStackTrace().toString());
-            LOG.error(e.toString(), e);
+            LOG.error(e.getLocalizedMessage());
         }
 
         return "afterTopologyUpdate";
     }
 
+    @RequestMapping("/topology/clear")
+    public String reinitialize(Model model) throws SchedulerException {
+
+        //TODO propagate the deletions also to all other VISP instances - this operation is a hard reset and also
+        //removed the docker containers there
+
+        utilities.createInitialStatus();
+
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        return "afterTopologyUpdate";
+    }
 
 
 }

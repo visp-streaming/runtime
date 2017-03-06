@@ -1,13 +1,10 @@
 package ac.at.tuwien.infosys.visp.runtime.utility;
 
-import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +14,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.LinkedHashMap;
 
 @Service
@@ -26,12 +22,6 @@ public class Utilities {
 
     @Autowired
     private ReportingScalingActivities rsa;
-
-    @Autowired
-    private TopologyManagement topologyMgmt;
-
-    @Autowired
-    private TopologyParser parser;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -81,24 +71,20 @@ public class Utilities {
     @Autowired
     private ResourcePoolConnector rpc;
 
-    @Autowired
-    private ManualOperatorManagement rpp;
-
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-    public void initializeTopology() {
-        for (Operator op : topologyManagement.getTopology().values()) {
-            if (op.getName().contains("source")) {
-                continue;
-            }
-            rpp.addOperator(op);
-        }
+    @PostConstruct
+    public void init() {
+        topologyManagement.createMapping(infrastructureIp);
+        topologyManagement.setTopology(new LinkedHashMap<>());
     }
 
-    @PostConstruct
     public void createInitialStatus() {
+
+        //TODO propagate the deletions also to all other VISP instances - this operation is a hard reset and also
+        //removed the docker containers there
+
         LOG.info("Deleting old configurations");
-        //parser.parseTopologyFromClasspath("topologyConfiguration/" + topology + ".conf");
         resetPooledVMs();
         dhr.deleteAll();
         dcr.deleteAll();
@@ -110,21 +96,16 @@ public class Utilities {
         opeMetRepos.deleteAll();
         opeReplRepos.deleteAll();
 
-        resetPooledVMs();
         sar.deleteAll();
 
         template.getConnectionFactory().getConnection().flushAll();
-        topologyMgmt.cleanup(infrastructureIp);
-
-        LOG.info("Cleanup Completed");
-
-        topologyMgmt.createMapping(infrastructureIp);
+        topologyManagement.cleanup(infrastructureIp);
         topologyManagement.setTopology(new LinkedHashMap<>());
-        //initializeTopology();
+        LOG.info("Cleanup Completed");
     }
 
-    @PreDestroy
     public void exportData() {
+        //TODO provide HTML interface to export Data
         rsa.generateCSV();
         compressor.zipIt();
         compressor.cleanup();
