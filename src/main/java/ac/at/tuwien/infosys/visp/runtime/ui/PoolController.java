@@ -5,9 +5,11 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
-import ac.at.tuwien.infosys.visp.runtime.ui.entities.CreatePooledvmForm;
+import ac.at.tuwien.infosys.visp.runtime.ui.dto.CreatePooledvmForm;
+import ac.at.tuwien.infosys.visp.runtime.ui.dto.PooledVMDTO;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class PoolController {
@@ -35,6 +40,9 @@ public class PoolController {
     @Autowired
     private ResourceProvider rp;
 
+    @Autowired
+    private DockerContainerManagement dcm;
+
     @Value("${visp.runtime.ip}")
     private String runtimeip;
 
@@ -42,10 +50,26 @@ public class PoolController {
 
     @RequestMapping("/pooledvms")
     public String index(Model model) throws SchedulerException {
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
-        model.addAttribute("pools", pvmr.findAll());
+        model.addAttribute("pools", vms);
         return "pooledvms";
+    }
+
+    private List<PooledVMDTO> checkAvailablilityOfPooledVMs() {
+        List<PooledVMDTO> vms = new ArrayList<>();
+
+        for (PooledVM pvm : pvmr.findAll()) {
+            PooledVMDTO vm = new PooledVMDTO(pvm.getId(), pvm.getPoolname(), pvm.getName(), pvm.getUrl(), pvm.getFlavour(), true);
+
+            if (!dcm.checkAvailabilityofDockerhost(pvm.getUrl())) {
+                vm.setAvailable(false);
+                LOG.error("The pooled VM with the URL " + pvm.getUrl() + " is not available.");
+            };
+            vms.add(vm);
+        }
+        return vms;
     }
 
     @RequestMapping("/pooledvms/addpooledvm")
@@ -82,9 +106,11 @@ public class PoolController {
         pvm.setCpuFrequency(2400);
         pvmr.save(pvm);
 
-        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+
         model.addAttribute("message", "A new pooledVM has beeen started.");
-        model.addAttribute("pools", pvmr.findAll());
+        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        model.addAttribute("pools", vms);
 
         rp.updateResourceProvider();
         return "pooledvms";
@@ -102,8 +128,12 @@ public class PoolController {
             model.addAttribute("message", "The pooled VM has been deleted.");
         }
 
+
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
-        model.addAttribute("pools", pvmr.findAll());
+        model.addAttribute("pools", vms);
+
         rp.updateResourceProvider();
         return "pooledvms";
     }
@@ -121,9 +151,12 @@ public class PoolController {
             }
         }
 
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
-        model.addAttribute("message", "The pooled VMs have been deleted.");
         model.addAttribute("pools", pvmr.findAll());
+        model.addAttribute("message", "The pooled VMs have been deleted.");
+
         rp.updateResourceProvider();
         return "pooledvms";
     }

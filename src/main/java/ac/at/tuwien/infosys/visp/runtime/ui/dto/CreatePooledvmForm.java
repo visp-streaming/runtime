@@ -1,4 +1,4 @@
-package ac.at.tuwien.infosys.visp.runtime.ui.entities;
+package ac.at.tuwien.infosys.visp.runtime.ui.dto;
 
 
 public class CreatePooledvmForm {

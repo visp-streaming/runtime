@@ -44,9 +44,15 @@
                             </th>
                         </tr>
                         <tr th:each="pool : ${pools}">
+
+
+
                             <td class="vertmiddle col-md-3" th:text="${pool.getName()}"></td>
                             <td class="vertmiddle col-md-3" th:text="${pool.getPoolname()}"></td>
-                            <td class="vertmiddle col-md-3" th:text="${pool.getUrl()}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${pool.getUrl()}"
+                                th:if="${pool.getAvailable() == true}"></td>
+                            <td class="vertmiddle col-md-3 alert alert-danger" th:text="${pool.getUrl()}"
+                                th:if="${pool.getAvailable() == false}"></td>
                             <td class="vertmiddle col-md-2" th:text="${pool.getFlavour()}"></td>
                             <td class="vertmiddle col-md-1">
                                 <div class="pull-right">
