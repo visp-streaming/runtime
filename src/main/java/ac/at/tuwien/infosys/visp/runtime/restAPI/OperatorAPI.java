@@ -1,7 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
+import ac.at.tuwien.infosys.visp.common.operators.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.entities.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

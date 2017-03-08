@@ -1,10 +1,10 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
+import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPConnectionRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourcePoolUsage;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPConnection;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import org.slf4j.Logger;

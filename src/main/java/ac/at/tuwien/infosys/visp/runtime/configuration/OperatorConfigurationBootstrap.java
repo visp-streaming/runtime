@@ -2,8 +2,8 @@ package ac.at.tuwien.infosys.visp.runtime.configuration;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceTriple;
 import lombok.Data;
 import org.springframework.stereotype.Service;
 

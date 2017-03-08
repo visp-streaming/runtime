@@ -1,12 +1,12 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
+import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainerMonitor;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourcePoolUsage;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
