@@ -26,6 +26,8 @@ public class ResourceUsage {
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
+        //TODO calculate the availability
+        rp.setAvailability(0.5);
         ResourceTriple overall = new ResourceTriple();
         ResourceTriple planned = new ResourceTriple();
         ResourceTriple actual = new ResourceTriple();
