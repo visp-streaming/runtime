@@ -14,12 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
 @DependsOn("resourceProvider")
+@ConditionalOnProperty(name = "visp.reasoner", havingValue = "basic")
 public class ReasonerBasic {
 
     @Autowired
@@ -46,10 +48,6 @@ public class ReasonerBasic {
     @Autowired
     private ReasonerUtility reasonerUtility;
 
-
-    @Value("${visp.reasoner}")
-    private String reasoner;
-
     @Value("${visp.runtime.ip}")
     private String vispLocation;
 
@@ -61,9 +59,6 @@ public class ReasonerBasic {
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
 
-        if (!reasoner.equals("basic")) {
-            return;
-        }
 
         availabilityWatchdog.checkAvailablitiyOfContainer();
         pcm.removeContainerWhichAreFlaggedToShutdown();
