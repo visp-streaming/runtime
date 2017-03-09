@@ -22,11 +22,8 @@ public class DockerContainerMonitor {
     private String containerid;
     private String operator;
 
-    private double derivedCpuUsage;
-    private long cpuUsage;
-    private long systemUsage;
-
-    private long memoryUsage;
+    private double cpuUsage;
+    private double memoryUsage;
 
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime timestamp;

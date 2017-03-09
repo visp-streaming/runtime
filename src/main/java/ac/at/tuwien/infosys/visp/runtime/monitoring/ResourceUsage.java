@@ -43,15 +43,19 @@ public class ResourceUsage {
             overall.incrementStorage(pooledVM.getStorage());
 
             for (DockerContainer dc : dcr.findByHost(pooledVM.getLinkedhost())) {
-                DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
-
                 planned.incrementCores(dc.getCpuCores());
                 planned.incrementMemory(dc.getMemory());
                 planned.incrementStorage(Float.valueOf(dc.getStorage()));
 
-                actual.incrementCores((double) dcm.getCpuUsage());
-                actual.incrementMemory((int) dcm.getMemoryUsage());
-                planned.incrementStorage((float) -1);
+                DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
+
+                if (dcm != null) {
+                    actual.incrementCores(dcm.getCpuUsage());
+                    actual.incrementMemory((int) dcm.getMemoryUsage());
+
+                    //TODO fix as soon docker provides information about the actual used storage size
+                    actual.incrementStorage(Float.valueOf(dc.getStorage()));
+                }
             }
         }
 

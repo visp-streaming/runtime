@@ -66,45 +66,20 @@ public class ResourceMonitor {
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
-        DockerContainerMonitor oldDcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
         DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperatorType());
 
         try {
             stats = docker.stats(dc.getContainerid());
 
-            if (oldDcm == null) {
+            long cpuDelta = stats.cpuStats().cpuUsage().totalUsage() -  stats.precpuStats().cpuUsage().totalUsage();
+            long systemDelta = stats.cpuStats().systemCpuUsage() - stats.precpuStats().systemCpuUsage();
+            double allocatedCpuShares = dc.getCpuCores() / dh.getCores();
 
-                LOG.debug("Container " + dc.getContainerid() + " first computation of CPU Utilization");
+            double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares * 100;
 
-                dcm.setCpuUsage(stats.cpuStats().cpuUsage().totalUsage());
-                dcm.setSystemUsage(stats.cpuStats().systemCpuUsage());
-                dcm.setDerivedCpuUsage(0);
-                dcm.setMemoryUsage(stats.memoryStats().usage());
+            dcm.setCpuUsage(cpuUsage);
+            dcm.setMemoryUsage((stats.memoryStats().usage() / 1024 / 1024));
 
-            } else {
-
-	            /* Calculate the change of container's usage in between readings */
-                long currentCpuUsage = stats.cpuStats().cpuUsage().totalUsage();
-                long currentSystemUsage = stats.cpuStats().systemCpuUsage();
-                long cpuDelta = currentCpuUsage - oldDcm.getCpuUsage();
-                long systemDelta = currentSystemUsage - oldDcm.getSystemUsage();
-
-
-                if (systemDelta > 0 && cpuDelta > 0) {
-                    /* This information should be scaled with respect to the CPU share */
-                    double allocatedCpuShares = dc.getCpuCores() / dh.getCores();
-
-                    double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares; // * 100.0;
-
-                    LOG.debug("Container " + dc.getContainerid() + " CPU Utilization: "
-                            + cpuUsage + " (allocatedShares: " + allocatedCpuShares + ")");
-
-                    dcm.setDerivedCpuUsage(cpuUsage);
-                    dcm.setCpuUsage(currentCpuUsage);
-                    dcm.setSystemUsage(currentSystemUsage);
-                    dcm.setMemoryUsage(stats.memoryStats().usage());
-                }
-            }
             dcmr.save(dcm);
 
         } catch (DockerException | InterruptedException e) {
