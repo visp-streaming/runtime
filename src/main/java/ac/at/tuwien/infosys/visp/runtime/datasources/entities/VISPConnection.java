@@ -21,17 +21,14 @@ public class VISPConnection {
     private Double dataRate;
     private Double availability;
 
-    //TODO make dynamic or retrieve from actual configuration
-    public VISPConnection() {
-        this.availability = 0.5;
-    }
-
-    public VISPConnection(String start, String end, Double delay, Double dataRate) {
+    public VISPConnection(String start, String end, Double delay, Double dataRate, Double availability) {
         this.start = start;
         this.end = end;
         this.delay = delay;
         this.dataRate = dataRate;
-        //TODO make dynamic
-        this.availability = 0.5;
+        this.availability = availability;
+    }
+
+    public VISPConnection() {
     }
 }

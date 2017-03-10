@@ -1,6 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
-import ac.at.tuwien.infosys.visp.common.operators.OperatorConfiguration;
+import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import org.slf4j.Logger;
@@ -26,11 +26,9 @@ public class OperatorAPI {
     @RequestMapping(value = {"/getOperatorConfiguration/{operator}"}, method = RequestMethod.GET)
     public OperatorConfiguration getOperatorConfiguration(@PathVariable String operator) {
 
-        OperatorConfiguration op =  new OperatorConfiguration(operator);
+        OperatorConfiguration op =  new OperatorConfiguration(operator, 2400);
         op.setPlannedResources(new OperatorConfigurationBootstrap(operator).getExpected());
         op.setActualResources(resourceUsage.calculatelatestActualUsageForOperator(operator));
-
-        //TODO add additional information from the topology
 
         return op;
 

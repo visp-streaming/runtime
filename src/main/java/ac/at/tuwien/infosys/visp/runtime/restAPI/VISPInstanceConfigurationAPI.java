@@ -1,16 +1,17 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
 import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
+import ac.at.tuwien.infosys.visp.common.resources.VISPConnectionDTO;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPConnectionRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPConnection;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
+import ac.at.tuwien.infosys.visp.runtime.utility.GenerateDataForDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,24 +35,22 @@ public class VISPInstanceConfigurationAPI {
     @Autowired
     private ResourceUsage resourceUsage;
 
+    @Autowired
+    private GenerateDataForDB vispConnectionsGenerator;
+
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    @RequestMapping(value = {"/registerVISPInstance/{instanceURI}"}, method = RequestMethod.PUT)
-    public void registerInstance(@PathVariable String instanceURI) {
-        VISPInstance vi = new VISPInstance(instanceURI);
-        vir.save(vi);
-    }
-
-    @RequestMapping(value = {"/unregisterVISPInstance/{instanceURI}"}, method = RequestMethod.DELETE)
-    public void unregisterInstance(@PathVariable String instanceURI) {
-        VISPInstance vi = vir.findFirstByUri(instanceURI);
-        vir.delete(vi);
-    }
-
-
-    @RequestMapping(value = {"/listVISPInstances"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/listInstances"}, method = RequestMethod.GET)
     public List<VISPInstance> listInstances() {
-        return (List<VISPInstance>) vir.findAll();
+
+        List<VISPInstance> instances = (List<VISPInstance>) vir.findAll();
+
+        if (instances.isEmpty()) {
+            vispConnectionsGenerator.generateInstances();
+            instances = (List<VISPInstance>) vir.findAll();
+        }
+
+        return instances;
     }
 
     @RequestMapping(value = {"/listResourcePools"}, method = RequestMethod.GET)
@@ -65,18 +64,23 @@ public class VISPInstanceConfigurationAPI {
         return poolusage;
     }
 
-    @RequestMapping(value = {"/VISPconnections"}, method = RequestMethod.GET)
-    public List<VISPConnection> connections() {
+    @RequestMapping(value = {"/listConnections"}, method = RequestMethod.GET)
+    public List<VISPConnectionDTO> connections() {
 
-        //TODO implement probing component to gather the delays and datarates among different VISP instances
+        List<VISPConnection> cons = (List<VISPConnection>) vcr.findAll();
 
-        List<VISPConnection> con = (List<VISPConnection>) vcr.findAll();
-
-        if (con.isEmpty()) {
-            con.add(new VISPConnection("dummy", "dummy", 2.0, 10.0));
+        if (cons.isEmpty()) {
+            vispConnectionsGenerator.generateConnections();
+            cons = (List<VISPConnection>) vcr.findAll();
         }
 
-        return con;
+        List<VISPConnectionDTO> result = new ArrayList<>();
+
+        for (VISPConnection con : cons) {
+            result.add(new VISPConnectionDTO(con.getStart(), con.getEnd(), con.getDelay(), con.getDataRate(), con.getAvailability()));
+        }
+
+        return result;
     }
 
 

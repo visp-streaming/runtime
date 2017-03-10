@@ -207,10 +207,6 @@ public class OpenstackConnector extends ResourceConnector {
         setup();
         ActionResponse r = os.compute().servers().delete(id);
 
-        //ActionResponse r = os.compute().servers().action(id, Action.ter);
-
-        //TODO fix this shit...
-
         if (!r.isSuccess()) {
             LOG.error("Dockerhost could not be stopped: " +  r.getFault());
         } else {
