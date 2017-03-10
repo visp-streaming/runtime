@@ -321,7 +321,7 @@ public class DockerContainerManagement {
 
 
     public Boolean checkAvailabilityofDockerhost(String url) {
-        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + url + ":2375").connectTimeoutMillis(60000).build();
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + url + ":2375").connectTimeoutMillis(5000).build();
         try {
             if (docker.ping().equals("OK")) {
                 return true;

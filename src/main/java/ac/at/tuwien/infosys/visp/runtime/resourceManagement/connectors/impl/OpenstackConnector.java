@@ -120,6 +120,7 @@ public class OpenstackConnector extends ResourceConnector {
             }
         }
 
+
         ServerCreate sc = Builders.server()
                 .name("dockerhost")
                 .flavor(flavor)
@@ -151,6 +152,7 @@ public class OpenstackConnector extends ResourceConnector {
             } catch (InterruptedException e) {
                 //TODO remove if openstack behaves again
             }
+
             ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(server, freeIP.getFloatingIpAddress());
             if (!ipresponse.isSuccess()) {
                 LOG.error("Dockerhost could not be started", ipresponse.getFault());
@@ -180,14 +182,11 @@ public class OpenstackConnector extends ResourceConnector {
                 TimeUnit.SECONDS.sleep(1);
                 final DockerClient docker = DefaultDockerClient.builder().
                         uri(URI.create("http://" + dh.getUrl() + ":2375")).
-                        connectTimeoutMillis(3000000).
-                        build();
+                        connectTimeoutMillis(100000).build();
                 docker.ping();
                 connection = true;
-            } catch (InterruptedException e) {
-                LOG.debug("Dockerhost is not available yet.");
-            } catch (DockerException e) {
-                LOG.debug(e.getMessage());
+            } catch (InterruptedException | DockerException e) {
+                LOG.debug("Dockerhost is not available yet.", e);
             }
         }
 
@@ -199,14 +198,23 @@ public class OpenstackConnector extends ResourceConnector {
 
     @Override
     public final void stopDockerHost(final DockerHost dh) {
-        ActionResponse r = os.compute().servers().action(dh.getName(), Action.STOP);
+        stopDockerHost(dh.getName());
+        dhr.delete(dh);
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+    }
+
+    public final void stopDockerHost(final String id) {
+        setup();
+        ActionResponse r = os.compute().servers().delete(id);
+
+        //ActionResponse r = os.compute().servers().action(id, Action.ter);
+
+        //TODO fix this shit...
 
         if (!r.isSuccess()) {
-            LOG.error("Dockerhost could not be started", r.getFault());
+            LOG.error("Dockerhost could not be stopped: " +  r.getFault());
         } else {
-            LOG.info("DockerHost terminated " + dh.getName());
-            dhr.delete(dh);
-            sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+            LOG.info("DockerHost terminated " + id);
         }
     }
 

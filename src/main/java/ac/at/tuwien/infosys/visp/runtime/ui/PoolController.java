@@ -94,7 +94,7 @@ public class PoolController {
 
         dh = opc.startVM(dh);
         PooledVM pvm = new PooledVM();
-        pvm.setName(form.getPoolname() + "-" + dh.getName());
+        pvm.setName(dh.getName());
         pvm.setPoolname(form.getPoolname());
         pvm.setUrl(dh.getUrl());
         pvm.setCores(dh.getCores());
@@ -102,6 +102,7 @@ public class PoolController {
         pvm.setStorage(dh.getStorage());
         pvm.setFlavour(dh.getFlavour());
         pvm.setCost(form.getCost());
+        dhr.delete(dh); //delete host again from docker hosts
         //TODO configure
         pvm.setCpuFrequency(2400);
         pvmr.save(pvm);
@@ -124,6 +125,7 @@ public class PoolController {
         if (dhr.findFirstByName(pvm.getName()) != null) {
             model.addAttribute("message", "The pooled VM cannot not be deleted because there are still instances running.");
         } else {
+            opc.stopDockerHost(pvm.getName());
             pvmr.delete(pvm);
             model.addAttribute("message", "The pooled VM has been deleted.");
         }
@@ -144,9 +146,11 @@ public class PoolController {
         for (PooledVM pvm : pvmr.findAll()) {
             if (dhr.findFirstByName(pvm.getName()) != null) {
                 model.addAttribute("message", "The pooled VMs cannot not be deleted because there are still instances running.");
-                model.addAttribute("pools", pvmr.findAll());
+                List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+                model.addAttribute("pools", vms);
                 return "pooledvms";
             } else {
+                opc.stopDockerHost(pvm.getName());
                 pvmr.delete(pvm);
             }
         }
@@ -154,7 +158,7 @@ public class PoolController {
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
-        model.addAttribute("pools", pvmr.findAll());
+        model.addAttribute("pools", vms);
         model.addAttribute("message", "The pooled VMs have been deleted.");
 
         rp.updateResourceProvider();

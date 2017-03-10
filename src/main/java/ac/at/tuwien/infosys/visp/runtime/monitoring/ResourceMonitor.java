@@ -38,31 +38,22 @@ public class ResourceMonitor {
     @Autowired
     private DockerHostRepository dhr;
 
-    private static final String CONNECTION_PROTOCOL = "http://";
-    private static final String CONNECTION_PORT = ":2375";
-
     private static final Logger LOG = LoggerFactory.getLogger(ResourceMonitor.class);
 
     @Scheduled(fixedRateString = "${visp.monitor.period}")
     public void updateAllHostsCpuUtilization() {
+        for (DockerHost dh : dhr.findAll()) {
+            List<DockerContainer> hostedContainers = dcr.findByHost(dh.getName());
 
-        for (DockerHost dockerHost : dhr.findAll()) {
-            updateCpuUtilization(dockerHost);
+            for (DockerContainer container : hostedContainers) {
+                retrieveCpuUtilization(dh, container);
+            }
+            dcr.save(hostedContainers);
         }
     }
-
-    public void updateCpuUtilization(DockerHost dh) {
-        List<DockerContainer> hostedContainers = dcr.findByHost(dh.getName());
-
-        for (DockerContainer container : hostedContainers) {
-            retrieveCpuUtilization(dh, container);
-        }
-        dcr.save(hostedContainers);
-    }
-
 
     private DockerContainer retrieveCpuUtilization(DockerHost dh, DockerContainer dc) {
-        String connectionUri = CONNECTION_PROTOCOL + dh.getUrl() + CONNECTION_PORT;
+        String connectionUri = "http://" + dh.getUrl() + ":2375";
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
@@ -74,7 +65,6 @@ public class ResourceMonitor {
             long cpuDelta = stats.cpuStats().cpuUsage().totalUsage() -  stats.precpuStats().cpuUsage().totalUsage();
             long systemDelta = stats.cpuStats().systemCpuUsage() - stats.precpuStats().systemCpuUsage();
             double allocatedCpuShares = dc.getCpuCores() / dh.getCores();
-
             double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares * 100;
 
             dcm.setCpuUsage(cpuUsage);
