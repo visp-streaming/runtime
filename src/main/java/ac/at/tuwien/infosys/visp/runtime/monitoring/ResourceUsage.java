@@ -4,12 +4,14 @@ import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainerMonitor;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ResourceUsage {
@@ -27,7 +29,7 @@ public class ResourceUsage {
 
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
         //TODO calculate the availability
-        rp.setAvailability(0.5);
+        rp.setAvailability((Math.floor(80 + Math.random() * (99 - 80 + 1))) / 100);
         ResourceTriple overall = new ResourceTriple();
         ResourceTriple planned = new ResourceTriple();
         ResourceTriple actual = new ResourceTriple();
@@ -72,10 +74,20 @@ public class ResourceUsage {
         return rp;
     }
 
-    public ResourceTriple calculatelatestActualUsageForOperator(String operator) {
-        ResourceTriple result = new ResourceTriple();
+    public ResourceTriple calculatelatestActualUsageForOperatorType(String operator) {
         DockerContainerMonitor dcm = dcmr.findFirstByOperatorOrderByTimestampDesc(operator);
-        result.setCores((double) dcm.getCpuUsage());
+        return getResourceTriple(dcm);
+    }
+
+    public ResourceTriple calculatelatestActualUsageForOperatorid(String operatorid) {
+        DockerContainerMonitor dcm = dcmr.findFirstByOperatoridOrderByTimestampDesc(operatorid);
+        return getResourceTriple(dcm);
+    }
+
+
+    private ResourceTriple getResourceTriple(DockerContainerMonitor dcm) {
+        ResourceTriple result = new ResourceTriple();
+        result.setCores(dcm.getCpuUsage());
         result.setMemory((int) dcm.getMemoryUsage());
         result.setStorage(0F);
 
@@ -83,12 +95,22 @@ public class ResourceUsage {
         return result;
     }
 
-    public ResourceTriple calculateAverageUsageForOperator(String operator) {
+    public ResourceTriple calculateAverageUsageForOperatorType(String operator) {
+        List<DockerContainerMonitor> recordings = dcmr.findByOperator(operator);
+        return getResourceTriple(recordings);
+    }
+
+    public ResourceTriple calculateAverageUsageForOperatorID(String operatorid) {
+        List<DockerContainerMonitor> recordings = dcmr.findByOperatorid(operatorid);
+        return getResourceTriple(recordings);
+    }
+
+    private ResourceTriple getResourceTriple(List<DockerContainerMonitor> recordings) {
         ResourceTriple result = new ResourceTriple();
         Integer counter = 0;
 
-        for (DockerContainerMonitor dcm : dcmr.findByOperator(operator)) {
-            result.incrementCores((double) dcm.getCpuUsage());
+        for (DockerContainerMonitor dcm : recordings) {
+            result.incrementCores(dcm.getCpuUsage());
             result.incrementMemory((int) dcm.getMemoryUsage());
             result.incrementStorage(0F);
             counter++;

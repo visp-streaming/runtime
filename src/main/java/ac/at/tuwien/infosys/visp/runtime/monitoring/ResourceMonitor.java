@@ -57,7 +57,7 @@ public class ResourceMonitor {
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
-        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperatorType());
+        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperatorType(), dc.getOperatorName());
 
         try {
             stats = docker.stats(dc.getContainerid());
