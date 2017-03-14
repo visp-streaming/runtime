@@ -6,6 +6,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import com.rabbitmq.client.Channel;
@@ -258,6 +259,8 @@ public class RabbitMqManager {
                 LOG.error(e.getLocalizedMessage());
             }
         }
+        LOG.info("Killing all containers of operator " + update.getAffectedOperator().getName());
+        rpp.removeOperators(update.getAffectedOperator());
     }
 
     private void handleAddOperator(TopologyUpdate update) {
