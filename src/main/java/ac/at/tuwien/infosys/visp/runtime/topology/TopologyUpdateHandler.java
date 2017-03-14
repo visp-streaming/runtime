@@ -2,6 +2,8 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
@@ -39,6 +41,9 @@ public class TopologyUpdateHandler {
 
     @Autowired
     RabbitMqManager rabbitMqManager;
+
+    @Autowired
+    VISPInstanceRepository vir;
 
     @Value("${visp.runtime.ip}")
     private String vispRuntimeOwnIp;
@@ -318,7 +323,38 @@ public class TopologyUpdateHandler {
             pngPath = null;
         }
 
+        updateKnownVispInstances();
+
         return pngPath;
+    }
+
+    private void updateKnownVispInstances() {
+        /**
+         * curates a list of known runtime instances for various communication purposes
+         */
+        Map<String, VISPInstance> allInstances = new HashMap<>();
+
+        for (Operator op: topologyManagement.getOperators()) {
+            for (Operator.Location loc : op.getAllowedLocationsList()) {
+                if (!allInstances.containsKey(loc.getIpAddress())) {
+                    allInstances.put(loc.getIpAddress(), new VISPInstance(loc.getIpAddress()));
+                }
+            }
+        }
+        int newInstances = 0;
+        for (VISPInstance instance : allInstances.values()) {
+            VISPInstance vi = null;
+            try {
+                vi = vir.findFirstByUri(instance.getUri());
+            } catch(Exception e) {
+
+            }
+            if(vi == null) {
+                vir.save(instance);
+                newInstances++;
+            }
+        }
+        LOG.info("Stored " + newInstances + " new VISP instances to local repository");
     }
 
     public List<TopologyUpdate> filterUpdatesByOwnRuntime(List<TopologyUpdate> updates, String vispRuntimeOwnIp) {

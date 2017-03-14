@@ -9,8 +9,16 @@
 <th:block layout:fragment="content">
 
     <div class="panel panel-default">
-        <div th:if="${updateResult == null}" class="panel-heading">Update was not successful!</div>
-        <div th:if="${updateResult == null}" class="panel-body">
+        <div th:if="${action != null}" class="panel-heading">Clean successful!</div>
+        <div th:if="${action != null}" class="panel-body">
+            <div class="alert alert-success">
+                <strong>Success!</strong> <p>Topology is now empty.</p>
+                <p>Number of unsuccessful clear requests: <span th:text="${clearfails}"></span> (see logs for details)</p>
+            </div>
+
+        </div>
+        <div th:if="${updateResult == null AND action == null}" class="panel-heading">Update was not successful!</div>
+        <div th:if="${updateResult == null AND action == null}" class="panel-body">
             <div class="alert alert-danger">
                 <strong>Error</strong> Could not process updates - please check the logs.
             </div>

@@ -1,6 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
+import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.UpdateResult;
@@ -16,12 +18,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class TopologyController {
@@ -34,6 +39,9 @@ public class TopologyController {
 
     @Autowired
     private Utilities utilities;
+
+    @Autowired
+    private VISPInstanceRepository vir;
 
     @Value("${visp.runtime.ip}")
     private String runtimeip;
@@ -93,12 +101,37 @@ public class TopologyController {
     @RequestMapping("/topology/clear")
     public String reinitialize(Model model) throws SchedulerException {
 
-        //TODO propagate the deletions also to all other VISP instances - this operation is a hard reset and also
-        //removed the docker containers there
+        // clear own topology:
+        utilities.clearAll();
 
-        utilities.createInitialStatus();
+        List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
+
+        LOG.info("I currently know of " + allVispInstances.size() + " VISP instances...");
+
+        int clearFails = 0;
+
+        for(VISPInstance instance : allVispInstances) {
+            if(instance.getUri().equals(runtimeip)) {
+                continue;
+            }
+            LOG.info("sending clear request to " + instance.getUri() + "...");
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "http://" + instance.getUri() + ":8080/clear";
+            Map<String, Object> clearResult = restTemplate.getForObject(url, Map.class);
+            try {
+                String errorMessage = (String) clearResult.get("errorMessage");
+                if(errorMessage.equals("none")) {
+                    LOG.info("VISP Instance " + instance.getUri() + " replied clear success");
+                }
+            } catch (Exception e) {
+                LOG.error("VISP Instance " + instance.getUri() + " could not perform clear", e);
+                clearFails++;
+            }
+        }
 
         model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        model.addAttribute("action", "clear");
+        model.addAttribute("clearfails", clearFails);
         return "afterTopologyUpdate";
     }
 

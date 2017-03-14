@@ -156,12 +156,8 @@ public class RabbitMqManager {
 
             sendDockerSignalForUpdate(toOperatorId, "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
 
-        } catch (InterruptedException e) {
-            LOG.error(e.getLocalizedMessage());
-        } catch (DockerException e) {
-            LOG.error(e.getLocalizedMessage());
         } catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
+            LOG.error("Exception during exchange setup", e);
         } finally {
             try {
                 fromChannel.close();

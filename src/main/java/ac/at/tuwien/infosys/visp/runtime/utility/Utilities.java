@@ -5,6 +5,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
+import com.spotify.docker.client.exceptions.DockerRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.ws.rs.InternalServerErrorException;
 import java.util.LinkedHashMap;
 
 @Service
@@ -79,28 +81,33 @@ public class Utilities {
         topologyManagement.setTopology(new LinkedHashMap<>());
     }
 
-    public void createInitialStatus() {
+    public void clearAll() {
 
-        //TODO propagate the deletions also to all other VISP instances - this operation is a hard reset and also
+        //this operation is a hard reset and also
         //removed the docker containers there
 
-        LOG.info("Deleting old configurations");
-        resetPooledVMs();
-        dhr.deleteAll();
-        dcr.deleteAll();
-        qmr.deleteAll();
-        pcr.deleteAll();
-        dcmr.deleteAll();
+        try {
 
-        appMetRepos.deleteAll();
-        opeMetRepos.deleteAll();
-        opeReplRepos.deleteAll();
+            LOG.info("Deleting old configurations");
+            resetPooledVMs();
+            dhr.deleteAll();
+            dcr.deleteAll();
+            qmr.deleteAll();
+            pcr.deleteAll();
+            dcmr.deleteAll();
 
-        sar.deleteAll();
+            appMetRepos.deleteAll();
+            opeMetRepos.deleteAll();
+            opeReplRepos.deleteAll();
 
-        template.getConnectionFactory().getConnection().flushAll();
-        topologyManagement.cleanup(infrastructureIp);
-        topologyManagement.setTopology(new LinkedHashMap<>());
+            sar.deleteAll();
+
+            template.getConnectionFactory().getConnection().flushAll();
+            topologyManagement.cleanup(infrastructureIp);
+            topologyManagement.setTopology(new LinkedHashMap<>());
+        } catch(InternalServerErrorException e) {
+            LOG.error(e.getLocalizedMessage(), e.getCause());
+        }
         LOG.info("Cleanup Completed");
     }
 

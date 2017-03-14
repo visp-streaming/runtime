@@ -4,12 +4,12 @@ package ac.at.tuwien.infosys.visp.runtime.restAPI;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
+import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,12 +19,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-
-import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 public class TopologyAPI {
@@ -42,6 +38,9 @@ public class TopologyAPI {
 
     @Autowired
     private TopologyManagement topologyManagement;
+
+    @Autowired
+    private Utilities utilities;
 
     @RequestMapping("/checkStatus")
     @ResponseBody
@@ -136,6 +135,23 @@ public class TopologyAPI {
 
         jsonData.put("action", "commit");
         jsonData.put("hash", hash);
+        jsonData.put("errorMessage", errorMessage);
+        return jsonData;
+    }
+
+    @RequestMapping(value = "/clear", produces = "application/json")
+    @ResponseBody
+    public Map<String, Object> clear() throws IOException {
+        /**
+         * called from another VISP instance - cleans the current topology
+         */
+        Map<String, Object> jsonData = new HashMap<>();
+        String errorMessage = "none";
+        LOG.info("commiting topology clear");
+
+        utilities.clearAll();
+
+        jsonData.put("action", "clear");
         jsonData.put("errorMessage", errorMessage);
         return jsonData;
     }
