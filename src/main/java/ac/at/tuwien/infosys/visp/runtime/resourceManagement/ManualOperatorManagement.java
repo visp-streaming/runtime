@@ -74,6 +74,8 @@ public class ManualOperatorManagement {
 
     public Boolean testDeployment(List<Operator> ops) {
         return true;
+        // TODO: check if specified resource pool exists
+
         // TODO: for each resource pool
         //List<> resourcePools = ResourceProvider
 //        ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();

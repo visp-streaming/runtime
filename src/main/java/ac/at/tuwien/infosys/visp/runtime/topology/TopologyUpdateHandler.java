@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
@@ -20,6 +21,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,6 +47,9 @@ public class TopologyUpdateHandler {
 
     @Autowired
     VISPInstanceRepository vir;
+
+    @Autowired
+    private PooledVMRepository pvmr;
 
     @Value("${visp.runtime.ip}")
     private String vispRuntimeOwnIp;
@@ -82,7 +88,7 @@ public class TopologyUpdateHandler {
             LOG.info(operator.toString());
         }
 
-        List<TopologyUpdate> updates = updateTopology(topologyManagement.getTopology(), incomingTopology.topology);
+        List<TopologyUpdate> updates = computeListOfUpdates(topologyManagement.getTopology(), incomingTopology.topology);
         LOG.info("Have to perform the following updates:");
         for (TopologyUpdate update : filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp)) {
             LOG.info(update.toString());
@@ -92,7 +98,7 @@ public class TopologyUpdateHandler {
 
     }
 
-    public List<TopologyUpdate> updateTopology(Map<String, Operator> oldTopology, Map<String, Operator> newTopology) {
+    public List<TopologyUpdate> computeListOfUpdates(Map<String, Operator> oldTopology, Map<String, Operator> newTopology) {
         /**
          * this function computes which changes need to be performed when updating from the old to the new topology on host location
          */
@@ -106,11 +112,10 @@ public class TopologyUpdateHandler {
             Operator oldOperator = entry.getValue();
             if (!newTopology.containsKey(oldOperatorName)) {
                 // operatorType no longer existing, remove it
-                LOG.info("delete 1");
                 returnList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
             } else {
                 // operatorType is still here, check if we need to update
-                updateOperator(returnList, oldOperator, newTopology.get(oldOperatorName));
+                updateSingleOperator(returnList, oldOperator, newTopology.get(oldOperatorName));
             }
         }
         for (Map.Entry<String, Operator> entry : newTopology.entrySet()) {
@@ -118,7 +123,6 @@ public class TopologyUpdateHandler {
             Operator newOperator = entry.getValue();
             if (!oldTopology.containsKey(newOperatorName)) {
                 // operatorType is new, create it
-                LOG.info("add 1");
                 returnList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
             } else {
                 // this should already have been handled above...
@@ -132,13 +136,12 @@ public class TopologyUpdateHandler {
         return returnList;
     }
 
-    private void updateOperator(List<TopologyUpdate> updateList, Operator oldOperator, Operator newOperator) {
+    private void updateSingleOperator(List<TopologyUpdate> updateList, Operator oldOperator, Operator newOperator) {
         /**
          * checks whether there are differences between the two operators and adds the according updates if there are
          */
         if (!oldOperator.getConcreteLocation().equals(newOperator.getConcreteLocation())) {
             // operatorType is migrated
-            LOG.info("delete/add 2");
             updateList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
             updateList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
         }
@@ -205,7 +208,8 @@ public class TopologyUpdateHandler {
          * properly informed about the changes through a multi-phase
          * commit mechanism
          */
-        int hash = fileContent.hashCode();
+
+
         File topologyFile = saveIncomingTopologyFile(fileContent);
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
         List<String> involvedRuntimes = getInvolvedRuntimes(updates);
@@ -217,11 +221,22 @@ public class TopologyUpdateHandler {
         if (!allInvolvedRuntimesAreAvailable) {
             String errorMessage = "Critical error - one or more VISP runtime instances are not available: [" + String.join(", ", offlineRuntimes) + "]";
             LOG.error(errorMessage);
-            UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.SUCCESSFUL);
-            result.setStatus(UpdateResult.UpdateStatus.RUNTIMES_NOT_AVAILABLE);
+            UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.RUNTIMES_NOT_AVAILABLE);
             result.setErrorMessage(errorMessage);
             return result;
         }
+
+        try {
+            fileContent = new String(Files.readAllBytes(
+                    Paths.get(topologyParser.generateTopologyFile(
+                            assignConcreteResourcePools(topologyParser.parseTopologyFromString(fileContent).topology)))));
+            topologyFile = saveIncomingTopologyFile(fileContent);
+            updates = computeUpdatesFromNewTopologyFile();
+        } catch (IOException e) {
+            LOG.error("Could not assign concrete resource pools for uploaded topology", e.getLocalizedMessage());
+        }
+
+        int hash = fileContent.hashCode();
 
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
@@ -310,6 +325,7 @@ public class TopologyUpdateHandler {
 
     private String executeUpdate(File topologyFile, List<TopologyUpdate> updates) {
         TopologyParser.ParseResult parseResult = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath());
+//        parseResult.topology = assignConcreteResourcePools(parseResult.topology);
         topologyManagement.setTopology(parseResult.topology);
         topologyManagement.setDotFile(parseResult.dotFile);
         LOG.info("set dotfile for future usage to " + parseResult.dotFile);
@@ -328,13 +344,52 @@ public class TopologyUpdateHandler {
         return pngPath;
     }
 
+    private Map<String, Operator> assignConcreteResourcePools(Map<String, Operator> topology) {
+        /**
+         * the user can use "*" for resource pools
+         * if that has happened, replace with concrete resource pools
+         */
+
+        for (Operator op : topology.values()) {
+            if (!op.getConcreteLocation().getResourcePool().equals("*")) {
+                continue;
+            }
+            if (!op.getConcreteLocation().getIpAddress().equals(vispRuntimeOwnIp)) {
+                // request list of resource pools from the instance
+                try {
+                    RestTemplate restTemplate = new RestTemplate();
+                    String url = "http://" + op.getConcreteLocation().getIpAddress() + ":8080/vispconfiguration/listResourcePools";
+                    List<Map<String, Object>> resourcePools = restTemplate.getForObject(url, List.class);
+                    Map<String, Object> chosenPool = resourcePools.get(new Random().nextInt(resourcePools.size()));
+                    op.getConcreteLocation().setResourcePool((String) chosenPool.get("name"));
+                    LOG.info("Assigning concrete resource pool " + (String) chosenPool.get("name") + " for operator " +
+                            op.getName() + " on runtime " + op.getConcreteLocation());
+                } catch (Exception e) {
+                    LOG.error("Error while querying VISP instance for list of resource pools", e);
+                    throw new RuntimeException("Could not query VISP instance for list of resource pools");
+                }
+            } else {
+                List<String> allPools = pvmr.findDistinctPoolnames();
+                if (allPools.size() == 0) {
+                    throw new RuntimeException("No resource pools available for operator " + op.getName() + " on runtime " + vispRuntimeOwnIp);
+                }
+                String resourcePool = allPools.get(new Random().nextInt(allPools.size()));
+                op.getConcreteLocation().setResourcePool(resourcePool);
+                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on runtime " + vispRuntimeOwnIp);
+
+            }
+        }
+
+        return topology;
+    }
+
     private void updateKnownVispInstances() {
         /**
          * curates a list of known runtime instances for various communication purposes
          */
         Map<String, VISPInstance> allInstances = new HashMap<>();
 
-        for (Operator op: topologyManagement.getOperators()) {
+        for (Operator op : topologyManagement.getOperators()) {
             for (Operator.Location loc : op.getAllowedLocationsList()) {
                 if (!allInstances.containsKey(loc.getIpAddress())) {
                     allInstances.put(loc.getIpAddress(), new VISPInstance(loc.getIpAddress()));
@@ -346,10 +401,10 @@ public class TopologyUpdateHandler {
             VISPInstance vi = null;
             try {
                 vi = vir.findFirstByUri(instance.getUri());
-            } catch(Exception e) {
+            } catch (Exception e) {
 
             }
-            if(vi == null) {
+            if (vi == null) {
                 vir.save(instance);
                 newInstances++;
             }
@@ -411,7 +466,7 @@ public class TopologyUpdateHandler {
         LOG.info("Commiting update with localHash " + localHash);
         // TODO: check if hashes match
         executeUpdate(topologyManagement.getTestDeploymentFile(),
-                updateTopology(topologyManagement.getTopology(),
+                computeListOfUpdates(topologyManagement.getTopology(),
                         topologyParser.parseTopologyFromFileSystem(
                                 topologyManagement.getTestDeploymentFile().getAbsolutePath()).topology));
     }

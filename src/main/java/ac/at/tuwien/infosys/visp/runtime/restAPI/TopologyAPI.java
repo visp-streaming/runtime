@@ -84,6 +84,7 @@ public class TopologyAPI {
             deploymentPossible = topologyUpdateHandler.testDeploymentByFile(fileContent);
         }
         catch (Exception e) {
+            LOG.error("Deployment not possible: " + e.getLocalizedMessage());
             errorMessage = e.getLocalizedMessage();
             deploymentPossible = false;
         }

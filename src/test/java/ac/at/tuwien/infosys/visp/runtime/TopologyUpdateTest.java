@@ -61,7 +61,7 @@ public class TopologyUpdateTest {
         TopologyPair pair = getTopologiesFromFiles(file1, file2);
 
         TopologyUpdateHandler handler = new TopologyUpdateHandler();
-        List<TopologyUpdate> updatesToPerform = handler.updateTopology(pair.oldTopology, pair.newTopology);
+        List<TopologyUpdate> updatesToPerform = handler.computeListOfUpdates(pair.oldTopology, pair.newTopology);
 
         return updatesToPerform;
     }
