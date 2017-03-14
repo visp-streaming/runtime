@@ -197,6 +197,7 @@
                 <version>0.4.13</version>
                 <configuration>
                     <imageName>chochreiner/runtime</imageName>
+                    <useConfigFile>true</useConfigFile>
                     <forceTags>true</forceTags>
                     <imageTags>
                         <imageTag>latest</imageTag>
