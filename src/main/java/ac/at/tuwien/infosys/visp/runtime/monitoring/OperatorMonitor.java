@@ -84,7 +84,7 @@ public class OperatorMonitor {
                 try {
                     message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
                 } catch (ResourceAccessException e) {
-                    LOG.error("Could not access metrics endpoint");
+                    LOG.error("Could not access metrics endpoint " + e.getLocalizedMessage());
                 }
 
             if (message != null) {
