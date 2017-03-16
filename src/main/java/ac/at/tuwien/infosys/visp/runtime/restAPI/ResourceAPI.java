@@ -1,6 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourcePoolUsage;
+import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import org.slf4j.Logger;

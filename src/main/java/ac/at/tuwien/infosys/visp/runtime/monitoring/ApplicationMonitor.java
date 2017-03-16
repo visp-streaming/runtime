@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  * metrics.
  * <p>
  * These metrics are published on a message queue service
- * (RabbitMQ) by a topology operator (class: MonitorOperator)
+ * (RabbitMQ) by a topology operatorType (class: MonitorOperator)
  * using a push-approach.
  * <p>
  * When a new sample is available, the Runtime-ApplicationMonitor

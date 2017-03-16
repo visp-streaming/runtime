@@ -21,19 +21,18 @@ public class DockerContainerMonitor {
     private long id;
     private String containerid;
     private String operator;
+    private String operatorid;
 
-    private double derivedCpuUsage;
-    private long cpuUsage;
-    private long systemUsage;
-
-    private long memoryUsage;
+    private double cpuUsage;
+    private double memoryUsage;
 
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime timestamp;
 
-    public DockerContainerMonitor(String containerid, String operator) {
+    public DockerContainerMonitor(String containerid, String operator, String operatorid) {
         this.containerid = containerid;
         this.operator = operator;
+        this.operatorid = operatorid;
         this.timestamp = new DateTime(DateTimeZone.UTC);
     }
 

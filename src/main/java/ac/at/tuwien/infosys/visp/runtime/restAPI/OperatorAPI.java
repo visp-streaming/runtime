@@ -1,7 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
+import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.entities.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,17 +23,22 @@ public class OperatorAPI {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
-    @RequestMapping(value = {"/getOperatorConfiguration/{operator}"}, method = RequestMethod.GET)
-    public OperatorConfiguration getOperatorConfiguration(@PathVariable String operator) {
+    @RequestMapping(value = {"/getOperatorConfiguration/type/{operatorType}"}, method = RequestMethod.GET)
+    public OperatorConfiguration getOperatorConfigurationForOperatorType(@PathVariable String operatorType) {
 
-        OperatorConfiguration op =  new OperatorConfiguration(operator);
-        op.setPlannedResources(new OperatorConfigurationBootstrap(operator).getExpected());
-        op.setActualResources(resourceUsage.calculatelatestActualUsageForOperator(operator));
-
-        //TODO add additional information from the topology
-
+        OperatorConfiguration op =  new OperatorConfiguration(operatorType, 2400);
+        op.setPlannedResources(new OperatorConfigurationBootstrap(operatorType).getExpected());
+        op.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorType(operatorType));
         return op;
+    }
 
+    @RequestMapping(value = {"/getOperatorConfiguration/name/{operatorName}"}, method = RequestMethod.GET)
+    public OperatorConfiguration getOperatorConfiguration(@PathVariable String operatorName) {
+
+        OperatorConfiguration op =  new OperatorConfiguration(operatorName, 2400);
+        op.setPlannedResources(new OperatorConfigurationBootstrap(operatorName).getExpected());
+        op.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorid(operatorName));
+        return op;
     }
 
 

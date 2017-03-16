@@ -10,8 +10,11 @@ public interface DockerContainerMonitorRepository extends CrudRepository<DockerC
 
     DockerContainerMonitor findFirstByContaineridOrderByTimestampDesc(String containerid);
     List<DockerContainerMonitor> findByOperator(String operator);
+    List<DockerContainerMonitor> findByOperatorid(String operatorid);
+
 
     DockerContainerMonitor findFirstByOperatorOrderByTimestampDesc(String operator);
+    DockerContainerMonitor findFirstByOperatoridOrderByTimestampDesc(String operator);
 
 
 

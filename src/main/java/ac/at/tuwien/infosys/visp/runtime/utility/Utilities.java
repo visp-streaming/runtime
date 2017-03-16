@@ -1,43 +1,29 @@
 package ac.at.tuwien.infosys.visp.runtime.utility;
 
-import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.entities.operators.Operator;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerBasic;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourcePoolConnector;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyParser;
+import com.spotify.docker.client.exceptions.DockerRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import javax.ws.rs.InternalServerErrorException;
+import java.util.LinkedHashMap;
 
 @Service
+@DependsOn("resourceProvider")
 public class Utilities {
 
     @Autowired
     private ReportingScalingActivities rsa;
-
-    @Autowired
-    private TopologyManagement topologyMgmt;
-
-    @Autowired
-    private ProcessingNodeManagement processingNodeManagement;
-
-    @Autowired
-    private TopologyParser parser;
-
-    @Autowired
-    private OperatorConfigurationBootstrap opConfig;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -72,8 +58,14 @@ public class Utilities {
     @Autowired
     private ReportingCompressor compressor;
 
-    @Value("${visp.infrastructurehost}")
-    private String infrastructureHost;
+    @Autowired
+    private TopologyManagement topologyManagement;
+
+    @Autowired
+    private RuntimeConfigurationRepository rcr;
+
+    @Value("${visp.infrastructure.ip}")
+    private String infrastructureIp;
 
     @Value("${visp.topology}")
     private String topology;
@@ -84,52 +76,58 @@ public class Utilities {
     @Autowired
     private ResourcePoolConnector rpc;
 
-    @Autowired
-    private ReasonerBasic basicReasoner;
-
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-    public void initializeTopology(String infrastructureHost) {
-        for (Operator op : parser.getTopology().values()) {
-            if (op.getName().contains("source")) {
-                continue;
-            }
-            DockerContainer dc = opConfig.createDockerContainerConfiguration(op.getName());
+    @PostConstruct
+    public void init() {
+        topologyManagement.createMapping(infrastructureIp);
+        topologyManagement.setTopology(new LinkedHashMap<>());
 
-            processingNodeManagement.scaleup(dc, basicReasoner.selectSuitableDockerHost(dc, null), infrastructureHost);
+        // if the topology has been restarted, try to restore topology
+
+        if(!topologyManagement.restoreTopologyFromPeers()) {
+            topologyManagement.restoreTopologyFromDatabase();
         }
     }
 
-    @PostConstruct
-    public void createInitialStatus() {
+    public void clearAll() {
 
-        LOG.info("Deleting old configurations");
-        parser.loadTopology("topologyConfiguration/" + topology + ".conf");
-        resetPooledVMs();
-        dhr.deleteAll();
-        dcr.deleteAll();
-        qmr.deleteAll();
-        pcr.deleteAll();
-        dcmr.deleteAll();
+        //this operation is a hard reset and also
+        //removed the docker containers there
 
-        appMetRepos.deleteAll();
-        opeMetRepos.deleteAll();
-        opeReplRepos.deleteAll();
+        try {
 
-        resetPooledVMs();
-        sar.deleteAll();
+            LOG.info("Deleting old configurations");
+            resetPooledVMs();
+            dhr.deleteAll();
+            dcr.deleteAll();
+            qmr.deleteAll();
+            pcr.deleteAll();
+            dcmr.deleteAll();
 
-        template.getConnectionFactory().getConnection().flushAll();
-        topologyMgmt.cleanup(infrastructureHost);
+            appMetRepos.deleteAll();
+            opeMetRepos.deleteAll();
+            opeReplRepos.deleteAll();
 
+            sar.deleteAll();
+
+            template.getConnectionFactory().getConnection().flushAll();
+            topologyManagement.cleanup(infrastructureIp);
+            topologyManagement.setTopology(new LinkedHashMap<>());
+
+            try {
+                rcr.delete(rcr.findFirstByKey("last_topology_file").getId());
+            } catch(Exception e) {
+
+            }
+        } catch(InternalServerErrorException e) {
+            LOG.error(e.getLocalizedMessage(), e.getCause());
+        }
         LOG.info("Cleanup Completed");
-
-        topologyMgmt.createMapping(infrastructureHost);
-        initializeTopology(infrastructureHost);
     }
 
-    @PreDestroy
     public void exportData() {
+        //TODO provide HTML interface to export Data
         rsa.generateCSV();
         compressor.zipIt();
         compressor.cleanup();
@@ -144,5 +142,4 @@ public class Utilities {
             pvmr.save(vm);
         }
     }
-
 }

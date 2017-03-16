@@ -21,7 +21,8 @@ public class DockerContainer {
     private String containerid;
     private String host;
     private String image;
-    private String operator;
+    private String operatorType;
+    private String operatorName;
     private String status;
     private Double cpuCores;
     private Integer memory;
@@ -32,8 +33,9 @@ public class DockerContainer {
 
     private String monitoringPort;
 
-    public DockerContainer(String operator, Double cpuCores, Integer memory, Integer storage) {
-        this.operator = operator;
+    public DockerContainer(String operatorType, String operatorName, Double cpuCores, Integer memory, Integer storage) {
+        this.operatorType = operatorType;
+        this.operatorName = operatorName;
         this.cpuCores = cpuCores;
         this.memory = memory;
         this.storage = storage;

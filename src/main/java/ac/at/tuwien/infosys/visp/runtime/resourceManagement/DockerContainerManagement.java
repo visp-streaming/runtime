@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -41,25 +42,124 @@ public class DockerContainerManagement {
     @Autowired
     private DockerHostRepository dhr;
 
+    @Autowired
+    private OperatorConfigurationBootstrap opConfig;
+
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
 
-    @Value("${visp.node.port.available}'")
+    @Value("${visp.node.port.available}")
     private String encodedHostNodeAvailablePorts;
+
+    @Value("${visp.infrastructure.ip}")
+    private String redisHost;
+
+    @Value("${visp.infrastructure.ip}")
+    private String rabbitMqHost;
+
+    @Value("${visp.runtime.ip}")
+    private String ownIp;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
+    public void startContainer(DockerHost dh, Operator op) throws DockerException, InterruptedException {
+        /* Connect to docker server of the host */
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
+
+        /* Update the list of available docker images */
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
+            List<String> availableImages = dh.getAvailableImages();
+            availableImages.add(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
+            dh.setAvailableImages(availableImages);
+            dhr.save(dh);
+        }
+
+        /* Configure environment variables */
+        List<String> environmentVariables = new ArrayList<>();
+        String outgoingHost = op.getConcreteLocation().getIpAddress().equals(rabbitMqHost) ? ownIp : op.getConcreteLocation().getIpAddress(); // generalized deployment
+        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost); // TODO: check if this is always the right host
+        environmentVariables.add("SPRING_REDIS_HOST=" + redisHost);
+        environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
+        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
+        environmentVariables.add("ROLE=" + op.getType());
+        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(op.getName()));
+
+        LOG.info("Printing env variables");
+        //TODO set correct environment variables - especially for hosts
+        for(String ev : environmentVariables) {
+            LOG.info(ev);
+        }
+
+        /* Configure docker container */
+        Double vmCores = dh.getCores();
+        Double containerCores = dc.getCpuCores();
+
+        long containerMemory = (long) dc.getMemory().doubleValue() * 1024 * 1024;
+        long cpuShares = 1024 / (long) Math.ceil(vmCores / containerCores);
+
+        /* Bind container port (processingNodeServerPort) to an available host port */
+        String hostPort = getAvailablePortOnHost(dh);
+        if (hostPort == null)
+            throw new DockerException("Not available port on host " + dh.getName() + " to bind a new container");
+
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        portBindings.put(processingNodeServerPort, Lists.newArrayList(PortBinding.of("0.0.0.0", hostPort)));
+
+        final HostConfig hostConfig = HostConfig.builder()
+                .cpuShares(cpuShares)
+                .memoryReservation(containerMemory)
+                .portBindings(portBindings)
+                .networkMode("bridge")
+                .build();
+
+        final ContainerConfig containerConfig = ContainerConfig.builder()
+                .hostConfig(hostConfig)
+                .image(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))
+                .exposedPorts(processingNodeServerPort)
+                .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
+                .env(environmentVariables)
+                .build();
+
+        /* Start docker container */
+        final ContainerCreation creation = docker.createContainer(containerConfig);
+        final String id = creation.id();
+        docker.startContainer(id);
+
+        /* Save docker container information on repository */
+        dc.setContainerid(id);
+        dc.setImage(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
+        dc.setHost(dh.getName());
+        dc.setMonitoringPort(hostPort);
+        dc.setStatus("running");
+        dc.setTerminationTime(null);
+        dcr.save(dc);
+
+        /* Update the set of used port on docker host */
+        List<String> usedPorts = dh.getUsedPorts();
+        usedPorts.add(hostPort);
+        dh.setUsedPorts(usedPorts);
+        dhr.save(dh);
+
+        LOG.info("VISP - A new container with the ID: " + id + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dh.getName() + " has been started.");
+
+    }
+
     //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
+    @Deprecated
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
+        LOG.error("!! WARNING !! - this method is deprecated and the wrong outgoing host is set since no operator information is available");
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         /* Update the list of available docker images */
-        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(container.getOperator()))) {
-            docker.pull(operatorConfigurationBootstrap.getImage(container.getOperator()));
+        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(container.getOperatorType()))) {
+            docker.pull(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
             List<String> availableImages = dh.getAvailableImages();
-            availableImages.add(operatorConfigurationBootstrap.getImage(container.getOperator()));
+            availableImages.add(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
             dh.setAvailableImages(availableImages);
             dhr.save(dh);
         }
@@ -69,10 +169,10 @@ public class DockerContainerManagement {
         environmentVariables.add("SPRING_RABBITMQ_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + infrastructureHost);
         environmentVariables.add("SPRING_REDIS_HOST=" + infrastructureHost);
-        environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperator());
-        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperator()));
-        environmentVariables.add("ROLE=" + container.getOperator());
-        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperator()));        
+        environmentVariables.add("OUTGOINGEXCHANGE=" + container.getOperatorType());
+        environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(container.getOperatorType()));
+        environmentVariables.add("ROLE=" + container.getOperatorType());
+        environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(container.getOperatorType()));
 
         /* Configure docker container */
         Double vmCores = dh.getCores();
@@ -98,7 +198,7 @@ public class DockerContainerManagement {
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(operatorConfigurationBootstrap.getImage(container.getOperator()))
+                .image(operatorConfigurationBootstrap.getImage(container.getOperatorType()))
                 .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
@@ -111,7 +211,7 @@ public class DockerContainerManagement {
         
         /* Save docker container information on repository */
         container.setContainerid(id);
-        container.setImage(operatorConfigurationBootstrap.getImage(container.getOperator()));
+        container.setImage(operatorConfigurationBootstrap.getImage(container.getOperatorType()));
         container.setHost(dh.getName());
         container.setMonitoringPort(hostPort);
         container.setStatus("running");
@@ -124,7 +224,7 @@ public class DockerContainerManagement {
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
 
-        LOG.info("VISP - A new container with the ID: " + id + " for the operator: " + container.getOperator() + " on the host: " + dh.getName() + " has been started.");
+        LOG.info("VISP - A new container with the ID: " + id + " for the operatorType: " + container.getOperatorType() + " on the host: " + dh.getName() + " has been started.");
     }
 
     public void removeContainer(DockerContainer dc) {
@@ -172,25 +272,36 @@ public class DockerContainerManagement {
 
         dcr.delete(dc);
 
-        LOG.info("VISP - The container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + " was removed.");
+        LOG.info("VISP - The container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + " was removed.");
     }
 
     public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
+        LOG.info("in executeCommand for cmd: " + cmd);
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
-        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+        if(dh == null) {
+            throw new RuntimeException("Could not find dockerhost by name: " + dc.getHost());
+        }
 
-        final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
-        final LogStream output = docker.execStart(execId.id());
-        String result = output.readFully();
-        LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operator: " + dc.getOperator() + " on the host: " + dc.getHost() + "with the result: " + result);
-        return result;
+        try {
+            final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+            final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
+            final LogStream output = docker.execStart(execId.id());
+            String result = output.readFully();
+            LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
+            return result;
+        } catch(Exception e) {
+            // this exception is a bug in the spotify docker lib
+            LOG.warn("Spotify lib bug");
+            return "<could not fetch result from docker-host>";
+        }
     }
 
     public void markContainerForRemoval(DockerContainer dc) {
         dc.setStatus("stopping");
         dc.setTerminationTime(new DateTime(DateTimeZone.UTC));
-        dcr.save(dc);
+        dcr.saveAndFlush(dc);
+        LOG.info("Marked container " + dc + " for removal");
     }
 
 
@@ -214,4 +325,20 @@ public class DockerContainerManagement {
 
         return null;
     }
+
+
+    public Boolean checkAvailabilityofDockerhost(String url) {
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + url + ":2375").connectTimeoutMillis(5000).build();
+        try {
+            if (docker.ping().equals("OK")) {
+                return true;
+            }
+            return false;
+        } catch (DockerException e) {
+            return false;
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+
 }

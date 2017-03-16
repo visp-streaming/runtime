@@ -91,8 +91,8 @@ public class CentralizedRLReasoner {
     @Autowired
     private Monitor rabbitMQMonitor;
     
-    @Value("${visp.infrastructurehost}")
-    private String infrastructureHost;
+    @Value("${visp.infrastructure.ip}")
+    private String infrastructureIp;
     
     @Value("${reasoner.evaluate.afterrounds}")
     private Integer waitForReconfigurationEffects;
@@ -114,14 +114,17 @@ public class CentralizedRLReasoner {
 	private String RESOURCEPOOL = "";
 
 	public void initialize(){
-		RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+		if (!resourceProvider.getResourceProviders().entrySet().isEmpty()) {
+			RESOURCEPOOL = resourceProvider.getResourceProviders().entrySet().iterator().next().getKey();
+		}
+
 
 		/* Centralized Version of ReLED Controller */
 		controller = new HashMap<String, RLController>();
 		operatorNameToOperator = new HashMap<String, Operator>();
 		cooldownOperators = new HashMap<String, Integer>();
 		
-		/* Generate a new RL Controller for each operator */
+		/* Generate a new RL Controller for each operatorType */
 		createRLController();
 	
 		/* Retrieve the application SLA */
@@ -203,7 +206,7 @@ public class CentralizedRLReasoner {
 			/* ************** DEBUG ************** */
 			
 			
-			/* Run -APE steps for each operator (in a concurrent way) */
+			/* Run -APE steps for each operatorType (in a concurrent way) */
 			for (String operatorName : topologyManager.getOperatorsAsList()) {
 				
 				if (DEBUG)
@@ -212,7 +215,7 @@ public class CentralizedRLReasoner {
 				/* DEBUG: Save RL information */
 				saveQ(operatorName);
 				saveStateVisits(operatorName);
-				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureHost);
+				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureIp);
 				
 		    	/* Do not scale pinned or cooling-down operators */
 				if (!canReconfigure(operatorName))
@@ -282,7 +285,7 @@ public class CentralizedRLReasoner {
 	}
 	
 	/**
-	 * Analyze monitored metrics and plan next action for the operator node
+	 * Analyze monitored metrics and plan next action for the operatorType node
 	 * @param operatorName
 	 * @return
 	 * @throws Exception
@@ -294,7 +297,7 @@ public class CentralizedRLReasoner {
 		Operator operator = operatorNameToOperator.get(operatorName);
 		
 		if (operatorController == null || application == null || operator == null)
-			throw new RLException("Invalid operator information (controller, application, operator)");
+			throw new RLException("Invalid operatorType information (controller, application, operatorType)");
 		
 		// DEBUG: 
 		String serializedReward = operatorController.getReward(application, operator, applicationSla);
@@ -334,7 +337,7 @@ public class CentralizedRLReasoner {
 		
 		switch(decodedAction){
 			case SCALE_IN:
-				/* Scale-in the number of operator replicas by stopping a 
+				/* Scale-in the number of operatorType replicas by stopping a
 				 * (randomly chosen) processing node (Docker container) */
 				procNodeManager.scaleDown(operatorName);
 				
@@ -345,7 +348,7 @@ public class CentralizedRLReasoner {
 				 * the consolidation of containers on available hosts is
 				 * postponed to next execution of the adaptation cycle */
 				
-				/* Put operator in a cooling down state */
+				/* Put operatorType in a cooling down state */
 				cooldownOperators.put(operatorName, waitForReconfigurationEffects);
 				
 				break;
@@ -354,18 +357,18 @@ public class CentralizedRLReasoner {
 				break;
 			
 			case SCALE_OUT:
-				/* Scale-out the number of operator replicas by executing the steps: 
+				/* Scale-out the number of operatorType replicas by executing the steps:
 				 * - create a new docker container
 				 * - determine the container placement (existing nodes, new node) 
 				 * - launch the container */
 				DockerContainer container = operatorConfig.createDockerContainerConfiguration(operatorName);
 				DockerHost host = determineContainerPlacement(container);
-				procNodeManager.scaleup(container, host, infrastructureHost);
+				procNodeManager.scaleup(container, host, infrastructureIp);
 
 				/* Track scaling activity */
 				/* Action already tracked in procNodeManager.scaleUp() */
 
-				/* Put operator in a cooling down state */
+				/* Put operatorType in a cooling down state */
 				cooldownOperators.put(operatorName, waitForReconfigurationEffects);
 
 				break;
@@ -444,10 +447,10 @@ public class CentralizedRLReasoner {
     		/* Relocate Container */
     		DockerHost destinationHost = relocationMap.get(container);
     		procNodeManager.triggerShutdown(container);
-    		procNodeManager.scaleup(container, destinationHost, infrastructureHost);
+    		procNodeManager.scaleup(container, destinationHost, infrastructureIp);
     		
     		/* Track consolidation activity */
-    		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperator(), "consolidation", container.getHost()));
+    		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperatorType(), "consolidation", container.getHost()));
 
     	}
     	
@@ -521,7 +524,7 @@ public class CentralizedRLReasoner {
  	private Operator createOperatorModel(String operatorName){
 
 		List<OperatorQoSMetrics> operatorsMetrics = operatorMetricsRepository.findFirstByNameOrderByTimestampDesc(operatorName);
-		List<DockerContainer> containers = dockerRepository.findByOperator(operatorName);
+		List<DockerContainer> containers = dockerRepository.findByOperatorName(operatorName);
 
 	 	OperatorQoSMetrics qosMetrics = null;
 	 	if (operatorsMetrics == null || operatorsMetrics.isEmpty()){

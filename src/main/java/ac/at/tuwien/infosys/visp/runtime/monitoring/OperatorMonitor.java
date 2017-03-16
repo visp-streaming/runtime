@@ -1,29 +1,30 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.common.ProcessingNodeMetricsMessage;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.OperatorQoSMetricsRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.OperatorQoSMetrics;
-import ac.at.tuwien.infosys.visp.common.ProcessingNodeMetricsMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
 /**
  * The OperatorMonitor retrieves the statistics related
- * to each operator of the topology.
+ * to each operatorType of the topology.
  * <p>
  * It needs to collect the sum of emitted events and the
- * amount of processed event by each operator instance.
- * Afterwards, aggregates the statistics per operator.
+ * amount of processed event by each operatorType instance.
+ * Afterwards, aggregates the statistics per operatorType.
  * <p>
  * Note: to avoid collecting data from multiple or not consistent
  * window, this components adopts a PULL-approach.
@@ -80,7 +81,11 @@ public class OperatorMonitor {
 
                 String url = CONNECTION_PROTOCOL + hostUrl + ":" + container.getMonitoringPort() + MONITOR_ENTRYPOINT;
                 RestTemplate restTemplate = new RestTemplate();
-                message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+                try {
+                    message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
+                } catch (ResourceAccessException e) {
+                    LOG.error("Could not access metrics endpoint " + e.getLocalizedMessage());
+                }
 
             if (message != null) {
                 stats.add(message);
@@ -94,10 +99,10 @@ public class OperatorMonitor {
             stats.add(srcStats);
     	
     	/* Process collected stats to obtain: 
-    	 *  - processed messages per operator
-    	 *  - received messages per operator
+    	 *  - processed messages per operatorType
+    	 *  - received messages per operatorType
     	 *  
-    	 *  Note that a container runs an operator instance
+    	 *  Note that a container runs an operatorType instance
     	 */
         for (ProcessingNodeMetricsMessage msg : stats) {
 

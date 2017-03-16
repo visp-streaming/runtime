@@ -19,7 +19,7 @@ public class DockerHost {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private String name;
-    private String resourceProvider;
+    private String resourcepool;
     private String url;
     private Double cores;
     private Integer memory;

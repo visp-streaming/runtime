@@ -1,15 +1,18 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
+import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
+import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainerMonitor;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourcePoolUsage;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceTriple;
-import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ResourceUsage {
@@ -23,15 +26,14 @@ public class ResourceUsage {
     @Autowired
     private DockerContainerRepository dcr;
 
-
-    private Double cost;
-    private Integer cpuFrequency;
-    private Double availability;
-
+    @Autowired
+    private OperatorConfigurationBootstrap opconf;
 
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
+        //TODO calculate the availability
+        rp.setAvailability((Math.floor(80 + Math.random() * (99 - 80 + 1))) / 100);
         ResourceTriple overall = new ResourceTriple();
         ResourceTriple planned = new ResourceTriple();
         ResourceTriple actual = new ResourceTriple();
@@ -49,15 +51,19 @@ public class ResourceUsage {
             overall.incrementStorage(pooledVM.getStorage());
 
             for (DockerContainer dc : dcr.findByHost(pooledVM.getLinkedhost())) {
-                DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
-
                 planned.incrementCores(dc.getCpuCores());
                 planned.incrementMemory(dc.getMemory());
                 planned.incrementStorage(Float.valueOf(dc.getStorage()));
 
-                actual.incrementCores((double) dcm.getCpuUsage());
-                actual.incrementMemory((int) dcm.getMemoryUsage());
-                planned.incrementStorage((float) -1);
+                DockerContainerMonitor dcm = dcmr.findFirstByContaineridOrderByTimestampDesc(dc.getContainerid());
+
+                if (dcm != null) {
+                    actual.incrementCores(dcm.getCpuUsage());
+                    actual.incrementMemory((int) dcm.getMemoryUsage());
+
+                    //TODO fix as soon docker provides information about the actual used storage size
+                    actual.incrementStorage(Float.valueOf(dc.getStorage()));
+                }
             }
         }
 
@@ -72,25 +78,51 @@ public class ResourceUsage {
         return rp;
     }
 
-    public ResourceTriple calculatelatestActualUsageForOperator(String operator) {
-        ResourceTriple result = new ResourceTriple();
+    public ResourceTriple calculatelatestActualUsageForOperatorType(String operator) {
         DockerContainerMonitor dcm = dcmr.findFirstByOperatorOrderByTimestampDesc(operator);
-        result.setCores((double) dcm.getCpuUsage());
-        result.setMemory((int) dcm.getMemoryUsage());
-        result.setStorage(0F);
+        return getResourceTriple(dcm);
+    }
 
+    public ResourceTriple calculatelatestActualUsageForOperatorid(String operatorid) {
+        DockerContainerMonitor dcm = dcmr.findFirstByOperatoridOrderByTimestampDesc(operatorid);
+        return getResourceTriple(dcm);
+    }
+
+
+    private ResourceTriple getResourceTriple(DockerContainerMonitor dcm) {
+        ResourceTriple result = new ResourceTriple();
         //CPUstats = usage in % of the assigned shares (from actual resources)
+        result.setCores(dcm.getCpuUsage());
+        result.setMemory((int) dcm.getMemoryUsage());
+
+        //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
+        ResourceTriple planned = opconf.getExpected();
+        result.setStorage(planned.getStorage());
+
         return result;
     }
 
-    public ResourceTriple calculateAverageUsageForOperator(String operator) {
+    public ResourceTriple calculateAverageUsageForOperatorType(String operator) {
+        List<DockerContainerMonitor> recordings = dcmr.findByOperator(operator);
+        return getResourceTriple(recordings);
+    }
+
+    public ResourceTriple calculateAverageUsageForOperatorID(String operatorid) {
+        List<DockerContainerMonitor> recordings = dcmr.findByOperatorid(operatorid);
+        return getResourceTriple(recordings);
+    }
+
+    private ResourceTriple getResourceTriple(List<DockerContainerMonitor> recordings) {
         ResourceTriple result = new ResourceTriple();
         Integer counter = 0;
 
-        for (DockerContainerMonitor dcm : dcmr.findByOperator(operator)) {
-            result.incrementCores((double) dcm.getCpuUsage());
+        for (DockerContainerMonitor dcm : recordings) {
+            result.incrementCores(dcm.getCpuUsage());
             result.incrementMemory((int) dcm.getMemoryUsage());
-            result.incrementStorage(0F);
+
+            //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
+            ResourceTriple planned = opconf.getExpected();
+            result.incrementStorage(planned.getStorage());
             counter++;
         }
 

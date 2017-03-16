@@ -1,15 +1,19 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
-import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +44,12 @@ public class ReasonerUtility {
     @Autowired
     private TopologyManagement topologyMgmt;
 
+    @Autowired
+    private OperatorConfigurationBootstrap opConfig;
+
+    @Autowired
+    private ResourceProvider resourceProvider;
+
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
 
@@ -48,6 +58,8 @@ public class ReasonerUtility {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerUtility.class);
+
+    //TODO combine with resource monitor
 
     public ResourceAvailability calculateFreeresources(List<ResourceAvailability> resources) {
         ResourceAvailability all = new ResourceAvailability();
@@ -70,6 +82,39 @@ public class ReasonerUtility {
 
         return all;
     }
+
+    public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
+        ResourceAvailability ra = calculateFreeResourcesforHost(dh);
+
+        if (Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1) {
+            return false;
+        }
+        return true;
+    }
+
+
+
+    public ResourceAvailability calculateFreeResourcesforHost(DockerHost dh) {
+
+        ResourceAvailability rc = new ResourceAvailability(dh, 0, 0.0, 0, 0.0F);
+
+        for (DockerContainer dc : dcr.findByHost(dh.getName())) {
+            rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
+            rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
+            rc.setMemory(rc.getMemory() + dc.getMemory());
+            rc.setStorage(rc.getStorage() + dc.getStorage());
+        }
+
+        ResourceAvailability availability = new ResourceAvailability();
+        availability.setHost(dh);
+        availability.setAmountOfContainer(rc.getAmountOfContainer());
+        availability.setCpuCores(dh.getCores() - rc.getCpuCores());
+        availability.setMemory(dh.getMemory() - rc.getMemory());
+        availability.setStorage(dh.getStorage() - rc.getStorage());
+
+        return availability;
+    }
+
 
     public List<ResourceAvailability> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
         Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
@@ -130,7 +175,7 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") started. ####");
+        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") started. ####");
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
@@ -160,13 +205,14 @@ public class ReasonerUtility {
             }
         }
 
-        LOG.info("##### select suitable host for Container (" + dc.getOperator() + ") finished with host (" + selectedHost +"). ####");
+        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") finished with host (" + selectedHost +"). ####");
         return selectedHost;
     }
 
 
+
     public String selectOperatorTobeScaledDown() {
-        LOG.info("##### select operator to be scaled down initialized. ####");
+        LOG.info("##### select operatorType to be scaled down initialized. ####");
         String selectedOperator = null;
 
         //get all Instances
@@ -176,7 +222,7 @@ public class ReasonerUtility {
 
         // select all instances that have more than one instances
         for (String operator : tmgmt.getOperatorsAsList()) {
-            Integer amount = dcr.findByOperator(operator).size();
+            Integer amount = dcr.findByOperatorName(operator).size();
             if (amount < 2) {
                 continue;
             }
@@ -226,7 +272,7 @@ public class ReasonerUtility {
 
 
             //calculate delayfactor
-            Integer expectedDuration = Integer.parseInt(topologyMgmt.getSpecificValueForProcessingOperator(entry.getKey(), "expectedDuration"));
+            double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(entry.getKey())).getExpectedDuration();
             Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
             LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 
@@ -253,7 +299,7 @@ public class ReasonerUtility {
         }
 
 
-        LOG.info("##### select operator to be scaled down finished. ####");
+        LOG.info("##### select operatorType to be scaled down finished. ####");
         return selectedOperator;
     }
 
@@ -316,6 +362,28 @@ public class ReasonerUtility {
     	return null;
     	
     }
+
+
+    /**
+     * simple selection mechanism to select the next best dockerhost for a current VISP instance considering all resources pools, which are assigne to this instance
+     *
+     */
+    public DockerHost selectSuitableDockerHost(Operator op) throws Exception {
+        DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
+
+        for (DockerHost dh : dhr.findByResourcepool(op.getConcreteLocation().getResourcePool())) {
+            if (checkDeployment(dc, dh)) {
+                return dh;
+            }
+        }
+        DockerHost dh =  resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
+        if (dh != null) {
+            return dh;
+        }
+
+        throw new Exception("not enough resources available");
+    }
+
 
 
 }

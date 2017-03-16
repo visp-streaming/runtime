@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/main">
+
+<head/>
+
+<body>
+<th:block layout:fragment="content">
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="panel panel-default">
+                <div class="panel-heading">Apply new Topology</div>
+                <div class="panel-body text-center">
+                    <form action="/topology/uploadTopologyGUI" method="POST" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control"/>
+                            <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">Utility Operations</div>
+                <div class="panel-body text-center">
+                    <span><a class="btn btn-danger" th:href="${'/topology/clear'}">Clear Topology</a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Current Topology</div>
+        <div class="panel-body">
+            <div id="topologyFigure"></div>
+            <div th:if="${emptyTopology}" class="alert alert-info">
+                <strong>Info: </strong>
+                <span>Topology is currently empty.</span>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+
+<th:block layout:fragment="script">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var dotContent = [[${dotContent}]];
+        if (dotContent) {
+            image = Viz(dotContent, {format: "png-image-element"});
+            document.getElementById("topologyFigure").appendChild(image);
+        }
+
+        /*]]>*/
+    </script>
+</th:block>
+
+</body>
+</html>

@@ -14,6 +14,8 @@ public interface PooledVMRepository extends CrudRepository<PooledVM, Long> {
 
     PooledVM findFirstByName(String name);
 
+    PooledVM findFirstById(Long id);
+
     PooledVM findFirstByPoolnameAndLinkedhostIsNull(String poolname);
 
     List<PooledVM> findByPoolname(String poolname);

@@ -20,7 +20,7 @@ public class SetupAPI {
 
     @RequestMapping(value = {"/setup"}, method = RequestMethod.GET)
     public void setup() {
-        utilities.createInitialStatus();
+        utilities.clearAll();
     }
 
     @RequestMapping(value = {"/export"}, method = RequestMethod.GET)
