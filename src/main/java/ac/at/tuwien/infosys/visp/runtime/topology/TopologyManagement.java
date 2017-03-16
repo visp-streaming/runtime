@@ -209,6 +209,23 @@ public class TopologyManagement {
    
     }
 
+    public List<Operator> getDownstreamOperatorsAsList(Operator operator) {
+        List<Operator> resultset = new ArrayList<>();
+
+        for(Operator o : topology.values()) {
+            if(o.getSources() == null) {
+                continue;
+            }
+            for( Operator source : o.getSources()) {
+                if(source.getName().equals(operator.getName())) {
+                    resultset.add(o);
+                }
+            }
+        }
+
+        return resultset;
+    }
+
     public String getDotfile() {
         return dotFile;
     }

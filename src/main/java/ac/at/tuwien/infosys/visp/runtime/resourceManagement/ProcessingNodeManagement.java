@@ -97,17 +97,23 @@ public class ProcessingNodeManagement {
 
     public void removeAll(Operator operator) {
         List<DockerContainer> dcs = dcr.findByOperatorName(operator.getName());
+        removeAllHelper(operator, dcs);
+    }
 
+    public void removeAll(Operator operator, String resourcePool) {
+        List<DockerContainer> dcs = dcr.findAllRunningByOperatorNameAndResourcepool(operator.getName(), resourcePool);
+        removeAllHelper(operator, dcs);
+    }
+
+    private void removeAllHelper(Operator operator, List<DockerContainer> dcs) {
         for (DockerContainer dc : dcs) {
             if (dhr.findFirstByName(dc.getHost()).getResourcepool().equals(operator.getConcreteLocation().getResourcePool())) {
                 if (dc.getStatus() == null) {
                     dc.setStatus("running");
                 }
-
                 if (dc.getStatus().equals("stopping")) {
                     continue;
                 }
-
                 triggerShutdown(dc);
             }
         }

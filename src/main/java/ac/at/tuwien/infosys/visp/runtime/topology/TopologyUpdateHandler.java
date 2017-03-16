@@ -90,7 +90,7 @@ public class TopologyUpdateHandler {
 
         List<TopologyUpdate> updates = computeListOfUpdates(topologyManagement.getTopology(), incomingTopology.topology);
         LOG.info("Have to perform the following updates:");
-        for (TopologyUpdate update : filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp)) {
+        for (TopologyUpdate update : updates) {
             LOG.info(update.toString());
         }
 
@@ -131,7 +131,7 @@ public class TopologyUpdateHandler {
 
         // sort updates in the order ADD - REMOVE - UPDATE
         // this prevents cases where operators are added as source that do not exist yet
-        returnList.sort(Comparator.comparingInt(t -> t.getAction().ordinal()));
+        //returnList.sort(Comparator.comparingInt(t -> t.getAction().ordinal()));
 
         return returnList;
     }
@@ -141,9 +141,14 @@ public class TopologyUpdateHandler {
          * checks whether there are differences between the two operators and adds the according updates if there are
          */
         if (!oldOperator.getConcreteLocation().equals(newOperator.getConcreteLocation())) {
-            // operatorType is migrated
-            updateList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
-            updateList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
+            // operator is migrated
+            boolean sameIp = oldOperator.getConcreteLocation().getIpAddress().equals(newOperator.getConcreteLocation().getIpAddress());
+            TopologyUpdate update1 = new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator);
+            update1.setChangeTopologyMessageFlow(!sameIp); // do not actually change topology message flow since it will be redeployed on same instance
+            updateList.add(update1);
+            TopologyUpdate update2 = new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator);
+            update2.setChangeTopologyMessageFlow(!sameIp);
+            updateList.add(update2);
         }
 
         if (!sourcesAreEqual(oldOperator, newOperator)) {
@@ -252,7 +257,7 @@ public class TopologyUpdateHandler {
 
         String pngPath = null;
 
-        UpdateResult updateResult = new UpdateResult(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp), null, UpdateResult.UpdateStatus.SUCCESSFUL);
+        UpdateResult updateResult = new UpdateResult(updates, null, UpdateResult.UpdateStatus.SUCCESSFUL);
 
         if (allInvolvedRuntimesAgree) {
             if (contactedRuntimes.size() != involvedRuntimes.size()) {
@@ -332,7 +337,7 @@ public class TopologyUpdateHandler {
 
         String pngPath;
         try {
-            rabbitMqManager.performUpdates(filterUpdatesByOwnRuntime(updates, vispRuntimeOwnIp));
+            rabbitMqManager.performUpdates(updates);
             pngPath = topologyManagement.getDotfile();
         } catch (Exception e) {
             LOG.error("could not perform updates", e);
@@ -410,19 +415,6 @@ public class TopologyUpdateHandler {
             }
         }
         LOG.info("Stored " + newInstances + " new VISP instances to local repository");
-    }
-
-    public List<TopologyUpdate> filterUpdatesByOwnRuntime(List<TopologyUpdate> updates, String vispRuntimeOwnIp) {
-        List<TopologyUpdate> returnList = new ArrayList<>();
-        for (TopologyUpdate update : updates) {
-            if (update.getAffectedHost().equals(vispRuntimeOwnIp)) {
-                returnList.add(update);
-            } else {
-                LOG.info("do not execute update on this host: " + update);
-            }
-        }
-
-        return returnList;
     }
 
     private TestDeploymentDTO sendRestRequest(final String fileContent, String url) throws UnsupportedEncodingException {

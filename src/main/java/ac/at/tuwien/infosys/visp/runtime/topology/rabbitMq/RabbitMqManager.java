@@ -1,12 +1,13 @@
 package ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
+import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import com.rabbitmq.client.Channel;
@@ -17,9 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -41,6 +44,9 @@ public class RabbitMqManager {
 
     @Autowired
     private ManualOperatorManagement rpp;
+
+    @Autowired
+    private TopologyManagement topologyManagement;
 
     @Value("${spring.rabbitmq.username}")
     private String rabbitmqUsername;
@@ -72,7 +78,7 @@ public class RabbitMqManager {
 
     public Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
         LOG.info("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
-        if(infrastructureHost.equals(ownIp)) {
+        if (infrastructureHost.equals(ownIp)) {
             infrastructureHost = rabbitMqHost;
         }
         ConnectionFactory factory = new ConnectionFactory();
@@ -85,19 +91,12 @@ public class RabbitMqManager {
         return channel;
     }
 
-    public void declareExchanges(List<TopologyUpdate> updates)  {
+    public void declareExchanges(List<TopologyUpdate> updates) throws IOException, TimeoutException {
         if (updates.size() == 0) {
             return;
         }
 
-        ChannelFactory channelFactory = null;
-        try {
-            channelFactory = new ChannelFactory(ownIp, null).invoke();
-        } catch (Exception e) {
-            LOG.error("Could not declare exchange because connection to rmq could not be established", e);
-            return;
-        }
-        Channel fromChannel = channelFactory.getFromChannel();
+        Channel fromChannel = createChannel(ownIp);
         for (TopologyUpdate update : updates) {
             if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
                 continue;
@@ -119,43 +118,29 @@ public class RabbitMqManager {
     }
 
 
-    public void addMessageFlow(String fromOperatorId, String toOperatorId,
-                               String fromInfrastructureHost, String toInfrastructureHost) {
+    public String addMessageFlow(String fromOperatorId, String toOperatorId,
+                                               String fromInfrastructureHost) throws IOException, TimeoutException {
         /**
          * add a message flow from operatorType FROM to operatorType TO
          */
 
-
-//        if (fromInfrastructureHost.equals(ownIp)) {
-//            fromInfrastructureHost = rabbitMqHost;
-//        }
-//
-//        if (toInfrastructureHost.equals(ownIp)) {
-//            toInfrastructureHost = rabbitMqHost;
-//        }
-
-        LOG.info("Adding message flow from " + fromInfrastructureHost + "/" + fromOperatorId + " to " + toInfrastructureHost + "/" + toOperatorId);
-        ChannelFactory channelFactory = null;
-        try {
-            channelFactory = new ChannelFactory(fromInfrastructureHost, toInfrastructureHost).invoke();
-        } catch (Exception e) {
-            LOG.error("Could not connect to " + fromInfrastructureHost + "'s rabbitmq", e);
-        }
-        Channel fromChannel = channelFactory.getFromChannel();
+        Channel fromChannel = this.createChannel(fromInfrastructureHost);
 
         try {
-
             String exchangeName = fromOperatorId;
             fromChannel.exchangeDeclare(exchangeName, "fanout", true); // TODO: redundant
             LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + fromInfrastructureHost);
 
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
+
+            LOG.info("declaring queue " + queueName);
             fromChannel.queueDeclare(queueName, true, false, false, null);
 
             // tell exchange to send msgs to queue:
+            LOG.info("tell exchange " + exchangeName + " to forward messages to queue " + queueName);
             fromChannel.queueBind(queueName, exchangeName, exchangeName); // third parameter is ignored in fanout mode
 
-            sendDockerSignalForUpdate(toOperatorId, "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
+            //sendDockerSignalForUpdate(toOperatorId, new Operator.Location(toInfrastructureHost, toResourcePool), "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
 
         } catch (Exception e) {
             LOG.error("Exception during exchange setup", e);
@@ -168,25 +153,42 @@ public class RabbitMqManager {
                 LOG.error(e.getLocalizedMessage());
             }
         }
+        return "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
     }
 
-    private void sendDockerSignalForUpdate(String toOperatorId, String updateCommand) throws DockerException, InterruptedException {
-        List<DockerContainer> dcs = dcr.findByOperatorName(toOperatorId);
+    private void sendDockerSignalForUpdate(Operator operator, String updateCommand) throws DockerException, InterruptedException {
+        if(operator instanceof Source) {
+            return; // source is no actual container
+        }
+        String toOperatorId = operator.getName();
+        Operator.Location location = operator.getConcreteLocation();
+        LOG.info("Searching for containers with operator-name " + toOperatorId + " @ location: " + location);
+        List<DockerContainer> dcs = dcr.findAllRunningByOperatorNameAndResourcepool(toOperatorId, location.getResourcePool());
         if (dcs.size() <= 0) {
+            LOG.info("Could not find the right one - but found those containers:");
+            for (DockerContainer dc : dcr.findAll()) {
+                LOG.info(dc.toString());
+            }
             throw new RuntimeException("Could not find docker containers for operator " + toOperatorId);
         }
+        LOG.info("Found " + dcs.size() + " matching containers for operator-name " + toOperatorId);
         for (DockerContainer dc : dcs) {
+            LOG.info("Checking container " + dc + " (Status: " + dc.getStatus() + ")");
+
             String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate";
             LOG.info("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
-            dcm.executeCommand(dc, command);
+            try {
+                dcm.executeCommand(dc, command);
+            } catch (Exception e) {
+                LOG.info("Could not execute command on docker container " + dc, e);
+            }
         }
     }
 
-    public void removeMessageFlow(String fromOperatorId, String toOperatorId,
-                                  String fromInfrastructureHost, String toInfrastructureHost) throws IOException, TimeoutException {
-        ChannelFactory channelFactory = new ChannelFactory(fromInfrastructureHost, toInfrastructureHost).invoke();
-        Channel toChannel = channelFactory.getToChannel();
-        Channel fromChannel = channelFactory.getFromChannel();
+    public String removeMessageFlow(String fromOperatorId, String toOperatorId,
+                                  String fromInfrastructureHost) throws IOException, TimeoutException {
+
+        Channel fromChannel = createChannel(fromInfrastructureHost);
 
         try {
 
@@ -204,157 +206,291 @@ public class RabbitMqManager {
             // this should stop the exchange sending messages to the queue
             fromChannel.queueUnbind(queueName, exchangeName, exchangeName);
 
-            // TODO: delete queues
             LOG.info("!unbinding queue " + queueName + " on exchange " + exchangeName + " on host " + fromInfrastructureHost);
 
-            sendDockerSignalForUpdate(toOperatorId, "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
-
-        } catch (InterruptedException e) {
-            LOG.error(e.getLocalizedMessage());
-        } catch (DockerException e) {
-            LOG.error(e.getLocalizedMessage());
-        } finally {
-            toChannel.close();
-            if (!toInfrastructureHost.equals(fromInfrastructureHost)) {
-                fromChannel.close();
+            LOG.info("Deleting queue " + queueName + " on host " + fromInfrastructureHost);
+            try {
+                fromChannel.queueDelete(queueName);
+            } catch (Exception e) {
+                LOG.error("Could not delete queue " + queueName, e);
             }
-            // TODO: close connection
+            //sendDockerSignalForUpdate(toOperatorId, new Operator.Location(toInfrastructureHost, toResourcePool), "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
+
+            return "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
+        } finally {
+            try {
+                fromChannel.close();
+                // TODO: close connection
+            } catch (Exception e) {
+                LOG.warn("Could not close channel(s)");
+            }
         }
+    }
+
+    @Deprecated
+    public void performUpdatesOld(List<TopologyUpdate> updates) throws IOException, TimeoutException {
+//        declareExchanges(updates);
+
+//        for (TopologyUpdate update : updates) {
+////            if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+////                continue;
+////            }
+//            LOG.info("Performing update: " + update.toString());
+//            switch (update.getAction()) {
+//                case UPDATE_OPERATOR:
+//                    handleRabbitmqUpdateOperator(update);
+//                    break;
+//                case ADD_OPERATOR:
+//                    handleRabbitmqAddOperator(update);
+//                    break;
+//                case REMOVE_OPERATOR:
+//                    handleRabbitmqRemoveOperator(update);
+//                    break;
+//                default:
+//                    LOG.error("Unknown action: " + update.getAction() + " for update " + update.toString());
+//                    break;
+//            }
+//        }
+//        LOG.info("All updates were applied");
     }
 
     public void performUpdates(List<TopologyUpdate> updates) throws IOException, TimeoutException {
         declareExchanges(updates);
 
-        for (TopologyUpdate update : updates) {
-            if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
-                continue;
+        // step 1
+
+        List<Pair<Operator, String>> updateSignals = updateRabbitMqInfrastructure(updates);
+
+        // step 2
+
+        removeOldContainersFromUpdate(updates);
+        addNewContainersFromUpdate(updates);
+
+        // step 3
+
+        sendContainerUpdateSignals(updateSignals);
+
+        LOG.info("All updates were applied");
+    }
+
+    private void sendContainerUpdateSignals(List<Pair<Operator, String>> updateSignals) {
+        for(Pair<Operator, String> updateSignal : updateSignals) {
+            try {
+                sendDockerSignalForUpdate(updateSignal.getFirst(), updateSignal.getSecond());
+            } catch (Exception e) {
+                LOG.error("Exception during sending docker signal for update to operator " + updateSignal.getFirst(), e);
             }
-            LOG.info("Performing update: " + update.toString());
+        }
+    }
+
+    private void addNewContainersFromUpdate(List<TopologyUpdate> updates) {
+        for(TopologyUpdate update : updates) {
+            if(update.getAction().equals(TopologyUpdate.Action.ADD_OPERATOR) &&
+                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                LOG.info("Spawning operator " + update.getAffectedOperatorId());
+                rpp.addOperator(update.getAffectedOperator());
+            }
+        }
+    }
+
+    private void removeOldContainersFromUpdate(List<TopologyUpdate> updates) {
+        for(TopologyUpdate update : updates) {
+            if(update.getAction().equals(TopologyUpdate.Action.REMOVE_OPERATOR) &&
+                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                LOG.info("Removing operator " + update.getAffectedOperatorId());
+                rpp.removeOperators(update.getAffectedOperator());
+            }
+        }
+    }
+
+    private List<Pair<Operator, String>> updateRabbitMqInfrastructure(List<TopologyUpdate> updates) {
+        List<Pair<Operator, String>> results = new ArrayList<>();
+        for (TopologyUpdate update : updates) {
+            List<Pair<Operator, String>> resultPairs = null;
             switch (update.getAction()) {
                 case UPDATE_OPERATOR:
-                    handleUpdateOperator(update);
+                    resultPairs = handleRabbitmqUpdateOperator(update);
                     break;
                 case ADD_OPERATOR:
-                    handleAddOperator(update);
+                    resultPairs = handleRabbitmqAddOperator(update);
                     break;
                 case REMOVE_OPERATOR:
-                    handleRemoveOperator(update);
+                    resultPairs = handleRabbitmqRemoveOperator(update);
                     break;
                 default:
                     LOG.error("Unknown action: " + update.getAction() + " for update " + update.toString());
                     break;
             }
-        }
-        LOG.info("All updates were applied");
-    }
-
-    private void handleRemoveOperator(TopologyUpdate update) {
-        LOG.info("Handling remove operatorType update");
-        for (Operator source : update.getAffectedOperator().getSources()) {
-            LOG.info("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
-            try {
-                removeMessageFlow(source.getName(), update.getAffectedOperator().getName(), source.getConcreteLocation().getIpAddress(),
-                        update.getAffectedOperator().getConcreteLocation().getIpAddress());
-            } catch (IOException | TimeoutException e) {
-                LOG.error(e.getLocalizedMessage());
+            if(resultPairs != null) {
+                results.addAll(resultPairs);
             }
         }
-        LOG.info("Killing all containers of operator " + update.getAffectedOperator().getName());
-        rpp.removeOperators(update.getAffectedOperator());
+        return results;
     }
 
-    private void handleAddOperator(TopologyUpdate update) {
-        LOG.info("Handling add operatorType update");
-        rpp.addOperator(update.getAffectedOperator());
-        for (Operator source : update.getAffectedOperator().getSources()) {
-            // for each source, add message flow to this operatorType
-            // TODO: check if the sources already exist!
-            try {
-                LOG.info("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
-                addMessageFlow(source.getName(), update.getAffectedOperatorId(), source.getConcreteLocation().getIpAddress(),
-                        update.getAffectedOperator().getConcreteLocation().getIpAddress());
-            } catch (Exception e) {
-                LOG.error(e.getLocalizedMessage());
-            }
-        }
-    }
-
-    private void handleUpdateOperator(TopologyUpdate update) {
-        LOG.info("Handling update operatorType update");
-        switch (update.getUpdateType()) {
-            case UPDATE_SOURCE:
-                handleSourceUpdate(update);
-                break;
-            default:
-                throw new RuntimeException("Update type " + update.getUpdateType().toString() + " not yet implemented");
-                // TODO: implement others
-        }
-    }
-
-    private void handleSourceUpdate(TopologyUpdate update) {
-        SourcesUpdate sourcesUpdate = (SourcesUpdate) update.getChangeToBeExecuted();
-        // add message flow for new sources:
-        List<Operator> newSources = sourcesUpdate.getNewSources();
-        List<Operator> oldSources = sourcesUpdate.getOldSources();
-        for (Operator sourceEntry : newSources) {
-            if (!oldSources.contains(sourceEntry)) {
-                // add new flow from the new source to our target operatorType
-
-                LOG.info("Adding message flow between operators " + sourceEntry.getName() + " and " + update.getAffectedOperatorId());
-                addMessageFlow(sourceEntry.getName(), update.getAffectedOperatorId(), sourceEntry.getConcreteLocation().getIpAddress(),
-                        update.getAffectedOperator().getConcreteLocation().getIpAddress());
-
-            }
-        }
-
-        for (Operator sourceEntry : oldSources) {
-            if (!newSources.contains(sourceEntry)) {
-                // remove message flow from old source
+    private List<Pair<Operator, String>> handleRabbitmqRemoveOperator(TopologyUpdate update) {
+        List<Pair<Operator, String>> resultList = new ArrayList<>();
+        Pair<Operator, String> pair;
+        if (update.shouldChangeTopologyMessageFlow()) {
+            for (Operator source : update.getAffectedOperator().getSources()) {
+                if (source.getName().equals(update.getAffectedOperatorId())) {
+                    continue;
+                }
+                if (!source.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    continue;
+                }
+                LOG.info("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
                 try {
-                    LOG.info("Removing message flow between operators " + sourceEntry.getName() + " and " + update.getAffectedOperatorId());
-                    removeMessageFlow(sourceEntry.getName(), update.getAffectedOperatorId(), sourceEntry.getConcreteLocation().getIpAddress(),
-                            update.getAffectedOperator().getConcreteLocation().getIpAddress());
+                    pair = Pair.of(update.getAffectedOperator(),
+                            removeMessageFlow(source.getName(), update.getAffectedOperator().getName(),
+                            source.getConcreteLocation().getIpAddress()));
+                    if(pair != null) {
+                        resultList.add(pair);
+                    }
+                } catch (IOException | TimeoutException e) {
+                    LOG.error(e.getLocalizedMessage());
+                }
+            }
+
+
+            for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
+                if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
+                    continue;
+                }
+                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    continue;
+                }
+                LOG.info("Removing message flow between operators " + update.getAffectedOperator().getName() + " and " + downstreamOp.getName());
+                try {
+                    pair = Pair.of(update.getAffectedOperator(),
+                            removeMessageFlow(update.getAffectedOperator().getName(), downstreamOp.getName(),
+                                    update.getAffectedOperator().getConcreteLocation().getIpAddress()));
+                    if(pair != null) {
+                        resultList.add(pair);
+                    }
                 } catch (IOException | TimeoutException e) {
                     LOG.error(e.getLocalizedMessage());
                 }
             }
         }
 
-        // remove message flow for old sources
+        return resultList;
     }
 
-    private class ChannelFactory {
-        private String fromInfrastructureHost;
-        private String toInfrastructureHost;
-        private Channel fromChannel;
-        private Channel toChannel;
-
-        public ChannelFactory(String fromInfrastructureHost, String toInfrastructureHost) {
-            this.fromInfrastructureHost = fromInfrastructureHost;
-            this.toInfrastructureHost = toInfrastructureHost;
-        }
-
-        public Channel getFromChannel() {
-            return fromChannel;
-        }
-
-        public Channel getToChannel() {
-            return toChannel;
-        }
-
-        public ChannelFactory invoke() throws IOException, TimeoutException {
-            fromChannel = createChannel(fromInfrastructureHost);
-            toChannel = null;
-            if (!fromInfrastructureHost.equals(toInfrastructureHost)) {
-                // the two nodes are not on the same infrastructure host
-                if (toChannel != null) {
-                    toChannel = createChannel(toInfrastructureHost);
+    private List<Pair<Operator, String>> handleRabbitmqAddOperator(TopologyUpdate update) {
+        List<Pair<Operator, String>> resultList = new ArrayList<>();
+        Pair<Operator, String> pair;
+        if (update.shouldChangeTopologyMessageFlow()) {
+            for (Operator source : update.getAffectedOperator().getSources()) {
+                if (source.getName().equals(update.getAffectedOperatorId())) {
+                    continue;
                 }
-            } else {
-                toChannel = fromChannel;
+                if (!source.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    continue;
+                }
+                try {
+                    LOG.info("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
+                    pair = Pair.of(source,
+                            addMessageFlow(source.getName(), update.getAffectedOperatorId(), source.getConcreteLocation().getIpAddress()));
+                    if(pair != null) {
+                        resultList.add(pair);
+                    }
+                } catch (Exception e) {
+                    LOG.error(e.getLocalizedMessage());
+                }
             }
-            return this;
+            for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
+                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    continue;
+                }
+                if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
+                    continue;
+                }
+                try {
+                    LOG.info("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
+                    pair = Pair.of(update.getAffectedOperator(),
+                            addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress()));
+                    if(pair != null) {
+                        resultList.add(pair);
+                    }
+                } catch (Exception e) {
+                    LOG.error(e.getLocalizedMessage());
+                }
+            }
         }
+
+        return resultList;
+    }
+
+    private List<Pair<Operator, String>> handleRabbitmqUpdateOperator(TopologyUpdate update) {
+        LOG.info("Handling update operatorType update");
+        switch (update.getUpdateType()) {
+            case UPDATE_SOURCE:
+                try {
+                    return handleRabbitmqSourceUpdate(update);
+                } catch (Exception e) {
+                    LOG.error("Could not update rabbitmq for source update", e);
+                }
+            default:
+                throw new RuntimeException("Update type " + update.getUpdateType().toString() + " not yet implemented");
+                // TODO: implement others
+        }
+
+    }
+
+    private List<Pair<Operator, String>> handleRabbitmqSourceUpdate(TopologyUpdate update) throws IOException, TimeoutException {
+        List<Pair<Operator, String>> resultList = new ArrayList<>();
+        Pair<Operator, String> pair;
+        SourcesUpdate sourcesUpdate = (SourcesUpdate) update.getChangeToBeExecuted();
+        // add message flow for new sources:
+        List<Operator> newSources = sourcesUpdate.getNewSources();
+        List<Operator> oldSources = sourcesUpdate.getOldSources();
+        for (Operator newSourceEntry : newSources) {
+            if (newSourceEntry.getName().equals(update.getAffectedOperatorId())) {
+                continue;
+            }
+            if (!newSourceEntry.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                continue;
+            }
+            if (!oldSources.contains(newSourceEntry)) {
+                // add new flow from the new source to our target operatorType
+
+                LOG.info("Adding message flow between operators " + newSourceEntry.getName() + " and " + update.getAffectedOperatorId());
+                pair = Pair.of(newSourceEntry,
+                        addMessageFlow(newSourceEntry.getName(), update.getAffectedOperatorId(),
+                                newSourceEntry.getConcreteLocation().getIpAddress()));
+                if(pair != null) {
+                    resultList.add(pair);
+                }
+            }
+        }
+
+        for (Operator oldSourceEntry : oldSources) {
+            if (!newSources.contains(oldSourceEntry)) {
+                if (oldSourceEntry.getName().equals(update.getAffectedOperatorId())) {
+                    continue;
+                }
+                if (!oldSourceEntry.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    continue;
+                }
+                // remove message flow from old source
+                try {
+                    LOG.info("Removing message flow between operators " + oldSourceEntry.getName() + " and " + update.getAffectedOperatorId());
+                    pair = Pair.of(oldSourceEntry,
+                            removeMessageFlow(oldSourceEntry.getName(), update.getAffectedOperatorId(),
+                                    oldSourceEntry.getConcreteLocation().getIpAddress()));
+                    if(pair != null) {
+                        resultList.add(pair);
+                    }
+                } catch (IOException | TimeoutException e) {
+                    LOG.error(e.getLocalizedMessage());
+                }
+            }
+        }
+
+        return resultList;
+
+        // remove message flow for old sources
     }
 
 }

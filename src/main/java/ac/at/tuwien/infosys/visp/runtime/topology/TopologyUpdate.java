@@ -16,6 +16,8 @@ public class TopologyUpdate {
 
     private ChangeToBeExecuted changeToBeExecuted;
 
+    private boolean changeTopologyMessageFlow; // false if only a migration to another resource pool is happening
+
     private Operator affectedOperator;
 
     public Operator getAffectedOperator() {
@@ -40,6 +42,7 @@ public class TopologyUpdate {
         this.action = action;
         this.affectedOperator = affectedOperator;
         this.updateType = null;
+        this.changeTopologyMessageFlow = true;
     }
 
     public TopologyUpdate(String affectedHost, Action action, UpdateType updateType, Operator affectedOperator) {
@@ -50,6 +53,7 @@ public class TopologyUpdate {
         this.action = action;
         this.updateType = updateType;
         this.affectedOperator = affectedOperator;
+        this.changeTopologyMessageFlow = true;
     }
 
 
@@ -98,6 +102,14 @@ public class TopologyUpdate {
 
     public String getAffectedOperatorId() {
         return affectedOperator.getName();
+    }
+
+    public boolean shouldChangeTopologyMessageFlow() {
+        return changeTopologyMessageFlow;
+    }
+
+    public void setChangeTopologyMessageFlow(boolean changeTopologyMessageFlow) {
+        this.changeTopologyMessageFlow = changeTopologyMessageFlow;
     }
 
     @Override

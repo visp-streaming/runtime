@@ -72,6 +72,10 @@ public class ManualOperatorManagement {
         pcm.removeAll(op);
     }
 
+    public synchronized void removeOperators(Operator op, String resourcePool) {
+        pcm.removeAll(op, resourcePool);
+    }
+
     public Boolean testDeployment(List<Operator> ops) {
         return true;
         // TODO: check if specified resource pool exists
