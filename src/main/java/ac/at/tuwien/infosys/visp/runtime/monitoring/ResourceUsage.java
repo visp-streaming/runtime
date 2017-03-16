@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
 import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
+import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
@@ -24,6 +25,9 @@ public class ResourceUsage {
 
     @Autowired
     private DockerContainerRepository dcr;
+
+    @Autowired
+    private OperatorConfigurationBootstrap opconf;
 
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
@@ -87,11 +91,14 @@ public class ResourceUsage {
 
     private ResourceTriple getResourceTriple(DockerContainerMonitor dcm) {
         ResourceTriple result = new ResourceTriple();
+        //CPUstats = usage in % of the assigned shares (from actual resources)
         result.setCores(dcm.getCpuUsage());
         result.setMemory((int) dcm.getMemoryUsage());
-        result.setStorage(0F);
 
-        //CPUstats = usage in % of the assigned shares (from actual resources)
+        //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
+        ResourceTriple planned = opconf.getExpected();
+        result.setStorage(planned.getStorage());
+
         return result;
     }
 
@@ -112,7 +119,10 @@ public class ResourceUsage {
         for (DockerContainerMonitor dcm : recordings) {
             result.incrementCores(dcm.getCpuUsage());
             result.incrementMemory((int) dcm.getMemoryUsage());
-            result.incrementStorage(0F);
+
+            //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
+            ResourceTriple planned = opconf.getExpected();
+            result.incrementStorage(planned.getStorage());
             counter++;
         }
 

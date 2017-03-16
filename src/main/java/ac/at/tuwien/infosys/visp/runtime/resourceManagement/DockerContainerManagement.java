@@ -48,10 +48,10 @@ public class DockerContainerManagement {
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
 
-    @Value("${visp.node.port.available}'")
+    @Value("${visp.node.port.available}")
     private String encodedHostNodeAvailablePorts;
 
-    @Value("${visp.infrastructure.ip}'")
+    @Value("${visp.infrastructure.ip}")
     private String redisHost;
 
     @Value("${visp.infrastructure.ip}")

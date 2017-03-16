@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
@@ -39,6 +40,11 @@ public class ManualOperatorManagement {
     }
 
     public synchronized void addOperator(Operator op) {
+
+        if (op instanceof Source) {
+            //Do not spawn container for sources
+            return;
+        }
 
         try {
             if (op.getSize() == null) {
