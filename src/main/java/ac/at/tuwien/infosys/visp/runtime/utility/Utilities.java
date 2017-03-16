@@ -5,7 +5,6 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import com.spotify.docker.client.exceptions.DockerRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ws.rs.InternalServerErrorException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 
 @Service
@@ -124,6 +127,15 @@ public class Utilities {
             LOG.error(e.getLocalizedMessage(), e.getCause());
         }
         LOG.info("Cleanup Completed");
+    }
+
+    @PreDestroy
+    public void cleanLogfile() {
+        try {
+            Files.deleteIfExists(Paths.get("executionOutput.log"));
+        } catch (IOException e) {
+            //ignore me
+        }
     }
 
     public void exportData() {

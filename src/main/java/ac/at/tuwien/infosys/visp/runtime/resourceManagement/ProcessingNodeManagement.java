@@ -120,19 +120,16 @@ public class ProcessingNodeManagement {
     }
 
     public void scaleDown(String operator) {
-        List<DockerContainer> operators = dcr.findByOperatorName(operator);
+        List<DockerContainer> operators = dcr.findByOperatorNameAndStatus(operator, "running");
 
         if (operators.size() < 2) {
+            LOG.info("Could not scale down because only one operator instance is left.");
             return;
         }
 
         for (DockerContainer dc : operators) {
             if (dc.getStatus() == null) {
                 dc.setStatus("running");
-            }
-
-            if (dc.getStatus().equals("stopping")) {
-                continue;
             }
 
             triggerShutdown(dc);

@@ -524,7 +524,7 @@ public class CentralizedRLReasoner {
  	private Operator createOperatorModel(String operatorName){
 
 		List<OperatorQoSMetrics> operatorsMetrics = operatorMetricsRepository.findFirstByNameOrderByTimestampDesc(operatorName);
-		List<DockerContainer> containers = dockerRepository.findByOperatorName(operatorName);
+		List<DockerContainer> containers = dockerRepository.findByOperatorNameAndStatus(operatorName, "running");
 
 	 	OperatorQoSMetrics qosMetrics = null;
 	 	if (operatorsMetrics == null || operatorsMetrics.isEmpty()){

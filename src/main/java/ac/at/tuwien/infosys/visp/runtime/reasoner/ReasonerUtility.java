@@ -222,7 +222,7 @@ public class ReasonerUtility {
 
         // select all instances that have more than one instances
         for (String operator : tmgmt.getOperatorsAsList()) {
-            Integer amount = dcr.findByOperatorName(operator).size();
+            Integer amount = dcr.findByOperatorNameAndStatus(operator, "running").size();
             if (amount < 2) {
                 continue;
             }
