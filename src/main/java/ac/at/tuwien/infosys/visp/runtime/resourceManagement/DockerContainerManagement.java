@@ -300,7 +300,8 @@ public class DockerContainerManagement {
     public void markContainerForRemoval(DockerContainer dc) {
         dc.setStatus("stopping");
         dc.setTerminationTime(new DateTime(DateTimeZone.UTC));
-        dcr.save(dc);
+        dcr.saveAndFlush(dc);
+        LOG.info("Marked container " + dc + " for removal");
     }
 
 
