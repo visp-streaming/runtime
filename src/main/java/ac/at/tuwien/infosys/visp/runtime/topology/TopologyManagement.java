@@ -2,6 +2,10 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import com.google.common.base.Joiner;
@@ -13,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,6 +37,21 @@ public class TopologyManagement {
 
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
+
+    @Autowired
+    private RuntimeConfigurationRepository rcr;
+
+    @Autowired
+    private TopologyParser topologyParser;
+
+    @Autowired
+    private TopologyUpdateHandler topologyUpdateHandler;
+
+    @Autowired
+    private VISPInstanceRepository vir;
+
+    @Value("${visp.runtime.ip}")
+    private String runtimeip;
 
     private String dotFile;
 
@@ -251,5 +271,64 @@ public class TopologyManagement {
 
     public int getTestDeploymentHash() {
         return testDeploymentHash;
+    }
+
+    public boolean restoreTopologyFromPeers() {
+
+        List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
+
+        if(allVispInstances.size() == 0) {
+            LOG.warn("Could not restore topology from peers because no peers known");
+            return false;
+        }
+
+        LOG.info("Restoring topology from peers - still knowing of " + allVispInstances.size() + " VISP instances...");
+
+
+        for(VISPInstance instance : allVispInstances) {
+            if(instance.getUri().equals(runtimeip)) {
+                continue;
+            }
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "http://" + instance.getUri() + ":8080/getTopology";
+            try {
+                String topologyContent = restTemplate.getForObject(url, String.class);
+                if(topologyContent == null || topologyContent.equals("")) {
+                    continue;
+                }
+
+                TopologyParser.ParseResult pr = topologyParser.parseTopologyFromString(topologyContent);
+                this.topology = pr.topology;
+                this.setDotFile(pr.dotFile);
+                LOG.info("Successfully retrieved topology from VISP instance " + instance.getUri());
+                return true;
+            } catch (Exception e) {
+                LOG.error("VISP Instance " + instance.getUri() + " could not be used to get topology", e);
+            }
+        }
+
+        LOG.warn("Could not restore topology from peers");
+        return false;
+    }
+
+    public boolean restoreTopologyFromDatabase() {
+        RuntimeConfiguration rc = rcr.findFirstByKey("last_topology_file");
+
+        if(rc == null) {
+            return false;
+        }
+
+        String topologyContent = rc.getValue();
+
+        if(topologyContent == null || topologyContent == "") {
+            LOG.warn("Retreived empty topology file from database");
+            return false;
+        }
+
+        TopologyParser.ParseResult pr = topologyParser.parseTopologyFromString(topologyContent);
+        this.topology = pr.topology;
+        this.setDotFile(pr.dotFile);
+
+        return true;
     }
 }

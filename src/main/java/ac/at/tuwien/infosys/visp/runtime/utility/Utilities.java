@@ -61,6 +61,9 @@ public class Utilities {
     @Autowired
     private TopologyManagement topologyManagement;
 
+    @Autowired
+    private RuntimeConfigurationRepository rcr;
+
     @Value("${visp.infrastructure.ip}")
     private String infrastructureIp;
 
@@ -79,6 +82,12 @@ public class Utilities {
     public void init() {
         topologyManagement.createMapping(infrastructureIp);
         topologyManagement.setTopology(new LinkedHashMap<>());
+
+        // if the topology has been restarted, try to restore topology
+
+        if(!topologyManagement.restoreTopologyFromPeers()) {
+            topologyManagement.restoreTopologyFromDatabase();
+        }
     }
 
     public void clearAll() {
@@ -105,6 +114,12 @@ public class Utilities {
             template.getConnectionFactory().getConnection().flushAll();
             topologyManagement.cleanup(infrastructureIp);
             topologyManagement.setTopology(new LinkedHashMap<>());
+
+            try {
+                rcr.delete(rcr.findFirstByKey("last_topology_file").getId());
+            } catch(Exception e) {
+
+            }
         } catch(InternalServerErrorException e) {
             LOG.error(e.getLocalizedMessage(), e.getCause());
         }

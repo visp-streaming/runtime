@@ -175,7 +175,7 @@ public class RabbitMqManager {
         for (DockerContainer dc : dcs) {
             LOG.info("Checking container " + dc + " (Status: " + dc.getStatus() + ")");
 
-            String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate";
+            String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate; touch ~/topologyUpdate";
             LOG.info("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
             try {
                 dcm.executeCommand(dc, command);
@@ -274,9 +274,17 @@ public class RabbitMqManager {
     }
 
     private void sendContainerUpdateSignals(List<Pair<Operator, String>> updateSignals) {
+        // make list unique
+
+        List<String> uniques = new ArrayList<>();
+
         for(Pair<Operator, String> updateSignal : updateSignals) {
+            if(uniques.contains(updateSignal.getSecond())) {
+                continue;
+            }
             try {
                 sendDockerSignalForUpdate(updateSignal.getFirst(), updateSignal.getSecond());
+                uniques.add(updateSignal.getSecond());
             } catch (Exception e) {
                 LOG.error("Exception during sending docker signal for update to operator " + updateSignal.getFirst(), e);
             }

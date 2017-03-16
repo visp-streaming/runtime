@@ -3,7 +3,9 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
@@ -50,6 +52,9 @@ public class TopologyUpdateHandler {
 
     @Autowired
     private PooledVMRepository pvmr;
+
+    @Autowired
+    private RuntimeConfigurationRepository rcr;
 
     @Value("${visp.runtime.ip}")
     private String vispRuntimeOwnIp;
@@ -345,6 +350,23 @@ public class TopologyUpdateHandler {
         }
 
         updateKnownVispInstances();
+
+        // save new topology file to db
+
+        try {
+            String fileContent = new String(Files.readAllBytes(topologyFile.toPath()));
+            RuntimeConfiguration rt = rcr.findFirstByKey("last_topology_file");
+            if(rt == null) {
+                rt = new RuntimeConfiguration("last_topology_file", fileContent);
+            } else {
+                rt.setValue(fileContent);
+            }
+            rcr.saveAndFlush(rt);
+            LOG.info("saved runtime configuration with key last_topology_file and value " + fileContent);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         return pngPath;
     }
