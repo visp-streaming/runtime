@@ -2,11 +2,15 @@ package ac.at.tuwien.infosys.visp.runtime.datasources;
 
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.stream.Stream;
 
-public interface DockerContainerRepository extends CrudRepository<DockerContainer, Long> {
+public interface DockerContainerRepository extends JpaRepository<DockerContainer, Long> {
 
     List<DockerContainer> findByStatus(String status);
 
@@ -14,6 +18,15 @@ public interface DockerContainerRepository extends CrudRepository<DockerContaine
 
     List<DockerContainer> findByOperatorType(String operatorType);
 
+    List<DockerContainer> findByOperatorNameAndStatus(String operatorName, String status);
+
+    List<DockerContainer> findByOperatorTypeAndStatus(String operatorType, String status);
+
     List<DockerContainer> findByHost(String host);
+
+    @Query("SELECT dc FROM DockerContainer dc, DockerHost dh where dh.name = dc.host and dh.resourcepool = :resourcepool and dc.status = 'running' and dc.operatorName = :operatorname")
+    List<DockerContainer> findAllRunningByOperatorNameAndResourcepool(@Param("operatorname") String operatorName, @Param("resourcepool") String resourcepool);
+
+    // TODO: also for operator name
 
 }
