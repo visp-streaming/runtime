@@ -92,7 +92,7 @@ public class TopologyController {
             }
         }
         catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
+            LOG.error("Could not apply update from user", e);
         }
 
         return "afterTopologyUpdate";

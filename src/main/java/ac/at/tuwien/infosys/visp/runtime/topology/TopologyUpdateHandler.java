@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
+import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SizeUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.UpdateResult;
@@ -164,7 +165,20 @@ public class TopologyUpdateHandler {
                     newOperator);
             topologyUpdate.setChangeToBeExecuted(new SourcesUpdate(oldOperator.getSources(), newOperator.getSources()));
             updateList.add(topologyUpdate);
+        }
 
+        if(oldOperator.getSize() == null) {
+            oldOperator.setSize(Operator.Size.UNKNOWN);
+        }
+        if(newOperator.getSize() == null) {
+            newOperator.setSize(Operator.Size.UNKNOWN);
+        }
+        if(!oldOperator.getSize().equals(newOperator.getSize())) {
+            TopologyUpdate topologyUpdate = new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(),
+                    TopologyUpdate.Action.UPDATE_OPERATOR, TopologyUpdate.UpdateType.UPDATE_SIZE,
+                    newOperator);
+            topologyUpdate.setChangeToBeExecuted(new SizeUpdate(oldOperator.getSize(), newOperator.getSize()));
+            updateList.add(topologyUpdate);
         }
     }
 
@@ -252,6 +266,7 @@ public class TopologyUpdateHandler {
         List<String> contactedRuntimes = new ArrayList<>();
         for (String runtime : involvedRuntimes) {
             // TODO: make for loop parallel
+            LOG.info("Contacting VISP runtime for test deployment: " + runtime);
             TestDeploymentDTO result = sendRestRequest(fileContent, "http://" + runtime + ":8080/testDeploymentForTopologyFile");
             contactedRuntimes.add(runtime);
             if (!result.isDeploymentPossible()) {

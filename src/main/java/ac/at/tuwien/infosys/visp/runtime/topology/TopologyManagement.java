@@ -292,6 +292,7 @@ public class TopologyManagement {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + instance.getUri() + ":8080/getTopology";
             try {
+                LOG.info("Trying to retrieve topology from VISP instance " + instance.getUri() + "...");
                 String topologyContent = restTemplate.getForObject(url, String.class);
                 if(topologyContent == null || topologyContent.equals("")) {
                     continue;
@@ -303,7 +304,7 @@ public class TopologyManagement {
                 LOG.info("Successfully retrieved topology from VISP instance " + instance.getUri());
                 return true;
             } catch (Exception e) {
-                LOG.error("VISP Instance " + instance.getUri() + " could not be used to get topology", e);
+                LOG.warn("VISP Instance " + instance.getUri() + " could not be used to get topology (probably offline)");
             }
         }
 

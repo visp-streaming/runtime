@@ -10,7 +10,7 @@ public class TopologyUpdate {
 
     private Action action; // what kind of update is performed
 
-    public enum UpdateType {UPDATE_SOURCE};
+    public enum UpdateType {UPDATE_SIZE, UPDATE_SOURCE};
 
     private UpdateType updateType;
 
