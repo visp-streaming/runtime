@@ -282,13 +282,19 @@ public class DockerContainerManagement {
         if(dh == null) {
             throw new RuntimeException("Could not find dockerhost by name: " + dc.getHost());
         }
-        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
-        final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
-        final LogStream output = docker.execStart(execId.id());
-        String result = output.readFully();
-        LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
-        return result;
+        try {
+            final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+            final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
+            final LogStream output = docker.execStart(execId.id());
+            String result = output.readFully();
+            LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
+            return result;
+        } catch(Exception e) {
+            // this exception is a bug in the spotify docker lib
+            LOG.warn("Spotify lib bug");
+            return "<could not fetch result from docker-host>";
+        }
     }
 
     public void markContainerForRemoval(DockerContainer dc) {
