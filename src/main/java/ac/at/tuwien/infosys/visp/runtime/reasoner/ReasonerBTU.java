@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -30,8 +31,9 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 
+
 @Service
-@DependsOn("resourceProvider")
+@DependsOn({"configurationprovider","resourceProvider"})
 @ConditionalOnProperty(name = "visp.reasoner", havingValue = "btu")
 public class ReasonerBTU {
 
@@ -62,14 +64,14 @@ public class ReasonerBTU {
     @Autowired
     private ReasonerUtility reasonerUtility;
 
+    @Autowired
+    private Configurationprovider config;
+
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
     @Value("${visp.btu}")
     private Integer btu;
-
-    @Value("${visp.runtime.ip}")
-    private String vispLocation;
 
     @Autowired
     private ScalingActivityRepository sar;
@@ -178,7 +180,7 @@ public class ReasonerBTU {
         LOG.info("VISP - Start container scaling");
 
 
-        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(vispLocation)) {
+        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
             ScalingAction action = monitor.analyze(op);
 
             if (action.equals(ScalingAction.SCALEUP)) {

@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
@@ -13,14 +14,13 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
-@DependsOn("resourceProvider")
+@DependsOn({"configurationprovider","resourceProvider"})
 @ConditionalOnProperty(name = "visp.reasoner", havingValue = "basic")
 public class ReasonerBasic {
 
@@ -48,8 +48,8 @@ public class ReasonerBasic {
     @Autowired
     private ReasonerUtility reasonerUtility;
 
-    @Value("${visp.runtime.ip}")
-    private String vispLocation;
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
@@ -82,7 +82,7 @@ public class ReasonerBasic {
 
         LOG.info("VISP - Start Container scaleup ");
 
-        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(vispLocation)) {
+        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
             ScalingAction action = monitor.analyze(op);
 
             if (action.equals(ScalingAction.SCALEUP)) {

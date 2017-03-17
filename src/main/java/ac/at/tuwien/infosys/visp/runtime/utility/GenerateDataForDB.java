@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.utility;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPConnectionRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPConnection;
@@ -10,7 +11,7 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Random;
 
 @Service
+@DependsOn("configurationprovider")
 public class GenerateDataForDB {
 
     @Autowired
@@ -32,8 +34,8 @@ public class GenerateDataForDB {
     @Autowired
     private VISPInstanceRepository vir;
 
-    @Value("${visp.runtime.ip}")
-    private String vispLocation;
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(GenerateDataForDB.class);
 
@@ -42,11 +44,11 @@ public class GenerateDataForDB {
         Double datarateIntern = (Math.floor(1000 + Math.random() * (5000 - 1000 + 1)));
 
         //intern connections
-        vcr.save(new VISPConnection(vispLocation, vispLocation, 0.01, datarateIntern, availabilityIntern));
+        vcr.save(new VISPConnection(config.getRuntimeIP(), config.getRuntimeIP(), 0.01, datarateIntern, availabilityIntern));
 
         //extern connections
         for (VISPInstance vispInstance : vir.findAll()) {
-            if(vispInstance.getUri().equals(vispLocation)) {
+            if(vispInstance.getUri().equals(config.getRuntimeIP())) {
                 continue;
             }
 
@@ -64,7 +66,7 @@ public class GenerateDataForDB {
             } catch (IOException e) {
                 LOG.error(e.getLocalizedMessage());
             }
-            vcr.save(new VISPConnection(vispLocation, vispInstance.getUri(), delay, datarateExtern, availabilityExtern));
+            vcr.save(new VISPConnection(config.getRuntimeIP(), vispInstance.getUri(), delay, datarateExtern, availabilityExtern));
         }
     }
 

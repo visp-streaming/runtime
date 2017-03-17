@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
@@ -12,7 +13,7 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
+@DependsOn("configurationprovider")
 public class TopologyController {
 
     @Autowired
@@ -43,14 +45,14 @@ public class TopologyController {
     @Autowired
     private VISPInstanceRepository vir;
 
-    @Value("${visp.runtime.ip}")
-    private String runtimeip;
+    @Autowired
+    private Configurationprovider config;
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/topology")
     public String index(Model model) throws SchedulerException {
-        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
 
         if(topologyManagement.getTopology().size() == 0) {
             model.addAttribute("emptyTopology", true);
@@ -79,7 +81,7 @@ public class TopologyController {
          * this method is used to upload an updated topology description file by the user
          */
 
-        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
@@ -111,7 +113,7 @@ public class TopologyController {
         int clearFails = 0;
 
         for(VISPInstance instance : allVispInstances) {
-            if(instance.getUri().equals(runtimeip)) {
+            if(instance.getUri().equals(config.getRuntimeIP())) {
                 continue;
             }
             LOG.info("sending clear request to " + instance.getUri() + "...");
@@ -129,7 +131,7 @@ public class TopologyController {
             }
         }
 
-        model.addAttribute("pagetitle", "VISP Runtime - " + runtimeip);
+        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         model.addAttribute("action", "clear");
         model.addAttribute("clearfails", clearFails);
         return "afterTopologyUpdate";

@@ -5,10 +5,13 @@ import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 @Data
 @Service
+@DependsOn("configurationprovider")
 public class OperatorConfigurationBootstrap {
 
     public OperatorConfigurationBootstrap(String name) {
@@ -18,6 +21,9 @@ public class OperatorConfigurationBootstrap {
     public OperatorConfigurationBootstrap() {
     }
 
+    @Autowired
+    private Configurationprovider config;
+
     private String name;
 
     //TODO replace this with actual resource usage and this should be only a fallback
@@ -26,7 +32,7 @@ public class OperatorConfigurationBootstrap {
     private Double incommingToOutgoingRatio = 0.5;
 
     public String getImage(String operator) {
-        return "bknasmueller/" + "vispprocessingnodes";
+        return config.getProcessingNodeImage();
     }
 
     public DockerContainer createDockerContainerConfiguration(String operator) {

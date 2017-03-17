@@ -1,5 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner.rl;
 
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import reled.RLController;
 import reled.ReLEDParameters;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@DependsOn("configurationprovider")
 public class CentralizedRLReasoner {
     
 	/* *** Constants 				*** */
@@ -90,9 +93,9 @@ public class CentralizedRLReasoner {
     
     @Autowired
     private Monitor rabbitMQMonitor;
-    
-    @Value("${visp.infrastructure.ip}")
-    private String infrastructureIp;
+
+    @Autowired
+	private Configurationprovider config;
     
     @Value("${reasoner.evaluate.afterrounds}")
     private Integer waitForReconfigurationEffects;
@@ -215,7 +218,7 @@ public class CentralizedRLReasoner {
 				/* DEBUG: Save RL information */
 				saveQ(operatorName);
 				saveStateVisits(operatorName);
-				rabbitMQMonitor.saveQueueCount(operatorName, infrastructureIp);
+				rabbitMQMonitor.saveQueueCount(operatorName, config.getInfrastructureIP());
 				
 		    	/* Do not scale pinned or cooling-down operators */
 				if (!canReconfigure(operatorName))
@@ -363,7 +366,7 @@ public class CentralizedRLReasoner {
 				 * - launch the container */
 				DockerContainer container = operatorConfig.createDockerContainerConfiguration(operatorName);
 				DockerHost host = determineContainerPlacement(container);
-				procNodeManager.scaleup(container, host, infrastructureIp);
+				procNodeManager.scaleup(container, host, config.getInfrastructureIP());
 
 				/* Track scaling activity */
 				/* Action already tracked in procNodeManager.scaleUp() */
@@ -447,7 +450,7 @@ public class CentralizedRLReasoner {
     		/* Relocate Container */
     		DockerHost destinationHost = relocationMap.get(container);
     		procNodeManager.triggerShutdown(container);
-    		procNodeManager.scaleup(container, destinationHost, infrastructureIp);
+    		procNodeManager.scaleup(container, destinationHost, config.getInfrastructureIP());
     		
     		/* Track consolidation activity */
     		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperatorType(), "consolidation", container.getHost()));

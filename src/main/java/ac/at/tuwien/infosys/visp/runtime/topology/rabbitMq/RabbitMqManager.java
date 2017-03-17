@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 
 
 @Service
+@DependsOn("configurationprovider")
 public class RabbitMqManager {
     /**
      * This class is used to interact with a specific rabbitmq host
@@ -63,12 +66,9 @@ public class RabbitMqManager {
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
 
-    @Value("${visp.infrastructure.ip}")
-    private String rabbitMqHost;
+    @Autowired
+    private Configurationprovider config;
 
-
-    @Value("${visp.runtime.ip}")
-    private String ownIp;
 
     private static final Logger LOG = LoggerFactory.getLogger(RabbitMqManager.class);
 
@@ -87,8 +87,8 @@ public class RabbitMqManager {
 
     public Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
         LOG.info("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
-        if (infrastructureHost.equals(ownIp)) {
-            infrastructureHost = rabbitMqHost;
+        if (infrastructureHost.equals(config.getRuntimeIP())) {
+            infrastructureHost = config.getInfrastructureIP();
         }
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(infrastructureHost);
@@ -105,9 +105,9 @@ public class RabbitMqManager {
             return;
         }
 
-        Channel fromChannel = createChannel(ownIp);
+        Channel fromChannel = createChannel(config.getRuntimeIP());
         for (TopologyUpdate update : updates) {
-            if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+            if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 continue;
             }
             String exchangeName = update.getAffectedOperator().getName();
@@ -117,7 +117,7 @@ public class RabbitMqManager {
                 LOG.error("Could not declare exchange " + exchangeName);
             }
 
-            LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + ownIp);
+            LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + config.getRuntimeIP());
         }
         try {
             fromChannel.close();
@@ -270,7 +270,7 @@ public class RabbitMqManager {
         for (TopologyUpdate update : updates) {
             if (update.getAction().equals(TopologyUpdate.Action.UPDATE_OPERATOR) &&
                     update.getUpdateType().equals(TopologyUpdate.UpdateType.UPDATE_SIZE) &&
-                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
 
                 Operator op = update.getAffectedOperator();
                 Operator.Size oldSize = ((SizeUpdate) update.getChangeToBeExecuted()).getOldSize();
@@ -346,7 +346,7 @@ public class RabbitMqManager {
     private void addNewContainersFromUpdate(List<TopologyUpdate> updates) {
         for (TopologyUpdate update : updates) {
             if (update.getAction().equals(TopologyUpdate.Action.ADD_OPERATOR) &&
-                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 LOG.info("Spawning operator " + update.getAffectedOperatorId());
                 rpp.addOperator(update.getAffectedOperator());
             }
@@ -356,7 +356,7 @@ public class RabbitMqManager {
     private void removeOldContainersFromUpdate(List<TopologyUpdate> updates) {
         for (TopologyUpdate update : updates) {
             if (update.getAction().equals(TopologyUpdate.Action.REMOVE_OPERATOR) &&
-                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                    update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 LOG.info("Removing operator " + update.getAffectedOperatorId());
                 rpp.removeOperators(update.getAffectedOperator());
             }
@@ -396,7 +396,7 @@ public class RabbitMqManager {
                 if (source.getName().equals(update.getAffectedOperatorId())) {
                     continue;
                 }
-                if (!source.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                if (!source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 LOG.info("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
@@ -417,7 +417,7 @@ public class RabbitMqManager {
                 if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
                     continue;
                 }
-                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 LOG.info("Removing message flow between operators " + update.getAffectedOperator().getName() + " and " + downstreamOp.getName());
@@ -445,7 +445,7 @@ public class RabbitMqManager {
                 if (source.getName().equals(update.getAffectedOperatorId())) {
                     continue;
                 }
-                if (!source.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                if (!source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 try {
@@ -460,7 +460,7 @@ public class RabbitMqManager {
                 }
             }
             for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
-                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(ownIp)) {
+                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
@@ -510,7 +510,7 @@ public class RabbitMqManager {
             if (newSourceEntry.getName().equals(update.getAffectedOperatorId())) {
                 continue;
             }
-            if (!newSourceEntry.getConcreteLocation().getIpAddress().equals(ownIp)) {
+            if (!newSourceEntry.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 continue;
             }
             if (!oldSources.contains(newSourceEntry)) {
@@ -531,7 +531,7 @@ public class RabbitMqManager {
                 if (oldSourceEntry.getName().equals(update.getAffectedOperatorId())) {
                     continue;
                 }
-                if (!oldSourceEntry.getConcreteLocation().getIpAddress().equals(ownIp)) {
+                if (!oldSourceEntry.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 // remove message flow from old source

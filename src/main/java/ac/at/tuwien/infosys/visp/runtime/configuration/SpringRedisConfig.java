@@ -12,15 +12,16 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
+@DependsOn("configurationprovider")
 public class SpringRedisConfig {
 
-    @Value("${visp.infrastructure.ip}")
-    private String infrastructureIp;
+    @Autowired
+    private Configurationprovider config;
 
     @Bean
     public JedisConnectionFactory connectionFactory() {
         JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
-        connectionFactory.setHostName(infrastructureIp);
+        connectionFactory.setHostName(config.getInfrastructureIP());
         connectionFactory.setPort(6379);
         return connectionFactory;
     }

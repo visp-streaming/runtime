@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
@@ -22,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -32,10 +34,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@DependsOn("configurationprovider")
 public class OpenstackConnector extends ResourceConnector {
-
-    @Value("${visp.dockerhost.image}")
-    private String dockerhostImage;
 
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
@@ -51,6 +51,9 @@ public class OpenstackConnector extends ResourceConnector {
 
     @Autowired
     private DockerHostRepository dhr;
+
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
@@ -120,11 +123,10 @@ public class OpenstackConnector extends ResourceConnector {
             }
         }
 
-
         ServerCreate sc = Builders.server()
                 .name("dockerhost")
                 .flavor(flavor)
-                .image(dockerhostImage)
+                .image(config.getOpenstackProcessingHostImage())
                 .userData(Base64.encodeAsString(cloudInit))
                 .keypairName(OPENSTACK_KEYPAIR_NAME)
                 .addSecurityGroup("default")

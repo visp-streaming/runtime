@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
@@ -16,7 +17,7 @@ import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -30,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
+@DependsOn("configurationprovider")
 public class TopologyUpdateHandler {
     /**
      * this class is used to handle the process of updating the topology at runtime
@@ -57,8 +59,8 @@ public class TopologyUpdateHandler {
     @Autowired
     private RuntimeConfigurationRepository rcr;
 
-    @Value("${visp.runtime.ip}")
-    private String vispRuntimeOwnIp;
+    @Autowired
+    private Configurationprovider config;
 
     private ReentrantLock lock = new ReentrantLock();
 
@@ -396,7 +398,7 @@ public class TopologyUpdateHandler {
             if (!op.getConcreteLocation().getResourcePool().equals("*")) {
                 continue;
             }
-            if (!op.getConcreteLocation().getIpAddress().equals(vispRuntimeOwnIp)) {
+            if (!op.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 // request list of resource pools from the instance
                 try {
                     RestTemplate restTemplate = new RestTemplate();
@@ -413,11 +415,11 @@ public class TopologyUpdateHandler {
             } else {
                 List<String> allPools = pvmr.findDistinctPoolnames();
                 if (allPools.size() == 0) {
-                    throw new RuntimeException("No resource pools available for operator " + op.getName() + " on runtime " + vispRuntimeOwnIp);
+                    throw new RuntimeException("No resource pools available for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
                 }
                 String resourcePool = allPools.get(new Random().nextInt(allPools.size()));
                 op.getConcreteLocation().setResourcePool(resourcePool);
-                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on runtime " + vispRuntimeOwnIp);
+                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
 
             }
         }
@@ -479,9 +481,9 @@ public class TopologyUpdateHandler {
         List<String> involvedRuntimes = new ArrayList<>();
         for (TopologyUpdate update : updates) {
             String runtime = update.getAffectedHost();
-            if (runtime.equals(vispRuntimeOwnIp)) {
+            if (runtime.equals(config.getRuntimeIP())) {
                 // the own runtime is not queried via REST
-                LOG.info("Skipping own runtime with IP " + vispRuntimeOwnIp);
+                LOG.info("Skipping own runtime with IP " + config.getRuntimeIP());
                 continue;
             }
             if (!involvedRuntimes.contains(runtime)) {

@@ -1,5 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.utility;
 
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
@@ -8,7 +9,6 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 
 @Service
-@DependsOn("resourceProvider")
+@DependsOn({"configurationprovider", "resourceProvider"})
 public class Utilities {
 
     @Autowired
@@ -67,11 +67,8 @@ public class Utilities {
     @Autowired
     private RuntimeConfigurationRepository rcr;
 
-    @Value("${visp.infrastructure.ip}")
-    private String infrastructureIp;
-
-    @Value("${visp.topology}")
-    private String topology;
+    @Autowired
+    private Configurationprovider config;
 
     @Autowired
     private PooledVMRepository pvmr;
@@ -83,7 +80,7 @@ public class Utilities {
 
     @PostConstruct
     public void init() {
-        topologyManagement.createMapping(infrastructureIp);
+        topologyManagement.createMapping(config.getInfrastructureIP());
         topologyManagement.setTopology(new LinkedHashMap<>());
 
         // if the topology has been restarted, try to restore topology
@@ -115,7 +112,7 @@ public class Utilities {
             sar.deleteAll();
 
             template.getConnectionFactory().getConnection().flushAll();
-            topologyManagement.cleanup(infrastructureIp);
+            topologyManagement.cleanup(config.getInfrastructureIP());
             topologyManagement.setTopology(new LinkedHashMap<>());
 
             try {

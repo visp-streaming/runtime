@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
@@ -16,17 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 @Service
+@DependsOn("configurationprovider")
 public class TopologyManagement {
     /**
      * this class is used to manage the topology of a specific VISP runtime
@@ -50,8 +51,8 @@ public class TopologyManagement {
     @Autowired
     private VISPInstanceRepository vir;
 
-    @Value("${visp.runtime.ip}")
-    private String runtimeip;
+    @Autowired
+    private Configurationprovider config;
 
     private String dotFile;
 
@@ -286,7 +287,7 @@ public class TopologyManagement {
 
 
         for(VISPInstance instance : allVispInstances) {
-            if(instance.getUri().equals(runtimeip)) {
+            if(instance.getUri().equals(config.getRuntimeIP())) {
                 continue;
             }
             RestTemplate restTemplate = new RestTemplate();

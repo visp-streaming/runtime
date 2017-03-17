@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -20,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@DependsOn("configurationprovider")
 public class DockerContainerManagement {
 
     @Autowired
@@ -45,20 +48,14 @@ public class DockerContainerManagement {
     @Autowired
     private OperatorConfigurationBootstrap opConfig;
 
+    @Autowired
+    private Configurationprovider config;
+
     @Value("${visp.node.processing.port}")
     private String processingNodeServerPort;
 
     @Value("${visp.node.port.available}")
     private String encodedHostNodeAvailablePorts;
-
-    @Value("${visp.infrastructure.ip}")
-    private String redisHost;
-
-    @Value("${visp.infrastructure.ip}")
-    private String rabbitMqHost;
-
-    @Value("${visp.runtime.ip}")
-    private String ownIp;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
@@ -80,9 +77,9 @@ public class DockerContainerManagement {
 
         /* Configure environment variables */
         List<String> environmentVariables = new ArrayList<>();
-        String outgoingHost = op.getConcreteLocation().getIpAddress().equals(rabbitMqHost) ? ownIp : op.getConcreteLocation().getIpAddress(); // generalized deployment
+        String outgoingHost = op.getConcreteLocation().getIpAddress().equals(config.getRabbitMQHost()) ? config.getRuntimeIP() : op.getConcreteLocation().getIpAddress(); // generalized deployment
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost); // TODO: check if this is always the right host
-        environmentVariables.add("SPRING_REDIS_HOST=" + redisHost);
+        environmentVariables.add("SPRING_REDIS_HOST=" + config.getRedisHost());
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());
