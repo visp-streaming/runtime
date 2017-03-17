@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -34,7 +33,6 @@ import java.util.List;
 
 @Service
 @DependsOn({"configurationprovider","resourceProvider"})
-@ConditionalOnProperty(name = "visp.reasoner", havingValue = "btu")
 public class ReasonerBTU {
 
     @Autowired
@@ -80,6 +78,9 @@ public class ReasonerBTU {
 
     @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
     public synchronized void updateResourceconfiguration() {
+        if (!config.getReasoner().equals("btu")) {
+            return;
+        }
 
         availabilityWatchdog.checkAvailablitiyOfContainer();
 

@@ -10,11 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,6 +24,7 @@ public class Configurationprovider {
 
     private String openstackProcessingHostImage = null;
     private String processingNodeImage = null;
+    private String reasoner = null;
 
     @Autowired
     private RuntimeConfigurationRepository rfr;
@@ -46,9 +43,11 @@ public class Configurationprovider {
         this.infrastructureIP = getData("infrastructureIP");
         this.openstackProcessingHostImage = getData("openstackProcessingHostImage");
         this.processingNodeImage = getData("processingNodeImage");
+        this.reasoner = getData("reasoner");
+
 
         if (this.runtimeIP==null) {
-                this.runtimeIP = getIp();
+                this.runtimeIP = "127.0.0.1";
                 this.infrastructureIP = runtimeIP;
         }
 
@@ -58,6 +57,10 @@ public class Configurationprovider {
 
         if (this.processingNodeImage ==null) {
             this.processingNodeImage=defaultProcessingNodeImage;
+        }
+
+        if (this.reasoner == null) {
+            this.reasoner = "none";
         }
     }
 
@@ -75,6 +78,8 @@ public class Configurationprovider {
         storeSingle("infrastructureIP", this.infrastructureIP);
         storeSingle("openstackProcessingHostImage", this.openstackProcessingHostImage);
         storeSingle("processingNodeImage", this.processingNodeImage);
+        storeSingle("reasoner", this.reasoner);
+
 
         List<String> lines = new ArrayList<>();
         lines.add(this.runtimeIP);
@@ -88,10 +93,10 @@ public class Configurationprovider {
     private void storeSingle(String identifier, String value) {
         RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
         if (rc == null) {
-            rfr.save(new RuntimeConfiguration(identifier, value));
+            rfr.saveAndFlush(new RuntimeConfiguration(identifier, value));
         } else {
             rc.setValue(value);
-            rfr.save(rc);
+            rfr.saveAndFlush(rc);
         }
     }
 
@@ -136,32 +141,14 @@ public class Configurationprovider {
         this.processingNodeImage = processingNodeImage;
     }
 
-    public String getIp()  {
-        //Try to identify IP for VISP runtime, if none is set
-        try {
-            URL whatismyip = new URL("http://checkip.amazonaws.com");
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new InputStreamReader(
-                        whatismyip.openStream()));
-                String ip = in.readLine();
-                return ip;
-            } catch (IOException e) {
-                LOG.error(e.getLocalizedMessage());
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        LOG.error(e.getLocalizedMessage());
-                    }
-                }
-            }
-        } catch (MalformedURLException e) {
-            LOG.error(e.getLocalizedMessage());
-        }
-        return "127.0.0.1";
+    public String getReasoner() {
+        return reasoner;
     }
+
+    public void setReasoner(String reasoner) {
+        this.reasoner = reasoner;
+    }
+
 
 }
 

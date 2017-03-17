@@ -7,13 +7,14 @@ public class ConfigurationForm {
     private String infrastructureip;
     private String openstackhostimageid;
     private String processingimageid;
+    private String reasoner;
 
-
-    public ConfigurationForm(String runtimeip, String infrastructureip, String openstackhostimageid, String processingimageid) {
+    public ConfigurationForm(String runtimeip, String infrastructureip, String openstackhostimageid, String processingimageid, String reasoner) {
         this.runtimeip = runtimeip;
         this.infrastructureip = infrastructureip;
         this.openstackhostimageid = openstackhostimageid;
         this.processingimageid = processingimageid;
+        this.reasoner = reasoner;
     }
 
     public ConfigurationForm() {
@@ -49,5 +50,13 @@ public class ConfigurationForm {
 
     public void setProcessingimageid(String processingimageid) {
         this.processingimageid = processingimageid;
+    }
+
+    public String getReasoner() {
+        return reasoner;
+    }
+
+    public void setReasoner(String reasoner) {
+        this.reasoner = reasoner;
     }
 }

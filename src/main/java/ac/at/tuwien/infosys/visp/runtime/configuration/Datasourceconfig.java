@@ -7,11 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,8 +32,8 @@ public class Datasourceconfig {
             LOG.error(e.getLocalizedMessage());
         }
 
-        if (IP ==null) {
-            IP = getIp();
+        if (IP == null) {
+            IP = "127.0.0.1";
         }
 
         String uri = "jdbc:mysql://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
@@ -56,32 +52,5 @@ public class Datasourceconfig {
         return dataSourceBuilder.build();
     }
 
-
-    public String getIp()  {
-        //Try to identify IP for VISP runtime, if none is set
-        try {
-            URL whatismyip = new URL("http://checkip.amazonaws.com");
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new InputStreamReader(
-                        whatismyip.openStream()));
-                String ip = in.readLine();
-                return ip;
-            } catch (IOException e) {
-                LOG.error(e.getLocalizedMessage());
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        LOG.error(e.getLocalizedMessage());
-                    }
-                }
-            }
-        } catch (MalformedURLException e) {
-            LOG.error(e.getLocalizedMessage());
-        }
-        return "127.0.0.1";
-    }
 
 }

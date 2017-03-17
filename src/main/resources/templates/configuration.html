@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="layout/main">
-<head></head>
+
+<head/>
 
 <body>
 <th:block layout:fragment="content">
@@ -43,12 +44,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="Processingimageid" class="col-sm-2 control-label">Processing Image ID</label>
+                    <label for="processingimageid" class="col-sm-2 control-label">Processing Image ID</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="Processingimageid" name="Processingimageid" th:field="*{processingimageid}" th:value="${configurationForm.getProcessingimageid()}"  />
+                        <input type="text" class="form-control" id="processingimageid" name="processingimageid" th:field="*{processingimageid}" th:value="${configurationForm.getProcessingimageid()}"  />
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="reasoner" class="col-sm-2 control-label">Reasoner</label>
+                    <div class="col-sm-10">
+                        <select id="reasoner" class="reasoner form-control" th:field="*{reasoner}">
+                            <option th:each="rs : ${reasoners}" th:value="${rs}"
+                                    th:selected="${configurationForm.getReasoner() != null and configurationForm.getReasoner().equals(rs)}" th:text="${rs}"/>
+                        </select>
+
+                    </div>
+                </div>
 
                 <div class="form-buttons">
                     <div class="btn-group">

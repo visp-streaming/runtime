@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.Arrays;
+
 @Controller
 public class ConfigurationController {
 
@@ -24,14 +26,11 @@ public class ConfigurationController {
     @RequestMapping("/configuration")
     public String configuration(Model model) {
 
-        ConfigurationForm configurationForm = new ConfigurationForm(config.getRuntimeIP(), config.getInfrastructureIP(), config.getOpenstackProcessingHostImage(), config.getProcessingNodeImage());
+        ConfigurationForm configurationForm = new ConfigurationForm(config.getRuntimeIP(), config.getInfrastructureIP(), config.getOpenstackProcessingHostImage(), config.getProcessingNodeImage(), config.getReasoner());
 
-        //model.addAttribute("types", presets.getTypes());
-        //model.addAttribute("patterns", presets.getPatterns());
-        //model.addAttribute(configurationForm);
-
-
+        model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", configurationForm);
+        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         model.addAttribute("message", null);
         return "configuration";
     }
@@ -43,17 +42,14 @@ public class ConfigurationController {
         config.setInfrastructureIP(form.getInfrastructureip());
         config.setOpenstackProcessingHostImage(form.getOpenstackhostimageid());
         config.setProcessingNodeImage(form.getProcessingimageid());
+        config.setReasoner(form.getReasoner());
 
         config.storeDataToDB();
 
 
-
-        //model.addAttribute("types", presets.getTypes());
-        //model.addAttribute(form);
-
-        //ecs.storeData(form);
-
+        model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", form);
+        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         model.addAttribute("message", "The configuration has been updated - you need to restart the application for the configuration to be applied.");
         return "configuration";
     }
