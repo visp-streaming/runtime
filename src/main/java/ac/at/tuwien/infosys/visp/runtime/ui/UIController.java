@@ -19,7 +19,6 @@ public class UIController {
 	@RequestMapping("/")
 	public String index(Model model) {
 
-		model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
 		model.addAttribute("rabbitmqMonitoring", "http://" + config.getRuntimeIP() + ":15672");
 		return "about";
 	}

@@ -10,7 +10,11 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -47,8 +51,8 @@ public class Configurationprovider {
 
 
         if (this.runtimeIP==null) {
-                this.runtimeIP = "127.0.0.1";
-                this.infrastructureIP = runtimeIP;
+                this.runtimeIP = getIp();
+                this.infrastructureIP = "127.0.0.1";
         }
 
         if (this.openstackProcessingHostImage ==null) {
@@ -149,6 +153,32 @@ public class Configurationprovider {
         this.reasoner = reasoner;
     }
 
+    public String getIp() {
+        //Try to identify IP for VISP runtime, if none is set
+        try {
+            URL whatismyip = new URL("http://checkip.amazonaws.com");
+            BufferedReader in = null;
+            try {
+                in = new BufferedReader(new InputStreamReader(
+                        whatismyip.openStream()));
+                String ip = in.readLine();
+                return ip;
+            } catch (IOException e) {
+                LOG.error(e.getLocalizedMessage());
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        LOG.error(e.getLocalizedMessage());
+                    }
+                }
+            }
+        } catch (MalformedURLException e) {
+            LOG.error(e.getLocalizedMessage());
+        }
+        return "127.0.0.1";
+    }
 
 }
 

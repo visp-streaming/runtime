@@ -52,7 +52,6 @@ public class TopologyController {
 
     @RequestMapping("/topology")
     public String index(Model model) throws SchedulerException {
-        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
 
         if(topologyManagement.getTopology().size() == 0) {
             model.addAttribute("emptyTopology", true);
@@ -81,7 +80,6 @@ public class TopologyController {
          * this method is used to upload an updated topology description file by the user
          */
 
-        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
@@ -131,7 +129,6 @@ public class TopologyController {
             }
         }
 
-        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         model.addAttribute("action", "clear");
         model.addAttribute("clearfails", clearFails);
         return "afterTopologyUpdate";

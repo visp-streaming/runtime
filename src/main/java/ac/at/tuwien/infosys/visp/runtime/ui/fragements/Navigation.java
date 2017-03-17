@@ -1,4 +1,4 @@
-package ac.at.tuwien.infosys.visp.runtime.ui;
+package ac.at.tuwien.infosys.visp.runtime.ui.fragements;
 
 import org.springframework.context.annotation.Configuration;
 

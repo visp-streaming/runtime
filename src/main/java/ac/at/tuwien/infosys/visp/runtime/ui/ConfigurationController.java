@@ -7,6 +7,7 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.Arrays;
 
 @Controller
+@DependsOn("configurationprovider")
 public class ConfigurationController {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
@@ -30,8 +32,6 @@ public class ConfigurationController {
 
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", configurationForm);
-        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
-        model.addAttribute("message", null);
         return "configuration";
     }
 
@@ -46,10 +46,8 @@ public class ConfigurationController {
 
         config.storeDataToDB();
 
-
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", form);
-        model.addAttribute("pagetitle", "VISP Runtime - " + config.getRuntimeIP());
         model.addAttribute("message", "The configuration has been updated - you need to restart the application for the configuration to be applied.");
         return "configuration";
     }
