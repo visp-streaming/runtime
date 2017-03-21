@@ -6,6 +6,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
+import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,9 @@ public class Utilities {
     @Autowired
     private ResourcePoolConnector rpc;
 
+    @Autowired
+    private RabbitMqManager rabbitMqManager;
+
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
     @PostConstruct
@@ -91,6 +95,12 @@ public class Utilities {
     }
 
     public void clearAll() {
+
+        try {
+            rabbitMqManager.removeAllQueues();
+        } catch(Exception e) {
+            LOG.error("error removing all queues", e);
+        }
 
         //this operation is a hard reset and also
         //removed the docker containers there

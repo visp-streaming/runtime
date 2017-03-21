@@ -14,20 +14,25 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SizeUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
+import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.entities.QueueResult;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.spotify.docker.client.exceptions.DockerException;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.util.Pair;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -278,7 +283,7 @@ public class RabbitMqManager {
                 try {
                     int oldSizeInt = 0;
                     int newSizeInt = 0;
-                    switch(oldSize) {
+                    switch (oldSize) {
                         case SMALL:
                             oldSizeInt = 1;
                             break;
@@ -289,7 +294,7 @@ public class RabbitMqManager {
                             oldSizeInt = 4;
                             break;
                     }
-                    switch(newSize) {
+                    switch (newSize) {
                         case SMALL:
                             newSizeInt = 1;
                             break;
@@ -304,21 +309,21 @@ public class RabbitMqManager {
 
                     int difference = newSizeInt - oldSizeInt;
 
-                    if(difference > 0) {
+                    if (difference > 0) {
                         // scale up:
                         LOG.info("Scaling up operator " + op.getName() + " with " + difference + " more copies");
-                        for(int i=0; i < difference; i++) {
+                        for (int i = 0; i < difference; i++) {
                             pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                         }
                     } else {
                         // scale down:
-                        LOG.info("Scaling down operator " + op.getName() + " with " + ( difference * (-1) ) + " fewer copies");
-                        for(int i=0; i < difference * (-1); i++) {
+                        LOG.info("Scaling down operator " + op.getName() + " with " + (difference * (-1)) + " fewer copies");
+                        for (int i = 0; i < difference * (-1); i++) {
                             pcm.scaleDown(op.getName());
                         }
                     }
 
-                } catch(Exception e) {
+                } catch (Exception e) {
                     LOG.error("Could not rescale operator " + op, e);
                 }
             }
@@ -552,6 +557,53 @@ public class RabbitMqManager {
         return resultList;
 
         // remove message flow for old sources
+    }
+
+    public void removeAllQueues() {
+        List<String> queuesToIgnore = new ArrayList<>();
+        queuesToIgnore.add("applicationmetrics");
+        queuesToIgnore.add("error");
+        queuesToIgnore.add("processingduration");
+
+        String plainCreds = rabbitmqUsername + ":" + rabbitmqPassword;
+        byte[] plainCredsBytes = plainCreds.getBytes();
+        byte[] base64CredsBytes = Base64.encodeBase64(plainCredsBytes);
+        String base64Creds = new String(base64CredsBytes);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Basic " + base64Creds);
+
+
+        Channel channel = null;
+        try {
+            String url = "http://" + config.getInfrastructureIP() + ":15672/api/queues";
+
+            RestTemplate restTemplate = new RestTemplate();
+            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<String> entity = new HttpEntity<String>("", headers);
+
+            ResponseEntity<QueueResult[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, QueueResult[].class);
+
+            channel = createChannel(config.getInfrastructureIP());
+            for (QueueResult queueResult : response.getBody()) {
+                if (queuesToIgnore.contains(queueResult.getName())) {
+                    continue;
+                }
+                // remove the queue
+                channel.queueDelete(queueResult.getName());
+                LOG.info("Deleted queue " + queueResult.getName());
+            }
+        } catch (Exception e) {
+            LOG.error("Could not delete all queues", e);
+        } finally {
+            if (channel != null) try {
+                channel.close();
+            } catch (Exception e) {
+            }
+        }
+
+
     }
 
 }
