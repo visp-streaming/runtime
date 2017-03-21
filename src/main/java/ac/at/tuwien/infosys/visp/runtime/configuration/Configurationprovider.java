@@ -2,6 +2,9 @@ package ac.at.tuwien.infosys.visp.runtime.configuration;
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -39,6 +43,12 @@ public class Configurationprovider {
     @Value("${visp.default.processingNodeImage}")
     private String defaultProcessingNodeImage;
 
+    @Value("${spring.rabbitmq.username}")
+    private String rabbitmqUsername;
+
+    @Value("${spring.rabbitmq.password}")
+    private String rabbitmqPassword;
+
     private static final Logger LOG = LoggerFactory.getLogger(Configurationprovider.class);
 
     @PostConstruct
@@ -52,7 +62,13 @@ public class Configurationprovider {
 
         if (this.runtimeIP==null) {
                 this.runtimeIP = getIp();
-                this.infrastructureIP = "127.0.0.1";
+        }
+
+        if (this.infrastructureIP==null) {
+            this.infrastructureIP = "127.0.0.1";
+
+            this.infrastructureIP = testcon(infrastructureIP);
+
         }
 
         if (this.openstackProcessingHostImage ==null) {
@@ -65,6 +81,54 @@ public class Configurationprovider {
 
         if (this.reasoner == null) {
             this.reasoner = "none";
+        }
+
+    }
+
+    @SuppressWarnings("Duplicates")
+    private String testcon(String infrastructureIP) {
+        String databaseIp = null;
+
+        try {
+            LOG.info("Trying to connect to " + infrastructureIP);
+            // try to connect to infrastructure host
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost(infrastructureIP);
+            factory.setUsername(rabbitmqUsername);
+            factory.setPassword(rabbitmqPassword);
+            Connection connection;
+            connection = factory.newConnection();
+            Channel channel = connection.createChannel();
+            channel.close();
+            connection.close();
+            return infrastructureIP;
+        } catch(Exception e) {
+            LOG.info("Connection to  " + infrastructureIP + " failed");
+            try {
+                // try to connect to database host
+                try {
+                    if (Files.exists(Paths.get("database.properties"))) {
+                        databaseIp = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
+                        databaseIp = databaseIp.replaceAll("\\r|\\n", "").trim();
+                    }
+                } catch (IOException e2) {
+                    LOG.error(e2.getLocalizedMessage(), e2);
+                }
+                LOG.info("Trying to connect to " + databaseIp);
+
+                ConnectionFactory factory = new ConnectionFactory();
+                factory.setHost(databaseIp);
+                factory.setUsername(rabbitmqUsername);
+                factory.setPassword(rabbitmqPassword);
+                Connection connection;
+                connection = factory.newConnection();
+                Channel channel = connection.createChannel();
+                channel.close();
+                connection.close();
+                return databaseIp;
+            } catch(Exception e1) {
+                throw new RuntimeException("Could neither connect to localhost nor to database IP");
+            }
         }
     }
 
@@ -86,7 +150,7 @@ public class Configurationprovider {
 
 
         List<String> lines = new ArrayList<>();
-        lines.add(this.runtimeIP);
+        lines.add(this.infrastructureIP);
         try {
             Files.write(Paths.get("database.properties"), lines);
         } catch (IOException e) {

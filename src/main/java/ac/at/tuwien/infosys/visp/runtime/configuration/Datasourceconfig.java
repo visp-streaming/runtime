@@ -24,10 +24,11 @@ public class Datasourceconfig {
 
         try {
 
-        if (Files.exists(Paths.get("database.properties"))) {
-            IP = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
-            IP = IP.replaceAll("\\r|\\n", "").trim();
-        }
+            if (Files.exists(Paths.get("database.properties"))) {
+                IP = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
+                IP = IP.replaceAll("\\r|\\n", "").trim();
+                LOG.info("Using database at IP " + IP);
+            }
         } catch (IOException e) {
             LOG.error(e.getLocalizedMessage());
         }
