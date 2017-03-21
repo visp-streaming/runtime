@@ -216,11 +216,12 @@ public class TopologyUpdateHandler {
         return oldSources.equals(newSources);
     }
 
-    public boolean testDeploymentByFile(String fileContent) {
+    public boolean testDeploymentByFile(String filePath) {
         this.lock.lock();
         try {
-            File topologyFile = saveIncomingTopologyFile(fileContent);
-            topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
+            //File topologyFile = saveIncomingTopologyFile(filePath);
+            File topologyFile = new File(filePath);
+            topologyManagement.saveTestDeploymentFile(topologyFile, filePath.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
 
             String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
