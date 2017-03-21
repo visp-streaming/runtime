@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationReposit
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SizeUpdate;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SourcesUpdate;
@@ -61,6 +62,9 @@ public class TopologyUpdateHandler {
 
     @Autowired
     private Configurationprovider config;
+
+    @Autowired
+    private ManualOperatorManagement manualOperatorMgmt;
 
     private ReentrantLock lock = new ReentrantLock();
 
@@ -218,13 +222,20 @@ public class TopologyUpdateHandler {
             File topologyFile = saveIncomingTopologyFile(fileContent);
             topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
-            List<String> involvedRuntimes = getInvolvedRuntimes(updates);
-            // TODO: only check updates where own IP is affected
+
+            String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
+
+            if(!ownDeploymentError.equals("ok")) {
+                String errorMessage = "Critical error - Could not deploy topology on remote instance " +
+                        config.getRuntimeIP() + "; error: [" + ownDeploymentError + "]";
+                LOG.error(errorMessage);
+                return false;
+            }
         } finally {
             this.lock.unlock();
         }
         LOG.info("testDeployment is possible!");
-        return true; // TODO fix
+        return true;
     }
 
     public UpdateResult handleUpdateFromUser(String fileContent) throws UnsupportedEncodingException {
@@ -238,6 +249,18 @@ public class TopologyUpdateHandler {
 
         File topologyFile = saveIncomingTopologyFile(fileContent);
         List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
+
+        // first check if local deployment is even possible - otherwise do not waste time to contact other instances
+        String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
+
+        if(!ownDeploymentError.equals("ok")) {
+            String errorMessage = "Critical error - Could not deploy topology on own instance; error: [" + ownDeploymentError + "]";
+            LOG.error(errorMessage);
+            UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.LOCAL_DEPLOYMENT_NOT_POSSIBLE);
+            result.setErrorMessage(errorMessage);
+            return result;
+        }
+
         List<String> involvedRuntimes = getInvolvedRuntimes(updates);
 
         List<String> offlineRuntimes = getOfflineRuntimeInstances(involvedRuntimes);
@@ -266,6 +289,7 @@ public class TopologyUpdateHandler {
 
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
+        List<String> listOfFailedRuntimes = new ArrayList<>();
         for (String runtime : involvedRuntimes) {
             // TODO: make for loop parallel
             LOG.info("Contacting VISP runtime for test deployment: " + runtime);
@@ -273,7 +297,7 @@ public class TopologyUpdateHandler {
             contactedRuntimes.add(runtime);
             if (!result.isDeploymentPossible()) {
                 allInvolvedRuntimesAgree = false;
-                break;
+                listOfFailedRuntimes.add(runtime);
             }
         }
 
@@ -291,14 +315,32 @@ public class TopologyUpdateHandler {
             updateResult.dotPath = pngPath;
             updateResult.setUpdatesPerformed(updates);
         } else {
+            LOG.info("Deployment not possible for all runtimes - abort");
             updateResult.distributedUpdateSuccessful = false;
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
             updateResult.setStatus(UpdateResult.UpdateStatus.DEPLOYMENT_NOT_POSSIBLE);
             updateResult.setDotPath(null);
+            updateResult.setErrorMessage("Deployment not possible for the following runtimes: " + String.join(", ", listOfFailedRuntimes));
         }
         updateResult.dotPath = pngPath;
 
         return updateResult;
+    }
+
+    private List<Operator> extractOwnOperators(File topologyFile, String runtimeIP) {
+        /**
+         * this method extracts all operators from a topology that belong to a specific VISP runtime instance
+         */
+        Map<String, Operator> topology = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath()).topology;
+        List<Operator> resultList = new ArrayList<>();
+
+        for(Operator o : topology.values()) {
+            if(o.getConcreteLocation().getIpAddress().equals(runtimeIP)) {
+                resultList.add(o);
+            }
+        }
+
+        return resultList;
     }
 
     private List<String> getOfflineRuntimeInstances(List<String> involvedRuntimes) {

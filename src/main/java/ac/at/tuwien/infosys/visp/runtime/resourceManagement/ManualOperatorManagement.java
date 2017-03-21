@@ -78,8 +78,13 @@ public class ManualOperatorManagement {
         pcm.removeAll(op, resourcePool);
     }
 
-    public Boolean testDeployment(List<Operator> ops) {
-        return true;
+    public String testDeployment(List<Operator> ops) {
+        /**
+         * must return "ok" if deployment is possible, a nice error message otherwise
+         * input "ops" only contains operators for this runtime instance
+         */
+        return "ok";
+        //return "not enough RAM";
         // TODO: check if specified resource pool exists
 
         // TODO: for each resource pool

@@ -116,9 +116,9 @@ public class TopologyController {
             }
             LOG.info("sending clear request to " + instance.getUri() + "...");
             RestTemplate restTemplate = new RestTemplate();
-            String url = "http://" + instance.getUri() + ":8080/clear";
-            Map<String, Object> clearResult = restTemplate.getForObject(url, Map.class);
             try {
+                String url = "http://" + instance.getUri() + ":8080/clear";
+                Map<String, Object> clearResult = restTemplate.getForObject(url, Map.class);
                 String errorMessage = (String) clearResult.get("errorMessage");
                 if(errorMessage.equals("none")) {
                     LOG.info("VISP Instance " + instance.getUri() + " replied clear success");
