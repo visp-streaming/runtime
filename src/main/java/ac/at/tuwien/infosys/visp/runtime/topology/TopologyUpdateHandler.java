@@ -405,7 +405,8 @@ public class TopologyUpdateHandler {
                     String url = "http://" + op.getConcreteLocation().getIpAddress() + ":8080/vispconfiguration/listResourcePools";
                     List<Map<String, Object>> resourcePools = restTemplate.getForObject(url, List.class);
                     Map<String, Object> chosenPool = resourcePools.get(new Random().nextInt(resourcePools.size()));
-                    op.getConcreteLocation().setResourcePool((String) chosenPool.get("name"));
+                    Operator.Location loc = op.getConcreteLocation();
+                    op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), (String) chosenPool.get("name")));
                     LOG.info("Assigning concrete resource pool " + (String) chosenPool.get("name") + " for operator " +
                             op.getName() + " on runtime " + op.getConcreteLocation());
                 } catch (Exception e) {
@@ -418,9 +419,8 @@ public class TopologyUpdateHandler {
                     throw new RuntimeException("No resource pools available for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
                 }
                 String resourcePool = allPools.get(new Random().nextInt(allPools.size()));
-                op.getConcreteLocation().setResourcePool(resourcePool);
-                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
-
+                op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), resourcePool));
+                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on own runtime " + config.getRuntimeIP());
             }
         }
 
