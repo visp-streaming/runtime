@@ -19,7 +19,7 @@ public class UIController {
 	@RequestMapping("/")
 	public String index(Model model) {
 
-		model.addAttribute("rabbitmqMonitoring", "http://" + config.getRuntimeIP() + ":15672");
+		model.addAttribute("rabbitmqMonitoring", "http://" + config.getInfrastructureIP() + ":15672");
 		return "about";
 	}
 
