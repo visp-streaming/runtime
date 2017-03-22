@@ -13,14 +13,19 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 @Controller
 @DependsOn("configurationprovider")
@@ -44,6 +50,20 @@ public class TopologyController {
 
     @Autowired
     private VISPInstanceRepository vir;
+
+    @Value("${visp.odr.host}")
+    private String odrHost;
+
+    @Value("${visp.odr.port}")
+    private String odrPort;
+
+    @Value("{visp.rt.callback.host")
+    private String callbackHost;
+
+    @Value("{visp.rt.callback.port")
+    private String callbackPort;
+
+    private Integer currentOptimizationTaskId;
 
     @Autowired
     private Configurationprovider config;
@@ -96,6 +116,25 @@ public class TopologyController {
         }
 
         return "afterTopologyUpdate";
+    }
+
+    @RequestMapping("/topology/optimizePlacements")
+    public String startODROptimization() {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://" + odrHost + ":" + odrPort + "/odrApi/addAndStartOptTask";
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+                .queryParam("vispRTHost", callbackHost)
+                .queryParam("port", callbackPort);
+        try {
+            ResponseEntity<Integer> response = restTemplate
+                    .exchange(builder.build().encode().toUri(), HttpMethod.POST, null, Integer.class);
+            this.currentOptimizationTaskId = response.getBody();
+        } catch(RestClientException e){
+            System.out.println("ODR Reasoner cannot be requested. Url: " + url);
+            return "ODR Reasoner invocation failed.";
+        }
+
+        return "ODR Reasoner started optimization task for topology with id:" + currentOptimizationTaskId;
     }
 
     @RequestMapping("/topology/clear")
