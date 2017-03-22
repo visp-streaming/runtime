@@ -6,7 +6,7 @@ import java.util.List;
 
 public class SourcesUpdate extends ChangeToBeExecuted {
     /**
-     * updates oldSources to newSources
+     * updates an operator's oldSources to newSources
      */
     List<Operator> oldSources;
     List<Operator> newSources;

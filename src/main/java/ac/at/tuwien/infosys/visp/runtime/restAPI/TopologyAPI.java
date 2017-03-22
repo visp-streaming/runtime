@@ -47,7 +47,7 @@ public class TopologyAPI {
     public Map<String, Object> checkOnlineStatus(HttpServletRequest request) {
         Map<String, Object> jsonData = new HashMap<>();
         jsonData.put("onlineStatus", "online");
-        LOG.info("Online request from IP " + request.getRemoteAddr());
+        LOG.debug("/checkStatus request from IP " + request.getRemoteAddr());
         return jsonData;
     }
 
@@ -56,6 +56,7 @@ public class TopologyAPI {
         /**
          * returns the currently active topology as a VISP topology description language file
          */
+        LOG.debug("/getTopology called");
         String topologyFile = parser.generateTopologyFile(topologyManagement.getTopology());
         byte[] encoded = Files.readAllBytes(Paths.get(topologyFile));
         return new String(encoded, Charset.defaultCharset());
@@ -71,16 +72,15 @@ public class TopologyAPI {
          * updates or not
          */
 
-        LOG.info("IN TEST DEPLOYMENT for the following file:");
+        LOG.debug("/testDeploymentForTopologyFile called");
 
         Map<String, Object> jsonData = new HashMap<>();
         String errorMessage = "none";
-        boolean deploymentPossible = false;
+        boolean deploymentPossible;
 
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
-            LOG.info(fileContent);
             deploymentPossible = topologyUpdateHandler.testDeploymentByFile(fileContent);
         }
         catch (Exception e) {
@@ -101,13 +101,15 @@ public class TopologyAPI {
         /**
          * called from another VISP instance - leads to abort of the topology update process
          */
+        LOG.debug("/abortTopologyUpdate called");
         Map<String, Object> jsonData = new HashMap<>();
         String errorMessage = "none";
-        LOG.info("aborting topology update");
         int localHash = topologyManagement.getTestDeploymentHash();
         if(localHash != Integer.parseInt(hash)) {
             LOG.warn("Warning - transmitted hash does not fit locally stored hash - will NOT abort commit");
             errorMessage = "invalid hash";
+        } else {
+            LOG.debug("Topology hash is valid");
         }
 
         jsonData.put("action", "abort");
@@ -123,14 +125,15 @@ public class TopologyAPI {
         /**
          * called from another VISP instance - leads to commit of the topology update process
          */
+        LOG.debug("/commitTopologyUpdate called");
         Map<String, Object> jsonData = new HashMap<>();
         String errorMessage = "none";
-        LOG.info("commiting topology update for hash " + hash);
         int localHash = topologyManagement.getTestDeploymentHash();
         if(localHash != Integer.parseInt(hash)) {
             LOG.warn("Warning - transmitted hash does not fit locally stored hash - will NOT commit");
             errorMessage = "invalid hash";
         } else {
+            LOG.debug("Hash was correct");
             if(topologyUpdateHandler.testDeploymentByFile(topologyManagement.getTestDeploymentFile().getAbsolutePath())) {
                 topologyUpdateHandler.commitUpdate(localHash);
             } else {
@@ -151,12 +154,10 @@ public class TopologyAPI {
         /**
          * called from another VISP instance - cleans the current topology
          */
+        LOG.debug("/clear called");
         Map<String, Object> jsonData = new HashMap<>();
         String errorMessage = "none";
-        LOG.info("commiting topology clear");
-
         utilities.clearAll();
-
         jsonData.put("action", "clear");
         jsonData.put("errorMessage", errorMessage);
         return jsonData;

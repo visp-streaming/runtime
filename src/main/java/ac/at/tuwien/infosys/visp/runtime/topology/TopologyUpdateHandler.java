@@ -93,17 +93,17 @@ public class TopologyUpdateHandler {
          * a topology hashmap
          */
         TopologyParser.ParseResult incomingTopology = topologyParser.parseTopologyFromFileSystem(incomingTopologyFilePath);
-        LOG.info("Incoming topology contains the following entries:");
+        LOG.debug("Incoming topology contains the following entries:");
         for (Map.Entry<String, Operator> entry : incomingTopology.topology.entrySet()) {
             String name = entry.getKey();
             Operator operator = entry.getValue();
-            LOG.info(operator.toString());
+            LOG.debug(operator.toString());
         }
 
         List<TopologyUpdate> updates = computeListOfUpdates(topologyManagement.getTopology(), incomingTopology.topology);
-        LOG.info("Have to perform the following updates:");
+        LOG.debug("Have to perform the following updates:");
         for (TopologyUpdate update : updates) {
-            LOG.info(update.toString());
+            LOG.debug(update.toString());
         }
 
         return updates;
@@ -140,11 +140,6 @@ public class TopologyUpdateHandler {
                 // this should already have been handled above...
             }
         }
-
-        // sort updates in the order ADD - REMOVE - UPDATE
-        // this prevents cases where operators are added as source that do not exist yet
-        //returnList.sort(Comparator.comparingInt(t -> t.getAction().ordinal()));
-
         return returnList;
     }
 
@@ -164,7 +159,6 @@ public class TopologyUpdateHandler {
         }
 
         if (!sourcesAreEqual(oldOperator, newOperator)) {
-            LOG.info("update");
             assert (newOperator.getConcreteLocation().equals(oldOperator.getConcreteLocation()));
             TopologyUpdate topologyUpdate = new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(),
                     TopologyUpdate.Action.UPDATE_OPERATOR, TopologyUpdate.UpdateType.UPDATE_SOURCE,
@@ -208,8 +202,8 @@ public class TopologyUpdateHandler {
                 || oldSources.size() != newSources.size()) {
             return false;
         }
-        oldSources = new ArrayList<String>(oldSources);
-        newSources = new ArrayList<String>(newSources);
+        oldSources = new ArrayList<>(oldSources);
+        newSources = new ArrayList<>(newSources);
 
         Collections.sort(oldSources);
         Collections.sort(newSources);
@@ -293,7 +287,7 @@ public class TopologyUpdateHandler {
         List<String> listOfFailedRuntimes = new ArrayList<>();
         for (String runtime : involvedRuntimes) {
             // TODO: make for loop parallel
-            LOG.info("Contacting VISP runtime for test deployment: " + runtime);
+            LOG.debug("Contacting VISP runtime for test deployment: " + runtime);
             TestDeploymentDTO result = sendRestRequest(fileContent, "http://" + runtime + ":8080/testDeploymentForTopologyFile");
             contactedRuntimes.add(runtime);
             if (!result.isDeploymentPossible()) {
@@ -316,7 +310,7 @@ public class TopologyUpdateHandler {
             updateResult.dotPath = pngPath;
             updateResult.setUpdatesPerformed(updates);
         } else {
-            LOG.info("Deployment not possible for all runtimes - abort");
+            LOG.warn("Deployment not possible for all runtimes - abort");
             updateResult.distributedUpdateSuccessful = false;
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
             updateResult.setStatus(UpdateResult.UpdateStatus.DEPLOYMENT_NOT_POSSIBLE);
@@ -372,40 +366,38 @@ public class TopologyUpdateHandler {
     }
 
     private void sendAbortSignalToRuntimes(List<String> contactedRuntimes, int hash) {
-        LOG.info("Sending abort signal to " + contactedRuntimes.size() + " runtimes");
+        LOG.debug("Sending abort signal to " + contactedRuntimes.size() + " runtimes");
         for (String runtime : contactedRuntimes) {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/abortTopologyUpdate?hash=" + hash;
-            LOG.info("sending request to url: " + url);
+            LOG.debug("sending request to url: " + url);
             Map<String, Object> abortResult = restTemplate.getForObject(url, Map.class);
-            LOG.info("runtime " + runtime + " replied " + abortResult.get("errorMessage"));
+            LOG.debug("runtime " + runtime + " replied " + abortResult.get("errorMessage"));
         }
     }
 
     private void sendCommitToRuntimes(List<String> contactedRuntimes, int hash) {
-        LOG.info("Sending commit signal to " + contactedRuntimes.size() + " runtimes");
+        LOG.debug("Sending commit signal to " + contactedRuntimes.size() + " runtimes");
         for (String runtime : contactedRuntimes) {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
-            LOG.info("sending request to url: " + url);
+            LOG.debug("sending request to url: " + url);
             Map<String, Object> commitResult = restTemplate.getForObject(url, Map.class);
-            LOG.info("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
+            LOG.debug("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
         }
     }
 
     private String executeUpdate(File topologyFile, List<TopologyUpdate> updates) {
         TopologyParser.ParseResult parseResult = topologyParser.parseTopologyFromFileSystem(topologyFile.getAbsolutePath());
-//        parseResult.topology = assignConcreteResourcePools(parseResult.topology);
         topologyManagement.setTopology(parseResult.topology);
         topologyManagement.setDotFile(parseResult.dotFile);
-        LOG.info("set dotfile for future usage to " + parseResult.dotFile);
 
         String pngPath;
         try {
             rabbitMqManager.performUpdates(updates);
-            pngPath = topologyManagement.getDotfile();
+            pngPath = topologyManagement.getDotFile();
         } catch (Exception e) {
-            LOG.error("could not perform updates", e);
+            LOG.error("Could not perform updates", e);
             pngPath = null;
         }
 
@@ -422,9 +414,9 @@ public class TopologyUpdateHandler {
                 rt.setValue(fileContent);
             }
             rcr.saveAndFlush(rt);
-            LOG.info("saved runtime configuration with key last_topology_file and value " + fileContent);
+            LOG.debug("saved runtime configuration with key last_topology_file and value " + fileContent);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Could not save topology file to DB", e);
         }
 
 
@@ -450,7 +442,7 @@ public class TopologyUpdateHandler {
                     Map<String, Object> chosenPool = resourcePools.get(new Random().nextInt(resourcePools.size()));
                     Operator.Location loc = op.getConcreteLocation();
                     op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), (String) chosenPool.get("name")));
-                    LOG.info("Assigning concrete resource pool " + (String) chosenPool.get("name") + " for operator " +
+                    LOG.debug("Assigning concrete resource pool " + (String) chosenPool.get("name") + " for operator " +
                             op.getName() + " on runtime " + op.getConcreteLocation());
                 } catch (Exception e) {
                     LOG.error("Error while querying VISP instance for list of resource pools", e);
@@ -463,7 +455,7 @@ public class TopologyUpdateHandler {
                 }
                 String resourcePool = allPools.get(new Random().nextInt(allPools.size()));
                 op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), resourcePool));
-                LOG.info("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on own runtime " + config.getRuntimeIP());
+                LOG.debug("Assigning concrete resource pool " + resourcePool + " for operator " + op.getName() + " on own runtime " + config.getRuntimeIP());
             }
         }
 
@@ -496,7 +488,7 @@ public class TopologyUpdateHandler {
                 newInstances++;
             }
         }
-        LOG.info("Stored " + newInstances + " new VISP instances to local repository");
+        LOG.debug("Stored " + newInstances + " new VISP instances to local repository");
     }
 
     private TestDeploymentDTO sendRestRequest(final String fileContent, String url) throws UnsupportedEncodingException {
@@ -513,7 +505,7 @@ public class TopologyUpdateHandler {
         };
         map.add("file", contentsAsResource);
         TestDeploymentDTO testDeploymentDTO = restTemplate.postForObject(url, map, TestDeploymentDTO.class);
-        LOG.info(testDeploymentDTO.toString());
+        LOG.debug(testDeploymentDTO.toString());
         return testDeploymentDTO;
     }
 
@@ -526,7 +518,7 @@ public class TopologyUpdateHandler {
             String runtime = update.getAffectedHost();
             if (runtime.equals(config.getRuntimeIP())) {
                 // the own runtime is not queried via REST
-                LOG.info("Skipping own runtime with IP " + config.getRuntimeIP());
+                LOG.debug("Skipping own runtime with IP " + config.getRuntimeIP());
                 continue;
             }
             if (!involvedRuntimes.contains(runtime)) {

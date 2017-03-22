@@ -6,7 +6,7 @@ import java.util.List;
 
 public class SizeUpdate extends ChangeToBeExecuted {
     /**
-     * updates oldSize to newSize
+     * updates an operator's size oldSize to newSize
      */
     Operator.Size oldSize;
     Operator.Size newSize;

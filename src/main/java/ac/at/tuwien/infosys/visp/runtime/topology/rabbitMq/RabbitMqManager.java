@@ -91,7 +91,7 @@ public class RabbitMqManager {
     }
 
     public Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
-        LOG.info("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
+        LOG.debug("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
         if (infrastructureHost.equals(config.getRuntimeIP())) {
             infrastructureHost = config.getInfrastructureIP();
         }
@@ -122,7 +122,7 @@ public class RabbitMqManager {
                 LOG.error("Could not declare exchange " + exchangeName);
             }
 
-            LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + config.getRuntimeIP());
+            LOG.debug("Declaring exchange " + exchangeName + " on host " + config.getRuntimeIP());
         }
         try {
             fromChannel.close();
@@ -142,29 +142,25 @@ public class RabbitMqManager {
 
         try {
             String exchangeName = fromOperatorId;
-            fromChannel.exchangeDeclare(exchangeName, "fanout", true); // TODO: redundant
-            LOG.info("DECLARING EXCHANGE " + exchangeName + " on host " + fromInfrastructureHost);
+            fromChannel.exchangeDeclare(exchangeName, "fanout", true);
+            LOG.debug("Declaring exchange " + exchangeName + " on host " + fromInfrastructureHost);
 
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
 
-            LOG.info("declaring queue " + queueName);
+            LOG.debug("Declaring queue " + queueName + " on host " + fromInfrastructureHost);
             fromChannel.queueDeclare(queueName, true, false, false, null);
 
             // tell exchange to send msgs to queue:
-            LOG.info("tell exchange " + exchangeName + " to forward messages to queue " + queueName);
+            LOG.debug("Set exchange " + exchangeName + " to forward messages to queue " + queueName);
             fromChannel.queueBind(queueName, exchangeName, exchangeName); // third parameter is ignored in fanout mode
-
-            //sendDockerSignalForUpdate(toOperatorId, new Operator.Location(toInfrastructureHost, toResourcePool), "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
 
         } catch (Exception e) {
             LOG.error("Exception during exchange setup", e);
         } finally {
             try {
                 fromChannel.close();
-            } catch (IOException e) {
-                LOG.error(e.getLocalizedMessage());
-            } catch (TimeoutException e) {
-                LOG.error(e.getLocalizedMessage());
+            } catch (Exception e) {
+                LOG.error("Could not close rabbitmq channel", e);
             }
         }
         return "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
@@ -176,25 +172,25 @@ public class RabbitMqManager {
         }
         String toOperatorId = operator.getName();
         Operator.Location location = operator.getConcreteLocation();
-        LOG.info("Searching for containers with operator-name " + toOperatorId + " @ location: " + location);
+        LOG.debug("Searching for containers with operator-name " + toOperatorId + " @ location: " + location);
         List<DockerContainer> dcs = dcr.findAllRunningByOperatorNameAndResourcepool(toOperatorId, location.getResourcePool());
         if (dcs.size() <= 0) {
-            LOG.info("Could not find the right one - but found those containers:");
+            LOG.debug("Could not find the right one - but found those containers:");
             for (DockerContainer dc : dcr.findAll()) {
-                LOG.info(dc.toString());
+                LOG.debug(dc.toString());
             }
             throw new RuntimeException("Could not find docker containers for operator " + toOperatorId);
         }
-        LOG.info("Found " + dcs.size() + " matching containers for operator-name " + toOperatorId);
+        LOG.debug("Found " + dcs.size() + " matching containers for operator-name " + toOperatorId);
         for (DockerContainer dc : dcs) {
-            LOG.info("Checking container " + dc + " (Status: " + dc.getStatus() + ")");
+            LOG.debug("Checking container " + dc + " (Status: " + dc.getStatus() + ")");
 
             String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate; touch ~/topologyUpdate";
-            LOG.info("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
+            LOG.debug("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
             try {
                 dcm.executeCommand(dc, command);
             } catch (Exception e) {
-                LOG.info("Could not execute command on docker container " + dc, e);
+                LOG.error("Could not execute command on docker container " + dc, e);
             }
         }
     }
@@ -207,36 +203,24 @@ public class RabbitMqManager {
         try {
 
             String exchangeName = fromOperatorId;
-            //toChannel.exchangeDeclare(exchangeName, "fanout", true);
-
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
-            //fromChannel.queueDeclare(queueName, true, false, false, null);
-
-            //fromChannel.queueBind(queueName, exchangeName, ""); // third parameter is ignored in fanout mode
-
-            // TODO: check whether we also have to unbind queue and exchange (probably not bc there could be other
-            //   queues that also depend on the same exchange?
-
-            // this should stop the exchange sending messages to the queue
+            // this stops the exchange sending messages to the queue
             fromChannel.queueUnbind(queueName, exchangeName, exchangeName);
 
-            LOG.info("!unbinding queue " + queueName + " on exchange " + exchangeName + " on host " + fromInfrastructureHost);
+            LOG.debug("Unbinding queue " + queueName + " on exchange " + exchangeName + " on host " + fromInfrastructureHost);
 
-            LOG.info("Deleting queue " + queueName + " on host " + fromInfrastructureHost);
             try {
                 fromChannel.queueDelete(queueName);
+                LOG.debug("Deleted queue " + queueName + " on host " + fromInfrastructureHost);
             } catch (Exception e) {
                 LOG.error("Could not delete queue " + queueName, e);
             }
-            //sendDockerSignalForUpdate(toOperatorId, new Operator.Location(toInfrastructureHost, toResourcePool), "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId);
-
             return "REMOVE " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
         } finally {
             try {
                 fromChannel.close();
-                // TODO: close connection
             } catch (Exception e) {
-                LOG.warn("Could not close channel(s)");
+                LOG.warn("Could not close rabbitmq channel(s)", e);
             }
         }
     }
@@ -261,7 +245,7 @@ public class RabbitMqManager {
 
         sendContainerUpdateSignals(updateSignals);
 
-        LOG.info("All updates were applied");
+        LOG.info("" + updates.size() + " updates were applied");
     }
 
     @SuppressWarnings("Duplicates")
@@ -311,13 +295,13 @@ public class RabbitMqManager {
 
                     if (difference > 0) {
                         // scale up:
-                        LOG.info("Scaling up operator " + op.getName() + " with " + difference + " more copies");
+                        LOG.debug("Scaling up operator " + op.getName() + " with " + difference + " more copies");
                         for (int i = 0; i < difference; i++) {
                             pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                         }
                     } else {
                         // scale down:
-                        LOG.info("Scaling down operator " + op.getName() + " with " + (difference * (-1)) + " fewer copies");
+                        LOG.debug("Scaling down operator " + op.getName() + " with " + (difference * (-1)) + " fewer copies");
                         for (int i = 0; i < difference * (-1); i++) {
                             pcm.scaleDown(op.getName());
                         }
@@ -352,7 +336,7 @@ public class RabbitMqManager {
         for (TopologyUpdate update : updates) {
             if (update.getAction().equals(TopologyUpdate.Action.ADD_OPERATOR) &&
                     update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
-                LOG.info("Spawning operator " + update.getAffectedOperatorId());
+                LOG.debug("Spawning operator " + update.getAffectedOperatorId());
                 rpp.addOperator(update.getAffectedOperator());
             }
         }
@@ -362,7 +346,7 @@ public class RabbitMqManager {
         for (TopologyUpdate update : updates) {
             if (update.getAction().equals(TopologyUpdate.Action.REMOVE_OPERATOR) &&
                     update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
-                LOG.info("Removing operator " + update.getAffectedOperatorId());
+                LOG.debug("Removing operator " + update.getAffectedOperatorId());
                 rpp.removeOperators(update.getAffectedOperator());
             }
         }
@@ -404,7 +388,7 @@ public class RabbitMqManager {
                 if (!source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
-                LOG.info("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
+                LOG.debug("Removing message flow between operators " + source.getName() + " and " + update.getAffectedOperator().getName());
                 try {
                     pair = Pair.of(update.getAffectedOperator(),
                             removeMessageFlow(source.getName(), update.getAffectedOperator().getName(),
@@ -425,7 +409,7 @@ public class RabbitMqManager {
                 if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
-                LOG.info("Removing message flow between operators " + update.getAffectedOperator().getName() + " and " + downstreamOp.getName());
+                LOG.debug("Removing message flow between operators " + update.getAffectedOperator().getName() + " and " + downstreamOp.getName());
                 try {
                     pair = Pair.of(update.getAffectedOperator(),
                             removeMessageFlow(update.getAffectedOperator().getName(), downstreamOp.getName(),
@@ -454,7 +438,7 @@ public class RabbitMqManager {
                     continue;
                 }
                 try {
-                    LOG.info("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
+                    LOG.debug("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
                     pair = Pair.of(source,
                             addMessageFlow(source.getName(), update.getAffectedOperatorId(), source.getConcreteLocation().getIpAddress()));
                     if (pair != null) {
@@ -472,7 +456,7 @@ public class RabbitMqManager {
                     continue;
                 }
                 try {
-                    LOG.info("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
+                    LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
                     pair = Pair.of(update.getAffectedOperator(),
                             addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress()));
                     if (pair != null) {
@@ -488,7 +472,7 @@ public class RabbitMqManager {
     }
 
     private List<Pair<Operator, String>> handleRabbitmqUpdateOperator(TopologyUpdate update) {
-        LOG.info("Handling update operatorType update");
+        LOG.debug("Handling update operatorType update");
         switch (update.getUpdateType()) {
             case UPDATE_SOURCE:
                 try {
@@ -521,7 +505,7 @@ public class RabbitMqManager {
             if (!oldSources.contains(newSourceEntry)) {
                 // add new flow from the new source to our target operatorType
 
-                LOG.info("Adding message flow between operators " + newSourceEntry.getName() + " and " + update.getAffectedOperatorId());
+                LOG.debug("Adding message flow between operators " + newSourceEntry.getName() + " and " + update.getAffectedOperatorId());
                 pair = Pair.of(newSourceEntry,
                         addMessageFlow(newSourceEntry.getName(), update.getAffectedOperatorId(),
                                 newSourceEntry.getConcreteLocation().getIpAddress()));
@@ -541,7 +525,7 @@ public class RabbitMqManager {
                 }
                 // remove message flow from old source
                 try {
-                    LOG.info("Removing message flow between operators " + oldSourceEntry.getName() + " and " + update.getAffectedOperatorId());
+                    LOG.debug("Removing message flow between operators " + oldSourceEntry.getName() + " and " + update.getAffectedOperatorId());
                     pair = Pair.of(oldSourceEntry,
                             removeMessageFlow(oldSourceEntry.getName(), update.getAffectedOperatorId(),
                                     oldSourceEntry.getConcreteLocation().getIpAddress()));
@@ -555,8 +539,6 @@ public class RabbitMqManager {
         }
 
         return resultList;
-
-        // remove message flow for old sources
     }
 
     public void removeAllQueues() {
@@ -564,6 +546,8 @@ public class RabbitMqManager {
         queuesToIgnore.add("applicationmetrics");
         queuesToIgnore.add("error");
         queuesToIgnore.add("processingduration");
+
+        // basic http auth:
 
         String plainCreds = rabbitmqUsername + ":" + rabbitmqPassword;
         byte[] plainCredsBytes = plainCreds.getBytes();
@@ -592,7 +576,7 @@ public class RabbitMqManager {
                 }
                 // remove the queue
                 channel.queueDelete(queueResult.getName());
-                LOG.info("Deleted queue " + queueResult.getName());
+                LOG.debug("Deleted queue " + queueResult.getName());
             }
         } catch (Exception e) {
             LOG.error("Could not delete all queues", e);

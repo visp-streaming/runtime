@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class QueueResult {
+    /**
+     * DTO representing the result of the rabbitmq API call
+     */
     String name;
 
     public String getName() {

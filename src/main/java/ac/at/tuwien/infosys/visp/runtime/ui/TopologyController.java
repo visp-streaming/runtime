@@ -58,7 +58,7 @@ public class TopologyController {
         } else {
             model.addAttribute("emptyTopology", false);
             try {
-                model.addAttribute("dotContent", getTopologyForVizJs(topologyManagement.getDotfile()));
+                model.addAttribute("dotContent", getTopologyForVizJs(topologyManagement.getDotFile()));
             } catch (Exception e) {
                 LOG.error("Unable to load graphviz image", e);
             }
@@ -106,7 +106,7 @@ public class TopologyController {
 
         List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
 
-        LOG.info("I currently know of " + allVispInstances.size() + " VISP instances...");
+        LOG.debug("This instance currently knows of " + allVispInstances.size() + " other VISP instances...");
 
         int clearFails = 0;
 
@@ -114,14 +114,14 @@ public class TopologyController {
             if(instance.getUri().equals(config.getRuntimeIP())) {
                 continue;
             }
-            LOG.info("sending clear request to " + instance.getUri() + "...");
+            LOG.debug("sending clear request to " + instance.getUri() + "...");
             RestTemplate restTemplate = new RestTemplate();
             try {
                 String url = "http://" + instance.getUri() + ":8080/clear";
                 Map<String, Object> clearResult = restTemplate.getForObject(url, Map.class);
                 String errorMessage = (String) clearResult.get("errorMessage");
                 if(errorMessage.equals("none")) {
-                    LOG.info("VISP Instance " + instance.getUri() + " replied clear success");
+                    LOG.debug("VISP Instance " + instance.getUri() + " replied clear success");
                 }
             } catch (Exception e) {
                 LOG.error("VISP Instance " + instance.getUri() + " could not perform clear", e);

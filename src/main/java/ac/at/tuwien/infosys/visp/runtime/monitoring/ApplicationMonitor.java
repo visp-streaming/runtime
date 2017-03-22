@@ -26,14 +26,8 @@ public class ApplicationMonitor {
     @Autowired
     private ApplicationQoSMetricsRepository appMetricsRepository;
 
-//    private static final Logger LOG = LoggerFactory.getLogger(ApplicationMonitor.class);
-
     @RabbitListener(queues = "applicationmetrics")
     public void assign(ApplicationQoSMetricsMessage message) throws InterruptedException {
-
-//		LOG.info("Application Monitor: received " + message.getTimestamp() + 
-//				" (a:" + message.getApplicationName() + ")" + 
-//				"avgResp=" + message.getAverageResponseTime());
 
         if (!Double.isNaN(message.getAverageResponseTime())) {
 

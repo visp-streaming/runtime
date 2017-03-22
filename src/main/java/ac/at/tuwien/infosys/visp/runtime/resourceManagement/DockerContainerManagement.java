@@ -78,18 +78,12 @@ public class DockerContainerManagement {
         /* Configure environment variables */
         List<String> environmentVariables = new ArrayList<>();
         String outgoingHost = op.getConcreteLocation().getIpAddress().equals(config.getRabbitMQHost()) ? config.getRuntimeIP() : op.getConcreteLocation().getIpAddress(); // generalized deployment
-        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost); // TODO: check if this is always the right host
+        environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost);
         environmentVariables.add("SPRING_REDIS_HOST=" + config.getRedisHost());
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());
         environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(op.getName()));
-
-        LOG.info("Printing env variables");
-        //TODO set correct environment variables - especially for hosts
-        for(String ev : environmentVariables) {
-            LOG.info(ev);
-        }
 
         /* Configure docker container */
         Double vmCores = dh.getCores();

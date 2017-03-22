@@ -76,14 +76,11 @@ public class TopologyManagement {
 
     public void createMapping(String infrastructureHost) {
         try {
-
-            // TODO: all these exchanges and queues must be created at the appropriate rabbitmq hosts
-
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost(infrastructureHost);
             factory.setUsername(rabbitmqUsername);
             factory.setPassword(rabbitmqPassword);
-            Connection connection = null;
+            Connection connection;
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
             
@@ -133,9 +130,8 @@ public class TopologyManagement {
                 if (n.getSources() != null) {
                     for (Operator source : n.getSources()) {
                         String queueName = RabbitMqManager.getQueueName(infrastructureHost, source.getName(), n.getName());
-                        LOG.info("Deleting queue " + queueName);
+                        LOG.debug("Deleting queue " + queueName);
                         channel.queueDelete(queueName);
-                        // TODO: check why this is not executed
                     }
                 }
             }
@@ -231,7 +227,7 @@ public class TopologyManagement {
     }
 
     public List<Operator> getDownstreamOperatorsAsList(Operator operator) {
-        List<Operator> resultset = new ArrayList<>();
+        List<Operator> resultSet = new ArrayList<>();
 
         for(Operator o : topology.values()) {
             if(o.getSources() == null) {
@@ -239,15 +235,15 @@ public class TopologyManagement {
             }
             for( Operator source : o.getSources()) {
                 if(source.getName().equals(operator.getName())) {
-                    resultset.add(o);
+                    resultSet.add(o);
                 }
             }
         }
 
-        return resultset;
+        return resultSet;
     }
 
-    public String getDotfile() {
+    public String getDotFile() {
         return dotFile;
     }
 
@@ -283,7 +279,7 @@ public class TopologyManagement {
             return false;
         }
 
-        LOG.info("Restoring topology from peers - still knowing of " + allVispInstances.size() + " VISP instances...");
+        LOG.debug("Restoring topology from peers - still knowing of " + allVispInstances.size() + " VISP instances...");
 
 
         for(VISPInstance instance : allVispInstances) {
@@ -293,7 +289,7 @@ public class TopologyManagement {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + instance.getUri() + ":8080/getTopology";
             try {
-                LOG.info("Trying to retrieve topology from VISP instance " + instance.getUri() + "...");
+                LOG.debug("Trying to retrieve topology from VISP instance " + instance.getUri() + "...");
                 String topologyContent = restTemplate.getForObject(url, String.class);
                 if(topologyContent == null || topologyContent.equals("")) {
                     continue;

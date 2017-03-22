@@ -4,9 +4,6 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 
 import java.util.List;
 
-/**
- * Created by bernhard on 06.03.17.
- */
 public class UpdateResult {
     public enum UpdateStatus  {SUCCESSFUL, RUNTIMES_NOT_AVAILABLE, LOCAL_DEPLOYMENT_NOT_POSSIBLE, DEPLOYMENT_NOT_POSSIBLE};
 

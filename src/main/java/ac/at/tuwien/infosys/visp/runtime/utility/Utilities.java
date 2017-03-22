@@ -107,7 +107,7 @@ public class Utilities {
 
         try {
 
-            LOG.info("Deleting old configurations");
+            LOG.debug("Deleting old configurations");
             resetPooledVMs();
             dhr.deleteAll();
             dcr.deleteAll();
