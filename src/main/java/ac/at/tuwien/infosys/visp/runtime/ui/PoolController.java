@@ -75,7 +75,6 @@ public class PoolController {
         CreatePooledvmForm form = new CreatePooledvmForm();
         form.setCost(1.5);
         form.setFlavour("m2.medium");
-        //TODO fix this in UI so that dropwown is selected first
 
         model.addAttribute("flavours", opc.getFlavours());
         model.addAttribute(form);

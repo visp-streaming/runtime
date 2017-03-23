@@ -139,7 +139,6 @@ public class DockerContainerManagement {
 
     }
 
-    //TODO get actual infrastructure host from the topology information to realize distributed topology deployments
     @Deprecated
     public void startContainer(DockerHost dh, DockerContainer container, String infrastructureHost) throws DockerException, InterruptedException {
         LOG.error("!! WARNING !! - this method is deprecated and the wrong outgoing host is set since no operator information is available");
@@ -281,7 +280,7 @@ public class DockerContainerManagement {
             String result = output.readFully();
             LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
             return result;
-        } catch(DockerException | InterruptedException e) {
+        } catch(Exception e) {
             // this exception is a bug in the spotify docker lib
             LOG.warn("Spotify lib bug");
             return "<could not fetch result from docker-host>";

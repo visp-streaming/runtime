@@ -115,7 +115,6 @@ public class OpenstackConnector extends ResourceConnector {
 
         Flavor flavor = os.compute().flavors().get(dh.getFlavour());
 
-        //TODO check if the flavors can be retrieved in future releases
         for (Flavor f : os.compute().flavors().list()) {
             if (f.getName().equals(dh.getFlavour())) {
                 flavor = f;
@@ -157,7 +156,7 @@ public class OpenstackConnector extends ResourceConnector {
 
             ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(server, freeIP.getFloatingIpAddress());
             if (!ipresponse.isSuccess()) {
-                LOG.error("Dockerhost could not be started", ipresponse.getFault());
+                LOG.error("IP could not be retrieved:" + ipresponse.getFault());
             }
             uri = freeIP.getFloatingIpAddress();
         }

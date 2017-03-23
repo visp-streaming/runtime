@@ -31,6 +31,10 @@ public class ResourceUsage {
 
     public ResourcePoolUsage calculateUsageForPool(String resourcePoolName) {
 
+        if (pvmr.findByPoolname(resourcePoolName).isEmpty()) {
+            return null;
+        }
+
         ResourcePoolUsage rp = new ResourcePoolUsage(resourcePoolName);
         //TODO calculate the availability
         rp.setAvailability((Math.floor(80 + Math.random() * (99 - 80 + 1))) / 100);
