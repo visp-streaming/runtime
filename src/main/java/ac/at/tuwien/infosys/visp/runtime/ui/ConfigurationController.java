@@ -46,6 +46,8 @@ public class ConfigurationController {
 
         config.storeDataToDB();
 
+        LOG.info("Configuration updated via web UI.");
+
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", form);
         model.addAttribute("message", "The configuration has been updated - you need to restart the application for the configuration to be applied.");

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
-<head th:replace="fragments/head :: head" />
+<head th:replace="fragments/head :: head" ></head>
 
 <body>
 <div class="page-container">
@@ -25,7 +25,7 @@
 
                     <li th:each="entry : ${@navigation.navEntries}"
                         th:classappend="${viewName == entry.viewName} ? 'active'">
-                        <a th:href="${entry.url}" th:text="${entry.userFriendlyName}"/>
+                        <a th:href="${entry.url}" th:text="${entry.userFriendlyName}"></a>
                     </li>
                 </ul>
             </div>

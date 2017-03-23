@@ -80,16 +80,11 @@ public class GenerateDataForDB {
                 }
             }
         }
-
-        for (VISPInstance instance : instances.values()) {
-            vir.save(instance);
-        }
-
+        vir.save(instances.values());
     }
 
 
-
-        public Double pingUrl(final String address) throws IOException {
+    private Double pingUrl(final String address) throws IOException {
         final URL url = new URL("http://" + address);
         final HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
         urlConn.setConnectTimeout(1000 * 10);
@@ -97,7 +92,7 @@ public class GenerateDataForDB {
         urlConn.connect();
         final long endTime = System.currentTimeMillis();
         if (urlConn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            return Double.valueOf((endTime - startTime));
+            return (double) (endTime - startTime);
         }
         return -1.0;
     }

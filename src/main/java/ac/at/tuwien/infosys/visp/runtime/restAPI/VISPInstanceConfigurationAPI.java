@@ -9,8 +9,6 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPConnection;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.utility.GenerateDataForDB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,8 +35,6 @@ public class VISPInstanceConfigurationAPI {
 
     @Autowired
     private GenerateDataForDB vispConnectionsGenerator;
-
-    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping(value = {"/listInstances"}, method = RequestMethod.GET)
     public List<VISPInstance> listInstances() {

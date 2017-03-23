@@ -109,7 +109,7 @@ public class Configurationprovider {
                 try {
                     if (Files.exists(Paths.get("database.properties"))) {
                         databaseIp = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
-                        databaseIp = databaseIp.replaceAll("\\r|\\n", "").trim();
+                        databaseIp = databaseIp.replaceAll("[\\r\\n]", "").trim();
                     }
                 } catch (IOException e2) {
                     LOG.error(e2.getLocalizedMessage(), e2);
@@ -217,7 +217,7 @@ public class Configurationprovider {
         this.reasoner = reasoner;
     }
 
-    public String getIp() {
+    private String getIp() {
         //Try to identify IP for VISP runtime, if none is set
         try {
             URL whatismyip = new URL("http://checkip.amazonaws.com");
@@ -225,8 +225,7 @@ public class Configurationprovider {
             try {
                 in = new BufferedReader(new InputStreamReader(
                         whatismyip.openStream()));
-                String ip = in.readLine();
-                return ip;
+                return in.readLine();
             } catch (IOException e) {
                 LOG.error(e.getLocalizedMessage());
             } finally {

@@ -27,7 +27,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 
@@ -197,7 +196,7 @@ public class ReasonerBTU {
 
 
 
-    public synchronized DockerHost selectSuitableDockerHost(Operator op, DockerHost blackListedHost) {
+    private synchronized DockerHost selectSuitableDockerHost(Operator op, DockerHost blackListedHost) {
 
         if (op.getName()==null) {
             LOG.error("op name = null");
@@ -231,14 +230,14 @@ public class ReasonerBTU {
     private DockerHost equalDistributionStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
         //use all hosts equally
         //select the host with most free CPU resources
-        Collections.sort(freeResources, ResourceComparator.FREECPUCORESASC);
+        freeResources.sort(ResourceComparator.FREECPUCORESASC);
         return selectFirstFitForResources(dc, freeResources);
     }
 
     private DockerHost binPackingStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
         //minimize the hosts
         //select the host with least free CPU resources
-        Collections.sort(freeResources, ResourceComparator.FREECPUCORESDESC);
+        freeResources.sort(ResourceComparator.FREECPUCORESDESC);
         return selectFirstFitForResources(dc, freeResources);
     }
 

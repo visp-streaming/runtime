@@ -8,7 +8,7 @@ public class QueueResult {
     /**
      * DTO representing the result of the rabbitmq API call
      */
-    String name;
+    private String name;
 
     public String getName() {
         return name;

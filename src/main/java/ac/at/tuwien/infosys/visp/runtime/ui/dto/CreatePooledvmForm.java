@@ -3,9 +3,9 @@ package ac.at.tuwien.infosys.visp.runtime.ui.dto;
 
 public class CreatePooledvmForm {
 
-    public String poolname;
-    public String flavour;
-    public Double cost;
+    private String poolname;
+    private String flavour;
+    private Double cost;
 
     public String getPoolname() {
         return poolname;

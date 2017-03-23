@@ -4,11 +4,9 @@ package ac.at.tuwien.infosys.visp.runtime.datasources;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public interface DockerContainerRepository extends JpaRepository<DockerContainer, Long> {
 
@@ -19,7 +17,7 @@ public interface DockerContainerRepository extends JpaRepository<DockerContainer
     List<DockerContainer> findByOperatorType(String operatorType);
 
     List<DockerContainer> findByOperatorNameAndStatus(String operatorName, String status);
-
+    
     List<DockerContainer> findByOperatorTypeAndStatus(String operatorType, String status);
 
     List<DockerContainer> findByHost(String host);

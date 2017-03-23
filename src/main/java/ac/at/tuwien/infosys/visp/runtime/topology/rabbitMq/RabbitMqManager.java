@@ -4,7 +4,6 @@ import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
@@ -18,7 +17,6 @@ import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.entities.QueueResult;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,9 +46,6 @@ public class RabbitMqManager {
     private DockerContainerManagement dcm;
 
     @Autowired
-    private DockerHostRepository dhr;
-
-    @Autowired
     private DockerContainerRepository dcr;
 
     @Autowired
@@ -65,15 +60,14 @@ public class RabbitMqManager {
     @Autowired
     private ProcessingNodeManagement pcm;
 
+    @Autowired
+    private Configurationprovider config;
+
     @Value("${spring.rabbitmq.username}")
     private String rabbitmqUsername;
 
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
-
-    @Autowired
-    private Configurationprovider config;
-
 
     private static final Logger LOG = LoggerFactory.getLogger(RabbitMqManager.class);
 
@@ -90,7 +84,7 @@ public class RabbitMqManager {
 
     }
 
-    public Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
+    private Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
         LOG.debug("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
         if (infrastructureHost.equals(config.getRuntimeIP())) {
             infrastructureHost = config.getInfrastructureIP();
@@ -101,11 +95,10 @@ public class RabbitMqManager {
         factory.setPassword(rabbitmqPassword);
         Connection connection;
         connection = factory.newConnection();
-        Channel channel = connection.createChannel();
-        return channel;
+        return connection.createChannel();
     }
 
-    public void declareExchanges(List<TopologyUpdate> updates) throws IOException, TimeoutException {
+    private void declareExchanges(List<TopologyUpdate> updates) throws IOException, TimeoutException {
         if (updates.size() == 0) {
             return;
         }
@@ -132,7 +125,7 @@ public class RabbitMqManager {
     }
 
 
-    public String addMessageFlow(String fromOperatorId, String toOperatorId,
+    private String addMessageFlow(String fromOperatorId, String toOperatorId,
                                  String fromInfrastructureHost) throws IOException, TimeoutException {
         /**
          * add a message flow from operatorType FROM to operatorType TO
@@ -141,9 +134,8 @@ public class RabbitMqManager {
         Channel fromChannel = this.createChannel(fromInfrastructureHost);
 
         try {
-            String exchangeName = fromOperatorId;
-            fromChannel.exchangeDeclare(exchangeName, "fanout", true);
-            LOG.debug("Declaring exchange " + exchangeName + " on host " + fromInfrastructureHost);
+            fromChannel.exchangeDeclare(fromOperatorId, "fanout", true);
+            LOG.debug("Declaring exchange " + fromOperatorId + " on host " + fromInfrastructureHost);
 
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
 
@@ -151,8 +143,8 @@ public class RabbitMqManager {
             fromChannel.queueDeclare(queueName, true, false, false, null);
 
             // tell exchange to send msgs to queue:
-            LOG.debug("Set exchange " + exchangeName + " to forward messages to queue " + queueName);
-            fromChannel.queueBind(queueName, exchangeName, exchangeName); // third parameter is ignored in fanout mode
+            LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
+            fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
 
         } catch (Exception e) {
             LOG.error("Exception during exchange setup", e);
@@ -166,7 +158,7 @@ public class RabbitMqManager {
         return "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
     }
 
-    private void sendDockerSignalForUpdate(Operator operator, String updateCommand) throws DockerException, InterruptedException {
+    private void sendDockerSignalForUpdate(Operator operator, String updateCommand)  {
         if (operator instanceof Source) {
             return; // source is no actual container
         }
@@ -187,27 +179,22 @@ public class RabbitMqManager {
 
             String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate; touch ~/topologyUpdate";
             LOG.debug("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
-            try {
                 dcm.executeCommand(dc, command);
-            } catch (Exception e) {
-                LOG.error("Could not execute command on docker container " + dc, e);
-            }
         }
     }
 
-    public String removeMessageFlow(String fromOperatorId, String toOperatorId,
+    private String removeMessageFlow(String fromOperatorId, String toOperatorId,
                                     String fromInfrastructureHost) throws IOException, TimeoutException {
 
         Channel fromChannel = createChannel(fromInfrastructureHost);
 
         try {
 
-            String exchangeName = fromOperatorId;
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
             // this stops the exchange sending messages to the queue
-            fromChannel.queueUnbind(queueName, exchangeName, exchangeName);
+            fromChannel.queueUnbind(queueName, fromOperatorId, fromOperatorId);
 
-            LOG.debug("Unbinding queue " + queueName + " on exchange " + exchangeName + " on host " + fromInfrastructureHost);
+            LOG.debug("Unbinding queue " + queueName + " on exchange " + fromOperatorId + " on host " + fromInfrastructureHost);
 
             try {
                 fromChannel.queueDelete(queueName);
@@ -565,7 +552,7 @@ public class RabbitMqManager {
             RestTemplate restTemplate = new RestTemplate();
             headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 
-            HttpEntity<String> entity = new HttpEntity<String>("", headers);
+            HttpEntity<String> entity = new HttpEntity<>("", headers);
 
             ResponseEntity<QueueResult[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, QueueResult[].class);
 
@@ -578,12 +565,13 @@ public class RabbitMqManager {
                 channel.queueDelete(queueResult.getName());
                 LOG.debug("Deleted queue " + queueResult.getName());
             }
-        } catch (Exception e) {
+        } catch (IOException | TimeoutException e) {
             LOG.error("Could not delete all queues", e);
         } finally {
             if (channel != null) try {
                 channel.close();
-            } catch (Exception e) {
+            } catch (IOException | TimeoutException e) {
+                LOG.error("Could not close channel.", e);
             }
         }
 

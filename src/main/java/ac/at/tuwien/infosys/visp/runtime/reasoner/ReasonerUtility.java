@@ -86,10 +86,7 @@ public class ReasonerUtility {
     public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
         ResourceAvailability ra = calculateFreeResourcesforHost(dh);
 
-        if (Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1) {
-            return false;
-        }
-        return true;
+        return !(Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
     }
 
 
@@ -323,7 +320,7 @@ public class ReasonerUtility {
     		canRelocate = false;
 
     		/* Sort resources w.r.t. already hosted containers */
-    		Collections.sort(resources, new LeastLoadedHostFirstComparator());
+    		resources.sort(new LeastLoadedHostFirstComparator());
     		
     		for (ResourceAvailability otherResource : resources){
     			

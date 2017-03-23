@@ -29,7 +29,7 @@ public class ReportingCompressor {
         generateFileList(node);
 
         byte[] buffer = new byte[1024];
-        String source = "";
+        String source;
         ZipOutputStream zos = null;
         try {
             try {
@@ -40,19 +40,14 @@ public class ReportingCompressor {
 
             zos = new ZipOutputStream(new FileOutputStream("reporting/" + new DateTime(DateTimeZone.UTC) + ".zip"));
 
-            FileInputStream in = null;
-
             for (String file : fileList) {
                 ZipEntry ze = new ZipEntry(source + File.separator + file);
                 zos.putNextEntry(ze);
-                try {
-                    in = new FileInputStream(SOURCE_FOLDER + File.separator + file);
+                try (FileInputStream in = new FileInputStream(SOURCE_FOLDER + File.separator + file)) {
                     int len;
                     while ((len = in.read(buffer)) > 0) {
                         zos.write(buffer, 0, len);
                     }
-                } finally {
-                    in.close();
                 }
             }
 
@@ -69,7 +64,7 @@ public class ReportingCompressor {
         }
     }
 
-    public void generateFileList(File node) {
+    private void generateFileList(File node) {
         if (node.isFile()) {
             fileList.add(node.toString().substring(SOURCE_FOLDER.length() + 1, node.toString().length()));
         }

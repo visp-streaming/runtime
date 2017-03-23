@@ -31,6 +31,7 @@ public class OperatorConfigurationBootstrap {
 
     private Double incommingToOutgoingRatio = 0.5;
 
+    //TODO retrieve actual image name based on operator type
     public String getImage(String operator) {
         return config.getProcessingNodeImage();
     }

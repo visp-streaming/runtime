@@ -102,9 +102,7 @@ public class TopologyManagement {
             channel.close();
             connection.close();
 
-        } catch (IOException e) {
-            LOG.error("Could not cleanup topology.", e);
-        } catch (TimeoutException e) {
+        } catch (IOException | TimeoutException e) {
             LOG.error("Could not cleanup topology.", e);
         }
     }
@@ -120,8 +118,7 @@ public class TopologyManagement {
             factory.setHost(infrastructureHost);
             factory.setUsername(rabbitmqUsername);
             factory.setPassword(rabbitmqPassword);
-            Connection connection = null;
-            connection = factory.newConnection();
+            Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
 
             for (Operator n : topology.values()) {
@@ -139,12 +136,8 @@ public class TopologyManagement {
             channel.close();
             connection.close();
 
-        } catch (IOException e) {
+        } catch (IOException | TimeoutException e) {
             LOG.error("Could not create mapping.", e);
-        } catch (TimeoutException e) {
-            LOG.error("Could not create mapping.", e);
-        } catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
         }
     }
 
@@ -186,9 +179,7 @@ public class TopologyManagement {
 
     public List<Operator> getOperators() {
         List<Operator> operators = new ArrayList<>();
-        for (Operator op : topology.values()) {
-            operators.add(op);
-        }
+        operators.addAll(topology.values());
         return operators;
     }
 
@@ -208,7 +199,7 @@ public class TopologyManagement {
     
     public String getDownstreamOperators(String operator){
     
-    	Set<String> ops = new HashSet<String>();
+    	Set<String> ops = new HashSet<>();
     	
         for (Operator n : topology.values()) {
 
@@ -318,7 +309,7 @@ public class TopologyManagement {
 
         String topologyContent = rc.getValue();
 
-        if(topologyContent == null || topologyContent == "") {
+        if(topologyContent == null || topologyContent.equals("")) {
             LOG.warn("Retreived empty topology file from database");
             return false;
         }

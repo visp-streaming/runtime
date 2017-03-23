@@ -112,20 +112,22 @@ public class OperatorMonitor {
     		/* Update Processed */
             for (String operatorName : processedByOpInstance.keySet()) {
                 Long processedCount = processedPerOperator.get(operatorName);
-                if (processedCount == null)
-                    processedCount = new Long(processedByOpInstance.get(operatorName));
-                else
-                    processedCount = new Long(processedCount.longValue() + processedByOpInstance.get(operatorName));
+                if (processedCount == null) {
+                    processedCount = processedByOpInstance.get(operatorName);
+                } else {
+                    processedCount = processedCount + processedByOpInstance.get(operatorName);
+                }
                 processedPerOperator.put(operatorName, processedCount);
             }
 
     		/* Update Received */
             for (String destination : emittedByOpInstance.keySet()) {
                 Long receivedCount = receivedPerOperator.get(destination);
-                if (receivedCount == null)
-                    receivedCount = new Long(emittedByOpInstance.get(destination));
-                else
-                    receivedCount = new Long(receivedCount.longValue() + emittedByOpInstance.get(destination));
+                if (receivedCount == null) {
+                    receivedCount = emittedByOpInstance.get(destination);
+                } else {
+                    receivedCount = receivedCount + emittedByOpInstance.get(destination);
+                }
                 receivedPerOperator.put(destination, receivedCount);
             }
 

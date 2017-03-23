@@ -266,7 +266,7 @@ public class DockerContainerManagement {
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + " was removed.");
     }
 
-    public String executeCommand(DockerContainer dc, String cmd) throws DockerException, InterruptedException {
+    public String executeCommand(DockerContainer dc, String cmd)  {
         LOG.info("in executeCommand for cmd: " + cmd);
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
@@ -281,7 +281,7 @@ public class DockerContainerManagement {
             String result = output.readFully();
             LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
             return result;
-        } catch(Exception e) {
+        } catch(DockerException | InterruptedException e) {
             // this exception is a bug in the spotify docker lib
             LOG.warn("Spotify lib bug");
             return "<could not fetch result from docker-host>";
@@ -321,13 +321,8 @@ public class DockerContainerManagement {
     public Boolean checkAvailabilityofDockerhost(String url) {
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + url + ":2375").connectTimeoutMillis(5000).build();
         try {
-            if (docker.ping().equals("OK")) {
-                return true;
-            }
-            return false;
-        } catch (DockerException e) {
-            return false;
-        } catch (InterruptedException e) {
+            return docker.ping().equals("OK");
+        } catch (DockerException | InterruptedException e) {
             return false;
         }
     }

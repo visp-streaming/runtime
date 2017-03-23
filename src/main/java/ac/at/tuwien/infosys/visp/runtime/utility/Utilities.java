@@ -125,11 +125,7 @@ public class Utilities {
             topologyManagement.cleanup(config.getInfrastructureIP());
             topologyManagement.setTopology(new LinkedHashMap<>());
 
-            try {
-                rcr.delete(rcr.findFirstByKey("last_topology_file").getId());
-            } catch(Exception e) {
-
-            }
+            rcr.delete(rcr.findFirstByKey("last_topology_file").getId());
         } catch(InternalServerErrorException e) {
             LOG.error(e.getLocalizedMessage(), e.getCause());
         }

@@ -27,7 +27,7 @@ public class ApplicationMonitor {
     private ApplicationQoSMetricsRepository appMetricsRepository;
 
     @RabbitListener(queues = "applicationmetrics")
-    public void assign(ApplicationQoSMetricsMessage message) throws InterruptedException {
+    public void assign(ApplicationQoSMetricsMessage message) {
 
         if (!Double.isNaN(message.getAverageResponseTime())) {
 

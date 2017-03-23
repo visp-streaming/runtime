@@ -3,13 +3,13 @@ package ac.at.tuwien.infosys.visp.runtime.entities;
 import java.util.Comparator;
 
 public class ResourceComparator {
-    public static final Comparator<ResourceAvailability> AMOUNTOFCONTAINERASC = (o1, o2) -> o1.getAmountOfContainer().compareTo(o2.getAmountOfContainer());
+    public static final Comparator<ResourceAvailability> AMOUNTOFCONTAINERASC = Comparator.comparing(ResourceAvailability::getAmountOfContainer);
 
-    public static final Comparator<ResourceAvailability> FREECPUCORESASC = (o1, o2) -> o1.getCpuCores().compareTo(o2.getCpuCores());
+    public static final Comparator<ResourceAvailability> FREECPUCORESASC = Comparator.comparing(ResourceAvailability::getCpuCores);
 
-    public static final Comparator<ResourceAvailability> FREERAMASC = (o1, o2) -> o1.getMemory().compareTo(o2.getMemory());
+    public static final Comparator<ResourceAvailability> FREERAMASC = Comparator.comparing(ResourceAvailability::getMemory);
 
-    public static final Comparator<ResourceAvailability> FREESTORAGEASC = (o1, o2) -> o1.getStorage().compareTo(o2.getStorage());
+    public static final Comparator<ResourceAvailability> FREESTORAGEASC = Comparator.comparing(ResourceAvailability::getStorage);
 
     public static final Comparator<ResourceAvailability> AMOUNTOFCONTAINERDESC = (o1, o2) -> o2.getAmountOfContainer().compareTo(o1.getAmountOfContainer());
 

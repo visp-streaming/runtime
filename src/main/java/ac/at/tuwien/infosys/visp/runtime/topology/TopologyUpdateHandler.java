@@ -43,16 +43,16 @@ public class TopologyUpdateHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TopologyUpdateHandler.class);
 
     @Autowired
-    TopologyParser topologyParser;
+    private TopologyParser topologyParser;
 
     @Autowired
-    TopologyManagement topologyManagement;
+    private TopologyManagement topologyManagement;
 
     @Autowired
-    RabbitMqManager rabbitMqManager;
+    private RabbitMqManager rabbitMqManager;
 
     @Autowired
-    VISPInstanceRepository vir;
+    private VISPInstanceRepository vir;
 
     @Autowired
     private PooledVMRepository pvmr;
@@ -114,7 +114,7 @@ public class TopologyUpdateHandler {
         /**
          * this function computes which changes need to be performed when updating from the old to the new topology on host location
          */
-        List<TopologyUpdate> returnList = new ArrayList<TopologyUpdate>();
+        List<TopologyUpdate> returnList = new ArrayList<>();
 
         // general assumption: operatorType names are unique throughout _both_ files
         // (if two operators have the same name in both files, it must be the same one)
@@ -442,7 +442,7 @@ public class TopologyUpdateHandler {
                     Map<String, Object> chosenPool = resourcePools.get(new Random().nextInt(resourcePools.size()));
                     Operator.Location loc = op.getConcreteLocation();
                     op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), (String) chosenPool.get("name")));
-                    LOG.debug("Assigning concrete resource pool " + (String) chosenPool.get("name") + " for operator " +
+                    LOG.debug("Assigning concrete resource pool " + chosenPool.get("name") + " for operator " +
                             op.getName() + " on runtime " + op.getConcreteLocation());
                 } catch (Exception e) {
                     LOG.error("Error while querying VISP instance for list of resource pools", e);
@@ -477,12 +477,7 @@ public class TopologyUpdateHandler {
         }
         int newInstances = 0;
         for (VISPInstance instance : allInstances.values()) {
-            VISPInstance vi = null;
-            try {
-                vi = vir.findFirstByUri(instance.getUri());
-            } catch (Exception e) {
-
-            }
+            VISPInstance vi = vir.findFirstByUri(instance.getUri());
             if (vi == null) {
                 vir.save(instance);
                 newInstances++;
@@ -493,7 +488,7 @@ public class TopologyUpdateHandler {
 
     private TestDeploymentDTO sendRestRequest(final String fileContent, String url) throws UnsupportedEncodingException {
         RestTemplate restTemplate = new RestTemplate();
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         final String filename = "topology.txt";
         map.add("name", filename);
         map.add("filename", filename);

@@ -2,14 +2,12 @@ package ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 
-import java.util.List;
-
 public class SizeUpdate extends ChangeToBeExecuted {
     /**
      * updates an operator's size oldSize to newSize
      */
-    Operator.Size oldSize;
-    Operator.Size newSize;
+    private Operator.Size oldSize;
+    private Operator.Size newSize;
 
     public SizeUpdate(Operator.Size oldSize, Operator.Size newSize) {
         this.oldSize = oldSize;

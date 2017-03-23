@@ -3,8 +3,6 @@ package ac.at.tuwien.infosys.visp.runtime.restAPI;
 import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,11 +15,6 @@ public class OperatorAPI {
 
     @Autowired
     private ResourceUsage resourceUsage;
-
-    @Autowired
-    private OperatorConfigurationBootstrap opConfig;
-
-    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping(value = {"/getOperatorConfiguration/type/{operatorType}"}, method = RequestMethod.GET)
     public OperatorConfiguration getOperatorConfigurationForOperatorType(@PathVariable String operatorType) {

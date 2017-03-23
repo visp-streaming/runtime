@@ -3,7 +3,6 @@ package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdateHandler;
-import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
 import ac.at.tuwien.infosys.visp.runtime.utility.Utilities;
 import ac.at.tuwien.infosys.visp.topologyParser.TopologyParser;
 import org.apache.commons.io.IOUtils;
@@ -28,10 +27,7 @@ public class TopologyAPI {
     private static final Logger LOG = LoggerFactory.getLogger(TopologyAPI.class);
 
     @Autowired
-    TopologyUpdateHandler topologyUpdateHandler;
-
-    @Autowired
-    RabbitMqManager rabbitMqManager;
+    private TopologyUpdateHandler topologyUpdateHandler;
 
     @Autowired
     private TopologyParser parser;

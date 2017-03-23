@@ -5,11 +5,15 @@ import ac.at.tuwien.infosys.visp.runtime.topology.TopologyUpdate;
 import java.util.List;
 
 public class UpdateResult {
-    public enum UpdateStatus  {SUCCESSFUL, RUNTIMES_NOT_AVAILABLE, LOCAL_DEPLOYMENT_NOT_POSSIBLE, DEPLOYMENT_NOT_POSSIBLE};
+    public enum UpdateStatus  {SUCCESSFUL, RUNTIMES_NOT_AVAILABLE, LOCAL_DEPLOYMENT_NOT_POSSIBLE, DEPLOYMENT_NOT_POSSIBLE}
 
     private UpdateStatus status;
 
     private String errorMessage;
+
+    private List<TopologyUpdate> updatesPerformed;
+    public String dotPath;
+    public boolean distributedUpdateSuccessful;
 
     public String getErrorMessage() {
         return errorMessage;
@@ -68,7 +72,5 @@ public class UpdateResult {
                 '}';
     }
 
-    public List<TopologyUpdate> updatesPerformed;
-    public String dotPath;
-    public boolean distributedUpdateSuccessful;
+
 }

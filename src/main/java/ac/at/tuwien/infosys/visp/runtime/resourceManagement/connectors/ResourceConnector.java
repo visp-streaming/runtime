@@ -34,7 +34,7 @@ public abstract class ResourceConnector {
 
     public abstract DockerHost startVM(DockerHost dh);
 
-    public abstract void stopDockerHost(DockerHost dh);
+    protected abstract void stopDockerHost(DockerHost dh);
 
     public abstract void markHostForRemoval(DockerHost dh);
 

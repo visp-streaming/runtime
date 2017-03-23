@@ -8,8 +8,8 @@ public class SourcesUpdate extends ChangeToBeExecuted {
     /**
      * updates an operator's oldSources to newSources
      */
-    List<Operator> oldSources;
-    List<Operator> newSources;
+    private List<Operator> oldSources;
+    private List<Operator> newSources;
 
     public SourcesUpdate(List<Operator> oldSources, List<Operator> newSources) {
         this.oldSources = oldSources;

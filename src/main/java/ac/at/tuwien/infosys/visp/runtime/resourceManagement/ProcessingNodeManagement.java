@@ -126,30 +126,15 @@ public class ProcessingNodeManagement {
             LOG.warn("Could not scale down because only one operator instance is left.");
             return;
         }
-
-        for (DockerContainer dc : operators) {
-            if (dc.getStatus() == null) {
-                dc.setStatus("running");
-            }
-
-            triggerShutdown(dc);
-            break;
-        }
+        triggerShutdown(operators.get(0));
     }
 
     public void triggerShutdown(DockerContainer dc) {
-
-        try {
-            dcm.markContainerForRemoval(dc);
+         dcm.markContainerForRemoval(dc);
             dcm.executeCommand(dc, "cd ~ ; touch killme");
-
 
             dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
             sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
             LOG.debug("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
-
-        } catch (InterruptedException | DockerException e) {
-            LOG.error("Could not trigger scaledown operation.", e);
-        }
     }
 }

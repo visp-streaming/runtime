@@ -15,7 +15,7 @@ public class ErrorMonitor {
     private static final Logger LOG = LoggerFactory.getLogger(ErrorMonitor.class);
 
     @RabbitListener(queues = "error")
-    public void assign(Message message) throws InterruptedException {
+    public void assign(Message message) {
         LOG.warn("Processing Node Exception: " + message.getPayload());
     }
 

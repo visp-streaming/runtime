@@ -6,11 +6,11 @@ import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.ChangeToBeExec
 public class TopologyUpdate {
     private String affectedHost; // which host is affected by this update
 
-    public enum Action {ADD_OPERATOR, REMOVE_OPERATOR, UPDATE_OPERATOR};
+    public enum Action {ADD_OPERATOR, REMOVE_OPERATOR, UPDATE_OPERATOR}
 
     private Action action; // what kind of update is performed
 
-    public enum UpdateType {UPDATE_SIZE, UPDATE_SOURCE};
+    public enum UpdateType {UPDATE_SIZE, UPDATE_SOURCE}
 
     private UpdateType updateType;
 

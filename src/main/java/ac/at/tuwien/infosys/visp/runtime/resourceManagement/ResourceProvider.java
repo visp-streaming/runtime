@@ -18,13 +18,13 @@ import java.util.Map;
 public class ResourceProvider {
 
     @Autowired
-    protected PooledVMRepository pvmr;
+    private PooledVMRepository pvmr;
 
     @Autowired
-    protected OpenstackConnector openstackConnector;
+    private OpenstackConnector openstackConnector;
 
     @Autowired
-    protected ResourcePoolConnector resourcePoolConnector;
+    private ResourcePoolConnector resourcePoolConnector;
 
     @Value("${visp.computational.resources.openstack}")
     private Boolean openstackUsage;
