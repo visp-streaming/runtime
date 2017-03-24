@@ -33,6 +33,7 @@ public class ResourceProvider {
 
     @PostConstruct
     public void init() {
+        resourceProviders = new HashMap<>();
 
         if (openstackUsage) {
             resourceProviders.put("openstack", "openstack");

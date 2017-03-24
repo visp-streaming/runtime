@@ -44,6 +44,9 @@ public class PoolController {
     @Autowired
     private DockerContainerManagement dcm;
 
+    @Autowired
+    private ResourceProvider rpp;
+
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @RequestMapping("/pooledvms")
@@ -125,7 +128,7 @@ public class PoolController {
             model.addAttribute("message", "The pooled VM has been deleted.");
         }
 
-
+        rpp.updateResourceProvider();
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
         model.addAttribute("pools", vms);
@@ -149,6 +152,7 @@ public class PoolController {
             }
         }
 
+        rpp.updateResourceProvider();
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
         model.addAttribute("pools", vms);
