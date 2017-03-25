@@ -19,6 +19,8 @@ public class OperatorQoSMetrics {
     private String timestamp;
     private double processedMessages;
     private double receivedMessages;
+    //time (in seconds) since the last measurement
+    private double deltaSeconds;
 
     public OperatorQoSMetrics() {
     }

@@ -155,6 +155,8 @@ public class OperatorMonitor {
                 msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) * 1000 / (double) delta;
             operator.setReceivedMessages(msgRecvPerUnitTime);
 
+            operator.setDeltaSeconds((double)delta / 1000);
+
             operatorQosRepository.save(operator);
 
             allOperators.remove(operatorName);
@@ -172,6 +174,8 @@ public class OperatorMonitor {
             if (receivedPerOperator.get(operatorName) != null)
                 msgRecvPerUnitTime = (double) receivedPerOperator.get(operatorName) * 1000 / (double) delta;
             operator.setReceivedMessages(msgRecvPerUnitTime);
+
+            operator.setDeltaSeconds((double)delta / 1000);
 
             operatorQosRepository.save(operator);
 

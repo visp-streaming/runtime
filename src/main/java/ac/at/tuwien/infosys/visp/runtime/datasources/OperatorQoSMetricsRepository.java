@@ -10,4 +10,6 @@ public interface OperatorQoSMetricsRepository extends CrudRepository<OperatorQoS
 
     List<OperatorQoSMetrics> findFirstByNameOrderByTimestampDesc(String name);
 
+    List<OperatorQoSMetrics> findFirst10ByNameOrderByTimestampDesc(String name);
+
 }
