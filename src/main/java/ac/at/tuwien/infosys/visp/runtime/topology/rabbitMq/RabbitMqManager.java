@@ -84,7 +84,7 @@ public class RabbitMqManager {
 
     }
 
-    private Channel createChannel(String infrastructureHost) throws IOException, TimeoutException {
+    private Connection createConnection(String infrastructureHost) throws IOException, TimeoutException {
         LOG.debug("Creating connection to host " + infrastructureHost + " with user " + rabbitmqUsername + " and pw " + rabbitmqPassword);
         if (infrastructureHost.equals(config.getRuntimeIP())) {
             infrastructureHost = config.getInfrastructureIP();
@@ -93,9 +93,7 @@ public class RabbitMqManager {
         factory.setHost(infrastructureHost);
         factory.setUsername(rabbitmqUsername);
         factory.setPassword(rabbitmqPassword);
-        Connection connection;
-        connection = factory.newConnection();
-        return connection.createChannel();
+        return factory.newConnection();
     }
 
     private void declareExchanges(List<TopologyUpdate> updates) throws IOException, TimeoutException {
@@ -103,7 +101,8 @@ public class RabbitMqManager {
             return;
         }
 
-        Channel fromChannel = createChannel(config.getRuntimeIP());
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
         for (TopologyUpdate update : updates) {
             if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 continue;
@@ -119,6 +118,7 @@ public class RabbitMqManager {
         }
         try {
             fromChannel.close();
+            connection.close();
         } catch (Exception e) {
             LOG.error("Could not close channel", e);
         }
@@ -131,8 +131,8 @@ public class RabbitMqManager {
          * add a message flow from operatorType FROM to operatorType TO
          */
 
-        Channel fromChannel = this.createChannel(fromInfrastructureHost);
-
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
         try {
             fromChannel.exchangeDeclare(fromOperatorId, "fanout", true);
             LOG.debug("Declaring exchange " + fromOperatorId + " on host " + fromInfrastructureHost);
@@ -151,6 +151,7 @@ public class RabbitMqManager {
         } finally {
             try {
                 fromChannel.close();
+                connection.close();
             } catch (Exception e) {
                 LOG.error("Could not close rabbitmq channel", e);
             }
@@ -186,7 +187,8 @@ public class RabbitMqManager {
     private String removeMessageFlow(String fromOperatorId, String toOperatorId,
                                     String fromInfrastructureHost) throws IOException, TimeoutException {
 
-        Channel fromChannel = createChannel(fromInfrastructureHost);
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
 
         try {
 
@@ -206,6 +208,7 @@ public class RabbitMqManager {
         } finally {
             try {
                 fromChannel.close();
+                connection.close();
             } catch (Exception e) {
                 LOG.warn("Could not close rabbitmq channel(s)", e);
             }
@@ -544,8 +547,8 @@ public class RabbitMqManager {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Basic " + base64Creds);
 
-
         Channel channel = null;
+        Connection connection = null;
         try {
             String url = "http://" + config.getInfrastructureIP() + ":15672/api/queues";
 
@@ -556,7 +559,9 @@ public class RabbitMqManager {
 
             ResponseEntity<QueueResult[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, QueueResult[].class);
 
-            channel = createChannel(config.getInfrastructureIP());
+            connection = createConnection(config.getRuntimeIP());
+            channel = connection.createChannel();
+
             for (QueueResult queueResult : response.getBody()) {
                 if (queuesToIgnore.contains(queueResult.getName())) {
                     continue;
@@ -570,12 +575,10 @@ public class RabbitMqManager {
         } finally {
             if (channel != null) try {
                 channel.close();
+                connection.close();
             } catch (IOException | TimeoutException e) {
                 LOG.error("Could not close channel.", e);
             }
         }
-
-
     }
-
 }

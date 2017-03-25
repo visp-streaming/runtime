@@ -143,10 +143,12 @@ public class ReasonerBTU {
 
                         if (operator==null) {
                             LOG.error("Operator is null");
+                            return;
                         }
 
                         if (operator.getName()==null) {
                             LOG.error("Operator is null");
+                            return;
                         }
 
 

@@ -73,30 +73,6 @@ public class Monitor {
         return upscalingDuration(operator, max);
     }
 
-    @Deprecated
-    public ScalingAction analyze(String operator, String infrastructureHost) {
-        List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
-
-        Integer max = 0;
-        Integer min = 0;
-
-        for (String queue : queues) {
-            Integer queueCount = getQueueCount(queue, infrastructureHost);
-            if (queueCount < min) {
-                min = queueCount;
-            }
-
-            if (queueCount > max) {
-                max = queueCount;
-            }
-
-            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator, queue, queueCount));
-        }
-
-        return upscalingDuration(operator, max);
-    }
-    
-    
     public void saveQueueCount(String operator, String infrastructureHost) {
 
     	List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
@@ -109,7 +85,6 @@ public class Monitor {
         }
 
     }
-
 
     private ScalingAction upscalingDuration(Operator operator, Integer maxQueue) {
         List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator.getName());
@@ -150,47 +125,6 @@ public class Monitor {
         return ScalingAction.DONOTHING;
     }
 
-    @Deprecated
-    private ScalingAction upscalingDuration(String operator, Integer maxQueue) {
-        List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator);
-
-        if (pds.isEmpty()) {
-            if (operator.contains("source")) {
-                return ScalingAction.DONOTHING;
-            }
-
-            return ScalingAction.DONOTHING;
-        }
-
-
-        if (pds.get(0).getDuration() * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getExpectedDuration()) {
-            if (maxQueue > queueUpscalingThreshold) {
-                return ScalingAction.SCALEUP;
-            }
-
-        }
-
-        Integer count = 4;
-        double[][] data = new double[5][2];
-        for (ProcessingDuration pd : pds) {
-            data[count][0] = count;
-            data[count][1] = pd.getDuration();
-            count--;
-        }
-
-        SimpleRegression regression = new SimpleRegression(false);
-        regression.addData(data);
-
-        Double expectedDurationValue = regression.predict(6);
-
-        if (expectedDurationValue * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getExpectedDuration()) {
-            if (maxQueue > queueUpscalingThreshold) {
-                return ScalingAction.SCALEUP;
-            }
-        }
-
-        return ScalingAction.DONOTHING;
-    }
 
     private ScalingAction upscalingQueue(String operator, Integer max) {
         if (max > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator)).getQueueThreshold()) {
@@ -235,7 +169,7 @@ public class Monitor {
             queueLoad = declareOk.getMessageCount();
             LOG.info("Current load for queue: " + name + " is " + queueLoad);
         } catch (Exception e) {
-            LOG.warn("Queue \"" + name + "\" is not yet available.");
+            LOG.warn("Queue \"" + name + "\" is not available.");
         }
 
         connectionFactory.destroy();
