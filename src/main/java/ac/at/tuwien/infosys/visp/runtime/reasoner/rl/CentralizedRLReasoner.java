@@ -366,7 +366,8 @@ public class CentralizedRLReasoner {
 				 * - launch the container */
 				DockerContainer container = operatorConfig.createDockerContainerConfiguration(operatorName);
 				DockerHost host = determineContainerPlacement(container);
-				procNodeManager.scaleup(container, host, config.getInfrastructureIP());
+				ac.at.tuwien.infosys.visp.common.operators.Operator op = topologyManager.getOperatorByIdentifier(container.getOperatorName());
+				procNodeManager.scaleup(host, op);
 
 				/* Track scaling activity */
 				/* Action already tracked in procNodeManager.scaleUp() */
@@ -450,8 +451,9 @@ public class CentralizedRLReasoner {
     		/* Relocate Container */
     		DockerHost destinationHost = relocationMap.get(container);
     		procNodeManager.triggerShutdown(container);
-    		procNodeManager.scaleup(container, destinationHost, config.getInfrastructureIP());
-    		
+			ac.at.tuwien.infosys.visp.common.operators.Operator op = topologyManager.getOperatorByIdentifier(container.getOperatorName());
+			procNodeManager.scaleup(destinationHost, op);
+
     		/* Track consolidation activity */
     		scalingActivityRepository.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), container.getOperatorType(), "consolidation", container.getHost()));
 
