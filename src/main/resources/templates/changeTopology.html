@@ -12,7 +12,7 @@
             <div class="panel panel-default">
                 <div class="panel-heading">Apply new Topology</div>
                 <div class="panel-body text-center">
-                    <form action="/topology/uploadTopologyGUI" method="POST" enctype="multipart/form-data">
+                    <form action="/topology/uploadTopologyGUIOnly" method="POST" enctype="multipart/form-data">
                         <div class="input-group">
                             <input type="file" name="file" class="form-control" required="true"/>
                             <span class="input-group-btn">
@@ -28,6 +28,8 @@
                 <div class="panel-heading">Utility Operations</div>
                 <div class="panel-body text-center">
                     <span><a class="btn btn-danger" th:href="${'/topology/clear'}">Clear Topology</a></span>
+                </div>
+                <div class="panel-body text-center">
                     <span><a class="btn btn-danger" th:href="${'/topology/optimizePlacements'}">ODR Optimization</a></span>
                 </div>
             </div>

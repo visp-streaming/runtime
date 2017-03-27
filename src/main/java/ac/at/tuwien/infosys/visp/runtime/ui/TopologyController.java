@@ -93,6 +93,12 @@ public class TopologyController {
         return dotContent;
     }
 
+    @RequestMapping(value = "/topology/uploadTopologyGUIOnly", method = RequestMethod.POST)
+    public String uploadTopologyGuiOnly(Model model,
+                                 @RequestParam("file") MultipartFile file) {
+        deleteCurrentOptimizationTask(); //delete if there is an existing optimization task;
+        return uploadTopology(model, file);
+    }
     @RequestMapping(value = "/topology/uploadTopologyGUI", method = RequestMethod.POST)
     public String uploadTopology(Model model,
             @RequestParam("file") MultipartFile file) {
@@ -120,6 +126,7 @@ public class TopologyController {
 
     @RequestMapping("/topology/optimizePlacements")
     public String startODROptimization() {
+        deleteCurrentOptimizationTask(); //delete if there is an existing optimization task;
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://" + odrHost + ":" + odrPort + "/odrApi/addAndStartOptTask";
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
@@ -137,8 +144,30 @@ public class TopologyController {
         return "ODR Reasoner started optimization task for topology with id:" + currentOptimizationTaskId;
     }
 
+    /**
+     * deletes the current optimization task from ODR optimization scheduling (if present)
+     */
+    public void deleteCurrentOptimizationTask() {
+        if (currentOptimizationTaskId == null) {
+            return;
+        }
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://" + odrHost + ":" + odrPort + "/odrApi/deleteOptTask";
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+                .queryParam("taskId", currentOptimizationTaskId);
+        try {
+            restTemplate
+                    .exchange(builder.build().encode().toUri(), HttpMethod.DELETE, null, Void.class);
+        } catch(RestClientException e){
+            System.out.println("ODR Reasoner cannot be requested. Url: " + url);
+        }
+    }
+
     @RequestMapping("/topology/clear")
     public String reinitialize(Model model) throws SchedulerException {
+
+        //delete if there is an existing optimization task;
+        deleteCurrentOptimizationTask();
 
         // clear own topology:
         utilities.clearAll();
