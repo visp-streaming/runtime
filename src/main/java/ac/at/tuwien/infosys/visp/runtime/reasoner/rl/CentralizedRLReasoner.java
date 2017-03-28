@@ -1,10 +1,11 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner.rl;
 
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
+import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
@@ -392,11 +393,12 @@ public class CentralizedRLReasoner {
     	
     	/* Compute resource availability on each running host */
 
-    	Map<DockerHost, ResourceAvailability> ras = reasonerUtility.calculateFreeResourcesforHosts(candidateHost);
+    	Map<DockerHost, ResourceTriple> ras = reasonerUtility.calculateFreeResourcesforHosts(candidateHost);
         List<ResourceAvailability> availableResources = new ArrayList<>();
 
-        for (ResourceAvailability ra : ras.values()) {
-        	availableResources.add(ra);
+        for (ResourceTriple rt : ras.values()) {
+        	//check if Dockerhost is used somewhere
+        	availableResources.add(new ResourceAvailability(null, rt));
 		}
 
     	/* Try to use an already running host */
@@ -424,11 +426,12 @@ public class CentralizedRLReasoner {
     		return;
     	
     	/* Compute resource availability on each running host */
-		Map<DockerHost, ResourceAvailability> ras = reasonerUtility.calculateFreeResourcesforHosts(null);
+		Map<DockerHost, ResourceTriple> ras = reasonerUtility.calculateFreeResourcesforHosts(null);
 		List<ResourceAvailability> availableResources = new ArrayList<>();
 
-		for (ResourceAvailability ra : ras.values()) {
-			availableResources.add(ra);
+		for (ResourceTriple rt : ras.values()) {
+			//check if Dockerhost is used somewhere
+			availableResources.add(new ResourceAvailability(null, rt));
 		}
 
     	/* Sort hosts in decreasing order w.r.t. the number of hosted containers */

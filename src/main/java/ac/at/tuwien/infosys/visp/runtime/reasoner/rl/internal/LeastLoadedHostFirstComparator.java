@@ -2,8 +2,6 @@ package ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal;
 
 import java.util.Comparator;
 
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
-
 public class LeastLoadedHostFirstComparator implements Comparator<ResourceAvailability>{
 
 	@Override

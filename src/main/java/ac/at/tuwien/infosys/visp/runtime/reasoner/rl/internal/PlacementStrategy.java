@@ -2,7 +2,6 @@ package ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal;
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
 
 import java.util.List;
 

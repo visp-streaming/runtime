@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -10,7 +11,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
+import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
@@ -60,29 +61,27 @@ public class ReasonerUtility {
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerUtility.class);
 
     public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
-        ResourceAvailability ra = calculateFreeResourcesforHost(dh);
-
+        ResourceTriple ra = calculateFreeResourcesforHost(dh);
         return !(Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
     }
 
-    public ResourceAvailability calculateFreeResourcesforHost(DockerHost dh) {
 
-        ResourceAvailability rc = new ResourceAvailability(dh, 0, dh.getCores(), dh.getMemory(), dh.getStorage());
+    public ResourceTriple calculateFreeResourcesforHost(DockerHost dh) {
+        ResourceTriple rc = new ResourceTriple(dh.getCores(), dh.getMemory(), dh.getStorage());
 
         for (DockerContainer dc : dcr.findByHost(dh.getName())) {
-            rc.incrementAmountOfContainer();
             rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
         }
 
         return rc;
     }
 
-    public Map<DockerHost, ResourceAvailability> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
-        Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
-        Map<DockerHost, ResourceAvailability> freeResources = new HashMap<>();
+    public Map<DockerHost, ResourceTriple> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
+        Map<String, ResourceTriple> hostResourceUsage = new HashMap<>();
+        Map<DockerHost, ResourceTriple> freeResources = new HashMap<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            hostResourceUsage.put(dh.getName(), new ResourceAvailability(dh, 0, dh.getCores(), dh.getMemory(), dh.getStorage()));
+            hostResourceUsage.put(dh.getName(), new ResourceTriple(dh.getCores(), dh.getMemory(), dh.getStorage()));
         }
 
         //collect current usage of cloud resources
@@ -91,15 +90,14 @@ public class ReasonerUtility {
                 continue;
             }
 
-            ResourceAvailability rc = hostResourceUsage.get(dc.getHost());
-            rc.incrementAmountOfContainer();
+            ResourceTriple rc = hostResourceUsage.get(dc.getHost());
             rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
             hostResourceUsage.put(dc.getHost(), rc);
         }
 
         //calculate how much resources are left on a specific host
 
-        for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
+        for (Map.Entry<String, ResourceTriple> entry : hostResourceUsage.entrySet()) {
             DockerHost dh = dhr.findFirstByName(entry.getKey());
 
             if (dh.getScheduledForShutdown()) {
@@ -128,7 +126,10 @@ public class ReasonerUtility {
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
-        for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost).values()) {
+        for (Map.Entry<DockerHost, ResourceTriple> ras : calculateFreeResourcesforHosts(blacklistedHost).entrySet()) {
+            DockerHost dh = ras.getKey();
+            ResourceTriple ra = ras.getValue();
+
             Double feasibilityThreshold = Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory());
 
             if (feasibilityThreshold < 1) {
@@ -138,18 +139,18 @@ public class ReasonerUtility {
             Integer remainingMemory = ra.getMemory() - dc.getMemory();
             Double remainingCpuCores = ra.getCores() - dc.getCpuCores();
 
-            Double difference = Math.abs((remainingMemory / ra.getHost().getMemory()) - (remainingCpuCores / ra.getHost().getCores()));
+            Double difference = Math.abs((remainingMemory / dh.getMemory()) - (remainingCpuCores / dh.getCores()));
 
             Double suitablility = difference / feasibilityThreshold;
 
-            if (!ra.getHost().getAvailableImages().contains(dc.getImage())) {
+            if (!dh.getAvailableImages().contains(dc.getImage())) {
                 suitablility = suitablility / 100;
             }
 
             if (suitablility < value) {
                 if (value > 0) {
                     value = suitablility;
-                    selectedHost = ra.getHost();
+                    selectedHost = dh;
                 }
             }
         }
@@ -157,7 +158,6 @@ public class ReasonerUtility {
         LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") finished with host (" + selectedHost +"). ####");
         return selectedHost;
     }
-
 
 
     public TreeMap<String, Double> selectOperatorTobeScaledDown() {

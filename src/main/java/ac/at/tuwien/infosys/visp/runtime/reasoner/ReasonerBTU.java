@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
@@ -9,8 +10,6 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceAvailability;
-import ac.at.tuwien.infosys.visp.runtime.entities.ResourceComparator;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
@@ -94,17 +93,23 @@ public class ReasonerBTU {
 
         LOG.info("VISP - Start Reasoner");
 
+        LOG.info("VISP - Start container scaling");
+
+
+        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
+            ScalingAction action = monitor.analyze(op);
+
+            if (action.equals(ScalingAction.SCALEUP)) {
+                pcm.scaleup(selectSuitableDockerHost(op, null), op);
+            }
+        }
+        LOG.info("VISP - Finished container scaling");
+
         LOG.info("VISP - Start check if any Hosts need to be shut down");
 
         /////////////////////
         // Check whether any hosts reach the end of their BTU (within the last 5 % of their BTU)
         /////////////////////
-
-        /**
-         * TODO:
-         *   + check if there are enough downscaling possibilities according to the utility fkt
-         *   + provide simulation for utility fkt to evaluate suitable values
-         */
 
         if (dhr.count() > 1) {
 
@@ -131,7 +136,7 @@ public class ReasonerBTU {
                     LOG.info(dh.getName() + " has " + containerToMigrate.size() + " containers which need to be migrated.");
 
 
-                    ResourceAvailability migrationRequirements = new ResourceAvailability(null);
+                    ResourceTriple migrationRequirements = new ResourceTriple();
                     for (DockerContainer dc : containerToMigrate) {
                         migrationRequirements.incrementCores(dc.getCpuCores());
                         migrationRequirements.incrementMemory(dc.getMemory());
@@ -185,36 +190,19 @@ public class ReasonerBTU {
             }
         }
 
-
-        ////////////////////
-
-
-        LOG.info("VISP - Start container scaling");
-
-
-        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
-            ScalingAction action = monitor.analyze(op);
-
-            if (action.equals(ScalingAction.SCALEUP)) {
-                //TODO consider critical path of topology for scaling down and up
-
-                pcm.scaleup(selectSuitableDockerHost(op, null), op);
-            }
-        }
-        LOG.info("VISP - Finished container scaling");
-
         LOG.info("VISP - Finished Reasoner");
     }
 
+
     private Boolean simulateMigration(DockerHost dh) {
         List<DockerContainer> containerMigrateSimulation = dcr.findByHost(dh.getName());
-        Map<DockerHost, ResourceAvailability> simulationRAS = reasonerUtility.calculateFreeResourcesforHosts(dh);
+        Map<DockerHost, ResourceTriple> simulationRAS = reasonerUtility.calculateFreeResourcesforHosts(dh);
 
         List<DockerContainer> migratedSucessful = new ArrayList<>();
 
         for (DockerContainer dc : containerMigrateSimulation) {
-            for (Map.Entry<DockerHost, ResourceAvailability> ra : simulationRAS.entrySet()) {
-                ResourceAvailability raSingle = ra.getValue();
+            for (Map.Entry<DockerHost, ResourceTriple> ra : simulationRAS.entrySet()) {
+                ResourceTriple raSingle = ra.getValue();
 
                 Double feasibilityThreshold = Math.min(raSingle.getCores() / dc.getCpuCores(), raSingle.getMemory() / dc.getMemory());
 
@@ -258,12 +246,16 @@ public class ReasonerBTU {
             TreeMap<String, Double> scaledowns = reasonerUtility.selectOperatorTobeScaledDown();
 
             if (scaledowns == null) {
-                return host;
+                return resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
+            }
+
+            if (scaledowns.isEmpty()) {
+                return resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
             }
 
             String scaledownoperator = scaledowns.firstKey();
             while (scaledownoperator != null) {
-                //TODO user operator name for scaledown
+                //TODO use operator name for scaledown
                 pcm.scaleDown(scaledownoperator);
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
                 if (host != null) {
@@ -280,42 +272,6 @@ public class ReasonerBTU {
         } else {
             return host;
         }
-    }
-
-    private DockerHost equalDistributionStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
-        //use all hosts equally
-        //select the host with most free CPU resources
-        freeResources.sort(ResourceComparator.FREECPUCORESASC);
-        return selectFirstFitForResources(dc, freeResources);
-    }
-
-    private DockerHost binPackingStrategy(DockerContainer dc, List<ResourceAvailability> freeResources) {
-        //minimize the hosts
-        //select the host with least free CPU resources
-        freeResources.sort(ResourceComparator.FREECPUCORESDESC);
-        return selectFirstFitForResources(dc, freeResources);
-    }
-
-    private DockerHost selectFirstFitForResources(DockerContainer dc, List<ResourceAvailability> freeResources) {
-        LOG.info("###### select suitable container for: ######");
-        LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getMemory() + " - Storage: " + dc.getStorage());
-        for (ResourceAvailability ra : freeResources) {
-            if (ra.getCores() <= dc.getCpuCores()) {
-                continue;
-            }
-            if (ra.getMemory() <= dc.getMemory()) {
-                continue;
-            }
-            if (ra.getStorage() <= dc.getStorage()) {
-                continue;
-            }
-            LOG.info("Host found: " + ra.getHost().getName());
-            LOG.info("###### select suitable container for ######");
-            return ra.getHost();
-        }
-        LOG.info("No suitable host found.");
-        LOG.info("###### select suitable container for ######");
-        return null;
     }
 
 }

@@ -1,12 +1,13 @@
-package ac.at.tuwien.infosys.visp.runtime.entities;
+package ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal;
 
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Data
-public class ResourceAvailability implements Comparable<ResourceAvailability> {
+public class ResourceAvailability {
 
     private DockerHost host;
 
@@ -17,6 +18,14 @@ public class ResourceAvailability implements Comparable<ResourceAvailability> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourceAvailability.class);
 
+
+    public ResourceAvailability(DockerHost dh, ResourceTriple rt) {
+        this.host = dh;
+        this.amountOfContainer = 3;
+        this.cores = rt.getCores();
+        this.memory = rt.getMemory();
+        this.storage = rt.getStorage();
+    }
 
     public ResourceAvailability(DockerHost dh) {
         this.host = dh;
@@ -89,12 +98,6 @@ public class ResourceAvailability implements Comparable<ResourceAvailability> {
         if (this.storage < 0){
             LOG.error("Too little storage.");
         }
-    }
-
-
-    @Override
-    public int compareTo(ResourceAvailability o) {
-        return ResourceComparator.AMOUNTOFCONTAINERASC.compare(this, o);
     }
 
     public ResourceAvailability clone() {
