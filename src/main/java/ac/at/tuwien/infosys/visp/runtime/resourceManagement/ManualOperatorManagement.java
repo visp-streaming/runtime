@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.Sink;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
@@ -39,6 +40,11 @@ public class ManualOperatorManagement {
 
         if (op instanceof Source) {
             //Do not spawn container for sources
+            return;
+        }
+
+        if (op instanceof Sink) {
+            //Do not spawn container for sinks
             return;
         }
 
@@ -94,7 +100,7 @@ public class ManualOperatorManagement {
 //        for (Operator op : ops) {
 //            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
 //            try {
-//                usage.decrementCores(dc.getCpuCores());
+//                usage.decrementCores(dc.getCores());
 //                usage.decrementMemory(dc.getMemory());
 //                usage.decrementStorage(Float.valueOf(dc.getStorage()));
 //            } catch (Exception e) {

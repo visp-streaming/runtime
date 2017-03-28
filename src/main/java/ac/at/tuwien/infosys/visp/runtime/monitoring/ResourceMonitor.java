@@ -16,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 /**
  * ResourceMonitor monitors the computing resources,
  * which are used to execute the processing nodes.
@@ -43,16 +41,13 @@ public class ResourceMonitor {
     @Scheduled(fixedRateString = "${visp.monitor.period}")
     public void updateAllHostsCpuUtilization() {
         for (DockerHost dh : dhr.findAll()) {
-            List<DockerContainer> hostedContainers = dcr.findByHost(dh.getName());
-
-            for (DockerContainer container : hostedContainers) {
+            for (DockerContainer container : dcr.findByHost(dh.getName())) {
                 retrieveCpuUtilization(dh, container);
             }
-            dcr.save(hostedContainers);
         }
     }
 
-    private DockerContainer retrieveCpuUtilization(DockerHost dh, DockerContainer dc) {
+    private void retrieveCpuUtilization(DockerHost dh, DockerContainer dc) {
         String connectionUri = "http://" + dh.getUrl() + ":2375";
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
@@ -75,7 +70,5 @@ public class ResourceMonitor {
         } catch (DockerException | InterruptedException e) {
             LOG.error(e.getMessage());
         }
-
-        return dc;
     }
 }

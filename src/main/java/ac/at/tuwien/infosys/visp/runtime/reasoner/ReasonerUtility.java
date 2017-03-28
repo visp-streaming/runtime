@@ -59,89 +59,53 @@ public class ReasonerUtility {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerUtility.class);
 
-    //TODO combine with resource monitor
-
-    public ResourceAvailability calculateFreeresources(List<ResourceAvailability> resources) {
-        ResourceAvailability all = new ResourceAvailability();
-        all.setAmountOfContainer(0);
-        all.setCpuCores(0.0);
-        all.setMemory(0);
-        all.setStorage(0.0F);
-
-
-        LOG.info("###### free resources ######");
-        for (ResourceAvailability ra : resources) {
-            all.setAmountOfContainer(all.getAmountOfContainer() + ra.getAmountOfContainer());
-            all.setCpuCores(all.getCpuCores() + ra.getCpuCores());
-            all.setMemory(all.getMemory() + ra.getMemory());
-            all.setStorage(all.getStorage() + ra.getStorage());
-
-            LOG.info(ra.getHost().getName() + " - Container: " + ra.getAmountOfContainer() + " - CPU: " + ra.getCpuCores() + " - RAM: " + ra.getMemory() + " - Storage: " + ra.getStorage());
-        }
-        LOG.info("###### free resources ######");
-
-        return all;
-    }
-
     public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
         ResourceAvailability ra = calculateFreeResourcesforHost(dh);
 
-        return !(Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
+        return !(Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
     }
-
-
 
     public ResourceAvailability calculateFreeResourcesforHost(DockerHost dh) {
 
-        ResourceAvailability rc = new ResourceAvailability(dh, 0, 0.0, 0, 0.0F);
+        ResourceAvailability rc = new ResourceAvailability(dh, 0, dh.getCores(), dh.getMemory(), dh.getStorage());
 
         for (DockerContainer dc : dcr.findByHost(dh.getName())) {
-            rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
-            rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
-            rc.setMemory(rc.getMemory() + dc.getMemory());
-            rc.setStorage(rc.getStorage() + dc.getStorage());
+            rc.incrementAmountOfContainer();
+            rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
         }
 
-        ResourceAvailability availability = new ResourceAvailability();
-        availability.setHost(dh);
-        availability.setAmountOfContainer(rc.getAmountOfContainer());
-        availability.setCpuCores(dh.getCores() - rc.getCpuCores());
-        availability.setMemory(dh.getMemory() - rc.getMemory());
-        availability.setStorage(dh.getStorage() - rc.getStorage());
-
-        return availability;
+        return rc;
     }
 
-
-    public List<ResourceAvailability> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
+    public Map<DockerHost, ResourceAvailability> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
         Map<String, ResourceAvailability> hostResourceUsage = new HashMap<>();
-        List<ResourceAvailability> freeResources = new ArrayList<>();
+        Map<DockerHost, ResourceAvailability> freeResources = new HashMap<>();
 
         for (DockerHost dh : dhr.findAll()) {
-            ResourceAvailability rc = new ResourceAvailability(dh, 0, 0.0, 0, 0.0F);
-            hostResourceUsage.put(dh.getName(), rc);
+            hostResourceUsage.put(dh.getName(), new ResourceAvailability(dh, 0, dh.getCores(), dh.getMemory(), dh.getStorage()));
         }
 
         //collect current usage of cloud resources
         for (DockerContainer dc : dcr.findAll()) {
-            if (dc.getStatus().equals("stopping")) {
+            if (dc.getStatus().equals("stopping") || dc.getOperatorType().equals("sink")) {
                 continue;
             }
 
             ResourceAvailability rc = hostResourceUsage.get(dc.getHost());
-            rc.setAmountOfContainer(rc.getAmountOfContainer() + 1);
-            rc.setCpuCores(rc.getCpuCores() + dc.getCpuCores());
-            rc.setMemory(rc.getMemory() + dc.getMemory());
-            rc.setStorage(rc.getStorage() + dc.getStorage());
+            rc.incrementAmountOfContainer();
+            rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
             hostResourceUsage.put(dc.getHost(), rc);
         }
 
         //calculate how much resources are left on a specific host
 
         for (Map.Entry<String, ResourceAvailability> entry : hostResourceUsage.entrySet()) {
-            String name = entry.getKey();
-            ResourceAvailability usage = entry.getValue();
-            DockerHost dh = dhr.findFirstByName(name);
+            DockerHost dh = dhr.findFirstByName(entry.getKey());
+
+            if (dh.getScheduledForShutdown()) {
+                LOG.info("Omitted host: " + dh.getName() + " for scheduling, since it is scheduled to shut down.");
+                continue;
+            }
 
             if (blacklistedHost != null) {
                 if (dh.getName().equals(blacklistedHost.getName())) {
@@ -149,19 +113,7 @@ public class ReasonerUtility {
                     continue;
                 }
             }
-
-            if (dh.getScheduledForShutdown()) {
-                LOG.info("Omitted host: " + dh.getName() + " for scheduling, since it is scheduled to shut down.");
-                continue;
-            }
-
-            ResourceAvailability availability = new ResourceAvailability();
-            availability.setHost(dh);
-            availability.setAmountOfContainer(usage.getAmountOfContainer());
-            availability.setCpuCores(dh.getCores() - usage.getCpuCores());
-            availability.setMemory(dh.getMemory() - usage.getMemory());
-            availability.setStorage(dh.getStorage() - usage.getStorage());
-            freeResources.add(availability);
+            freeResources.put(dh, entry.getValue());
         }
 
         return freeResources;
@@ -176,15 +128,15 @@ public class ReasonerUtility {
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
-        for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost)) {
-            Double feasibilityThreshold = Math.min(ra.getCpuCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory());
+        for (ResourceAvailability ra : calculateFreeResourcesforHosts(blacklistedHost).values()) {
+            Double feasibilityThreshold = Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory());
 
             if (feasibilityThreshold < 1) {
                 continue;
             }
 
             Integer remainingMemory = ra.getMemory() - dc.getMemory();
-            Double remainingCpuCores = ra.getCpuCores() - dc.getCpuCores();
+            Double remainingCpuCores = ra.getCores() - dc.getCpuCores();
 
             Double difference = Math.abs((remainingMemory / ra.getHost().getMemory()) - (remainingCpuCores / ra.getHost().getCores()));
 
@@ -208,14 +160,13 @@ public class ReasonerUtility {
 
 
 
-    public String selectOperatorTobeScaledDown() {
-        LOG.info("##### select operatorType to be scaled down initialized. ####");
-        String selectedOperator = null;
+    public TreeMap<String, Double> selectOperatorTobeScaledDown() {
+        TreeMap<String, Double> selectedOperators = new TreeMap<>();
 
-        //get all Instances
+        //get max/min of all operator instances
         Integer maxInstances = Integer.MIN_VALUE;
         Integer minInstances = 0;
-        Map<String, Integer> operatorAmount = new HashMap<>();
+        Map<String, Integer> operatorInstances = new HashMap<>();
 
         // select all instances that have more than one instances
         for (String operator : tmgmt.getOperatorsAsList()) {
@@ -223,7 +174,7 @@ public class ReasonerUtility {
             if (amount < 2) {
                 continue;
             }
-            operatorAmount.put(operator, amount);
+            operatorInstances.put(operator, amount);
             if (amount > maxInstances) {
                 maxInstances = amount;
             }
@@ -232,21 +183,18 @@ public class ReasonerUtility {
             }
         }
 
-        if (operatorAmount.isEmpty()) {
+        if (operatorInstances.isEmpty()) {
             return null;
         }
 
         Long totalScalingActions = scr.count();
         Double selectionValue = 0.0;
 
-        for (Map.Entry<String, Integer> entry : operatorAmount.entrySet()) {
-            String op = entry.getKey();
-            LOG.debug("### Suitability for Operator: " + op + " ###");
-
-
+        for (Map.Entry<String, Integer> operatortype : operatorInstances.entrySet()) {
+            String op = operatortype.getKey();
             // calculate instances impact factor
-            Integer instancefactor = (entry.getValue() - minInstances) / (maxInstances - minInstances);
-            LOG.debug("InstanceFactor: # = " + entry.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
+            Integer instancefactor = (operatortype.getValue() - minInstances) / (maxInstances - minInstances);
+            LOG.debug("InstanceFactor: # = " + operatortype.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
 
             //calculate qos impact factor
             List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(op);
@@ -267,23 +215,18 @@ public class ReasonerUtility {
                 avgDuration = 1.0;
             }
 
-
             //calculate delayfactor
-            double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(entry.getKey())).getExpectedDuration();
+            double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(operatortype.getKey())).getExpectedDuration();
             Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
             LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 
-
             //calculate scaling actions factor
-            Long scalings = scr.countByOperator(entry.getKey());
+            Long scalings = scr.countByOperator(operatortype.getKey());
             Long scalingFactor =  scalings / totalScalingActions;
             LOG.debug("ScalingFactor: scalingOperations = " + scalings + ", " + "totalScalings = " + totalScalingActions);
 
-
             Double overallFactor = instancefactor * 2 - delayFactor - scalingFactor * 0.5;
-            LOG.debug("OverallFactor: overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")");
-
-            LOG.info("###############");
+            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")");
 
             if (overallFactor < 0) {
                 continue;
@@ -291,13 +234,11 @@ public class ReasonerUtility {
 
             if (overallFactor > selectionValue) {
                 selectionValue = overallFactor;
-                selectedOperator = op;
+                selectedOperators.put(op, selectionValue);
             }
         }
 
-
-        LOG.info("##### select operatorType to be scaled down finished. ####");
-        return selectedOperator;
+        return selectedOperators;
     }
 
     
@@ -328,14 +269,14 @@ public class ReasonerUtility {
     				continue;
     			
     			/* Check resources */
-    			if ((otherResource.getCpuCores() - container.getCpuCores()) > 0 && 
+    			if ((otherResource.getCores() - container.getCpuCores()) > 0 &&
     				(otherResource.getMemory() - container.getMemory()) > 0 &&
     				(otherResource.getStorage() - container.getStorage()) > 0){
     				
         			/* Simulate relocation */
     				canRelocate = true;
     				resource.setAmountOfContainer(resource.getAmountOfContainer() + 1);
-    				resource.setCpuCores(resource.getCpuCores() + container.getCpuCores());
+    				resource.setCores(resource.getCores() + container.getCpuCores());
     				resource.setMemory(resource.getMemory() + container.getMemory());
     				resource.setStorage(resource.getStorage() + container.getStorage());
     				

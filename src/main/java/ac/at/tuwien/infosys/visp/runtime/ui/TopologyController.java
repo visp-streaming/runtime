@@ -118,7 +118,7 @@ public class TopologyController {
             RestTemplate restTemplate = new RestTemplate();
             try {
                 String url = "http://" + instance.getUri() + ":8080/clear";
-                Map<String, Object> clearResult = restTemplate.getForObject(url, Map.class);
+                Map clearResult = restTemplate.getForObject(url, Map.class);
                 String errorMessage = (String) clearResult.get("errorMessage");
                 if(errorMessage.equals("none")) {
                     LOG.debug("VISP Instance " + instance.getUri() + " replied clear success");

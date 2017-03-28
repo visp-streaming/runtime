@@ -60,12 +60,18 @@ public class TopologyUpdate {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TopologyUpdate that = (TopologyUpdate) o;
 
-        if (!affectedHost.equals(that.affectedHost)) return false;
-        if (action != that.action) return false;
+        if (!affectedHost.equals(that.affectedHost)) {
+            return false;
+        }
+        if (action != that.action) {
+            return false;
+        }
         return affectedOperator.getName().equals(that.getAffectedOperator().getName());
 
     }

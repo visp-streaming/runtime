@@ -34,7 +34,7 @@ public class SortedList<T> extends LinkedList<T> {
 	public boolean addAll(Collection<? extends T> elemCollection) {
 		
 		boolean result = super.addAll(elemCollection);
-		Collections.sort(this, comparator);
+		this.sort(comparator);
 		return result;
 		
 	}

@@ -349,7 +349,7 @@ public class TopologyUpdateHandler {
             try {
                 RestTemplate restTemplate = new RestTemplate();
                 String url = "http://" + runtime + ":8080/checkStatus";
-                Map<String, Object> abortResult = restTemplate.getForObject(url, Map.class);
+                Map abortResult = restTemplate.getForObject(url, Map.class);
                 String status = (String) abortResult.get("onlineStatus");
                 if (status.equals("online")) {
                     isOnline = true;
@@ -371,7 +371,7 @@ public class TopologyUpdateHandler {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/abortTopologyUpdate?hash=" + hash;
             LOG.debug("sending request to url: " + url);
-            Map<String, Object> abortResult = restTemplate.getForObject(url, Map.class);
+            Map abortResult = restTemplate.getForObject(url, Map.class);
             LOG.debug("runtime " + runtime + " replied " + abortResult.get("errorMessage"));
         }
     }
@@ -382,7 +382,7 @@ public class TopologyUpdateHandler {
             RestTemplate restTemplate = new RestTemplate();
             String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
             LOG.debug("sending request to url: " + url);
-            Map<String, Object> commitResult = restTemplate.getForObject(url, Map.class);
+            Map commitResult = restTemplate.getForObject(url, Map.class);
             LOG.debug("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
         }
     }
@@ -438,8 +438,8 @@ public class TopologyUpdateHandler {
                 try {
                     RestTemplate restTemplate = new RestTemplate();
                     String url = "http://" + op.getConcreteLocation().getIpAddress() + ":8080/vispconfiguration/listResourcePools";
-                    List<Map<String, Object>> resourcePools = restTemplate.getForObject(url, List.class);
-                    Map<String, Object> chosenPool = resourcePools.get(new Random().nextInt(resourcePools.size()));
+                    List resourcePools = restTemplate.getForObject(url, List.class);
+                    Map<String, Object> chosenPool = (Map<String, Object>) resourcePools.get(new Random().nextInt(resourcePools.size()));
                     Operator.Location loc = op.getConcreteLocation();
                     op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), (String) chosenPool.get("name")));
                     LOG.debug("Assigning concrete resource pool " + chosenPool.get("name") + " for operator " +

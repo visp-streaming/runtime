@@ -57,7 +57,9 @@ public class ReportingCompressor {
             LOG.error(e.getMessage());
         } finally {
             try {
-                zos.close();
+                if (zos != null) {
+                    zos.close();
+                }
             } catch (IOException e) {
                 LOG.error(e.getMessage());
             }

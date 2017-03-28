@@ -27,7 +27,10 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 @Service
@@ -99,8 +102,6 @@ public class ReasonerBTU {
 
         /**
          * TODO:
-         * - simulate downscaling
-         *   + check for minimal configuration for topology
          *   + check if there are enough downscaling possibilities according to the utility fkt
          *   + provide simulation for utility fkt to evaluate suitable values
          */
@@ -129,6 +130,16 @@ public class ReasonerBTU {
                     List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
                     LOG.info(dh.getName() + " has " + containerToMigrate.size() + " containers which need to be migrated.");
 
+
+                    ResourceAvailability migrationRequirements = new ResourceAvailability(null);
+                    for (DockerContainer dc : containerToMigrate) {
+                        migrationRequirements.incrementCores(dc.getCpuCores());
+                        migrationRequirements.incrementMemory(dc.getMemory());
+                        migrationRequirements.incrementStorage(Float.valueOf(dc.getStorage()));
+                    }
+
+                    Boolean migrationIsPossible = simulateMigration(dh);
+
                     //migrate Container
                     for (DockerContainer dc : containerToMigrate) {
                         if (dc.getStatus() == null) {
@@ -143,17 +154,16 @@ public class ReasonerBTU {
 
                         if (operator==null) {
                             LOG.error("Operator is null");
-                            return;
+                            continue;
                         }
 
                         if (operator.getName()==null) {
                             LOG.error("Operator is null");
-                            return;
+                            continue;
                         }
 
-
                         DockerHost selectedHost = selectSuitableDockerHost(operator, dh);
-                        if (selectedHost.equals(dh)) {
+                        if (!migrationIsPossible || selectedHost.equals(dh)) {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
                                 dh.setBTUend((btuEnd.plusSeconds(btu)));
                                 dhr.save(dh);
@@ -196,6 +206,43 @@ public class ReasonerBTU {
         LOG.info("VISP - Finished Reasoner");
     }
 
+    private Boolean simulateMigration(DockerHost dh) {
+        List<DockerContainer> containerMigrateSimulation = dcr.findByHost(dh.getName());
+        Map<DockerHost, ResourceAvailability> simulationRAS = reasonerUtility.calculateFreeResourcesforHosts(dh);
+
+        List<DockerContainer> migratedSucessful = new ArrayList<>();
+
+        for (DockerContainer dc : containerMigrateSimulation) {
+            for (Map.Entry<DockerHost, ResourceAvailability> ra : simulationRAS.entrySet()) {
+                ResourceAvailability raSingle = ra.getValue();
+
+                Double feasibilityThreshold = Math.min(raSingle.getCores() / dc.getCpuCores(), raSingle.getMemory() / dc.getMemory());
+
+                if (feasibilityThreshold < 1) {
+                    continue;
+                }
+
+                raSingle.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
+                simulationRAS.put(ra.getKey(), raSingle);
+                migratedSucessful.add(dc);
+            }
+        }
+
+        containerMigrateSimulation.removeAll(migratedSucessful);
+
+        if (!containerMigrateSimulation.isEmpty()) {
+            //some operators need to be scaled down to migrate the operators
+            TreeMap<String, Double> potentialScaledowns = reasonerUtility.selectOperatorTobeScaledDown();
+            if (potentialScaledowns == null) {
+                return false;
+            }
+            if (potentialScaledowns.size() < (containerMigrateSimulation.size() + 1)) {
+                //migration cannot be performed, since not enough containes can be scaled down; we assume that all containers have a similar size
+                return false;
+            }
+        }
+        return true;
+    }
 
 
     private synchronized DockerHost selectSuitableDockerHost(Operator op, DockerHost blackListedHost) {
@@ -208,7 +255,13 @@ public class ReasonerBTU {
         DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
         if (host == null) {
-            String scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
+            TreeMap<String, Double> scaledowns = reasonerUtility.selectOperatorTobeScaledDown();
+
+            if (scaledowns == null) {
+                return host;
+            }
+
+            String scaledownoperator = scaledowns.firstKey();
             while (scaledownoperator != null) {
                 //TODO user operator name for scaledown
                 pcm.scaleDown(scaledownoperator);
@@ -216,7 +269,7 @@ public class ReasonerBTU {
                 if (host != null) {
                     break;
                 }
-                scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown();
+                scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown().firstKey();
             }
 
             if (blackListedHost != null) {
@@ -247,7 +300,7 @@ public class ReasonerBTU {
         LOG.info("###### select suitable container for: ######");
         LOG.info("Containerspecs: CPU: " + dc.getCpuCores() + " - RAM: " + dc.getMemory() + " - Storage: " + dc.getStorage());
         for (ResourceAvailability ra : freeResources) {
-            if (ra.getCpuCores() <= dc.getCpuCores()) {
+            if (ra.getCores() <= dc.getCpuCores()) {
                 continue;
             }
             if (ra.getMemory() <= dc.getMemory()) {

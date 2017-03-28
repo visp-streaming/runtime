@@ -188,6 +188,7 @@ public class OperatorMonitor {
             RestTemplate restTemplate = new RestTemplate();
             message = restTemplate.getForObject(url, ProcessingNodeMetricsMessage.class);
         } catch (Exception e) {
+            LOG.error(e.getMessage());
         }
 
         return message;

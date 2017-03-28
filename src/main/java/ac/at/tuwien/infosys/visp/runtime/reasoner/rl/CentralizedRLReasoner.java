@@ -123,9 +123,9 @@ public class CentralizedRLReasoner {
 
 
 		/* Centralized Version of ReLED Controller */
-		controller = new HashMap<String, RLController>();
-		operatorNameToOperator = new HashMap<String, Operator>();
-		cooldownOperators = new HashMap<String, Integer>();
+		controller = new HashMap<>();
+		operatorNameToOperator = new HashMap<>();
+		cooldownOperators = new HashMap<>();
 		
 		/* Generate a new RL Controller for each operatorType */
 		createRLController();
@@ -391,7 +391,13 @@ public class CentralizedRLReasoner {
     	DockerHost candidateHost = null;
     	
     	/* Compute resource availability on each running host */
-        List<ResourceAvailability> availableResources = reasonerUtility.calculateFreeResourcesforHosts(candidateHost);
+
+    	Map<DockerHost, ResourceAvailability> ras = reasonerUtility.calculateFreeResourcesforHosts(candidateHost);
+        List<ResourceAvailability> availableResources = new ArrayList<>();
+
+        for (ResourceAvailability ra : ras.values()) {
+        	availableResources.add(ra);
+		}
 
     	/* Try to use an already running host */
         candidateHost = computePlacementWithLoadBalancing(container, availableResources);
@@ -418,10 +424,15 @@ public class CentralizedRLReasoner {
     		return;
     	
     	/* Compute resource availability on each running host */
-        List<ResourceAvailability> availableResources = reasonerUtility.calculateFreeResourcesforHosts(null);
+		Map<DockerHost, ResourceAvailability> ras = reasonerUtility.calculateFreeResourcesforHosts(null);
+		List<ResourceAvailability> availableResources = new ArrayList<>();
+
+		for (ResourceAvailability ra : ras.values()) {
+			availableResources.add(ra);
+		}
 
     	/* Sort hosts in decreasing order w.r.t. the number of hosted containers */
-    	SortedList<ResourceAvailability> sortedResources = new SortedList<ResourceAvailability>(new LeastLoadedHostFirstComparator());
+    	SortedList<ResourceAvailability> sortedResources = new SortedList<>(new LeastLoadedHostFirstComparator());
     	sortedResources.addAll(availableResources);
 
 		/* Determine host to be turned off and its container relocation */
@@ -492,7 +503,7 @@ public class CentralizedRLReasoner {
     	if (cooldownOperators == null || cooldownOperators.isEmpty())
     		return;
     	
-    	List<String> operatorToRemove = new ArrayList<String>();
+    	List<String> operatorToRemove = new ArrayList<>();
     	
     	for (String operator : cooldownOperators.keySet()){
     		Integer roundToWait = cooldownOperators.get(operator);
@@ -500,7 +511,7 @@ public class CentralizedRLReasoner {
     		if (roundToWait == null || roundToWait.equals(0)){
     			operatorToRemove.add(operator);
     		}else{
-        		roundToWait = new Integer(roundToWait.intValue() - 1);
+        		roundToWait = roundToWait.intValue() - 1;
         		cooldownOperators.put(operator, roundToWait);
     		}
     		
@@ -521,9 +532,9 @@ public class CentralizedRLReasoner {
 		/* Do not scale operators in a cooling down state*/
 		if (cooldownOperators.containsKey(operatorName))
     		return false;
-    	
+
     	return true;
-    	
+
     }
     
  	private Operator createOperatorModel(String operatorName){
@@ -562,11 +573,11 @@ public class CentralizedRLReasoner {
     	
     	if (operator == null || operator.getDeployment() == null)
     		return false;
-    	
-    	if (operator.getDeployment().getResources().size() < 2 && 
+
+    	if (operator.getDeployment().getResources().size() < 2 &&
     			ActionAvailable.SCALE_IN.equals(action.getAction()))
     			return false;
-    	
+
     	return true;
     }
  

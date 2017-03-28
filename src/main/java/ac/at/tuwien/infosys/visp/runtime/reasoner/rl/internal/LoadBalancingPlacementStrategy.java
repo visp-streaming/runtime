@@ -15,7 +15,7 @@ public class LoadBalancingPlacementStrategy implements PlacementStrategy {
         SortedList<ResourceAvailability> candidates = new SortedList<>(new LeastLoadedHostFirstComparator());
         
         for (ResourceAvailability ra : availableResources) {
-            if (ra.getCpuCores() <= container.getCpuCores()) {
+            if (ra.getCores() <= container.getCpuCores()) {
                 continue;
             }
             if (ra.getMemory() <= container.getMemory()) {

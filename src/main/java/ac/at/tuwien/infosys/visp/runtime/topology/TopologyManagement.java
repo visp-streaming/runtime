@@ -163,6 +163,7 @@ public class TopologyManagement {
                     for (Operator source : op.getSources()) {
                         incomingQueues.add(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName()));
                     }
+                    break;
                 }
             }
         }

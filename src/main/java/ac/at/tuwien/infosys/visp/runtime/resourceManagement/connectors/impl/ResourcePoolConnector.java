@@ -106,19 +106,23 @@ public class ResourcePoolConnector extends ResourceConnector {
         } catch (DockerException | InterruptedException e) {
             LOG.error("containers could not be fetched ", e);
         }
-        for (Container container : runningContainer) {
-            try {
-                docker.killContainer(container.id());
-            } catch (DockerException | InterruptedException e) {
-                LOG.error("container " + container.id() + " could not be cleanedup", e);
+        if (runningContainer != null) {
+            for (Container container : runningContainer) {
+                try {
+                    docker.killContainer(container.id());
+                } catch (DockerException | InterruptedException e) {
+                    LOG.error("container " + container.id() + " could not be cleanedup", e);
+                }
             }
         }
 
-        for (Container container : runningContainer) {
-            try {
-                docker.removeContainer(container.id());
-            } catch (DockerException | InterruptedException e) {
-                LOG.error("image " + container.id() + " could not be cleanedup", e);
+        if (runningContainer != null) {
+            for (Container container : runningContainer) {
+                try {
+                    docker.removeContainer(container.id());
+                } catch (DockerException | InterruptedException e) {
+                    LOG.error("image " + container.id() + " could not be cleanedup", e);
+                }
             }
         }
 

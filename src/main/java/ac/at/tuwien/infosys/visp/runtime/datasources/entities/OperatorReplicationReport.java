@@ -37,7 +37,7 @@ public class OperatorReplicationReport {
             this.numberOfReplicas = deployment.getResources().size();
             this.averageUtilization = deployment.getAverageUtilization();
 
-            List<Double> utils = new ArrayList<Double>();
+            List<Double> utils = new ArrayList<>();
             for (Resource r : deployment.getResources()) {
                 utils.add(r.getUtilization());
             }

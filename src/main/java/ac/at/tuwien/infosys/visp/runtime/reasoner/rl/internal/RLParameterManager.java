@@ -50,12 +50,12 @@ public class RLParameterManager {
     	
     	params = ReLEDParametersFactory.createParameters();
 
-    	params.set(ReLEDParamConstants.ALPHA, 	new Double(rlAlpha));
-		params.set(ReLEDParamConstants.LAMBDA, 	new Double(rlLambda));
-		params.set(ReLEDParamConstants.EPSILON, new Double(rlEpsilon));
+    	params.set(ReLEDParamConstants.ALPHA, rlAlpha);
+		params.set(ReLEDParamConstants.LAMBDA, rlLambda);
+		params.set(ReLEDParamConstants.EPSILON, rlEpsilon);
 		
-		params.set(ReLEDParamConstants.USE_ELIGIBILITY_TRACES, new Boolean(rlEligibility));
-		params.set(ReLEDParamConstants.GAMMA, new Double(rlGamma));
+		params.set(ReLEDParamConstants.USE_ELIGIBILITY_TRACES, rlEligibility);
+		params.set(ReLEDParamConstants.GAMMA, rlGamma);
     	
 		return params;
 		
