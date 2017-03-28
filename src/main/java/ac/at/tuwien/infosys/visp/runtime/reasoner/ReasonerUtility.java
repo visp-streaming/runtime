@@ -4,15 +4,13 @@ import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
+import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
@@ -50,6 +48,10 @@ public class ReasonerUtility {
 
     @Autowired
     private ResourceProvider resourceProvider;
+
+    @Autowired
+    private QueueMonitorRepository qmr;
+
 
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
@@ -225,8 +227,15 @@ public class ReasonerUtility {
             Long scalingFactor =  scalings / totalScalingActions;
             LOG.debug("ScalingFactor: scalingOperations = " + scalings + ", " + "totalScalings = " + totalScalingActions);
 
-            Double overallFactor = instancefactor * 2 - delayFactor - scalingFactor * 0.5;
-            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")");
+            QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
+            Integer queueFactor = 0;
+            if (qm.getAmount() < 1) {
+                queueFactor = 10;
+            }
+
+
+            Double overallFactor = instancefactor * 2 - delayFactor - scalingFactor * 0.5 + queueFactor;
+            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");
 
             if (overallFactor < 0) {
                 continue;

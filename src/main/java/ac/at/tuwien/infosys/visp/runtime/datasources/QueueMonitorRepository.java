@@ -10,5 +10,7 @@ public interface QueueMonitorRepository extends CrudRepository<QueueMonitor, Lon
 
     List<QueueMonitor> findFirst5ByOperatorOrderByIdDesc(String operator);
 
+    QueueMonitor findFirstByOperatorOrderByIdDesc(String operator);
+
 
 }

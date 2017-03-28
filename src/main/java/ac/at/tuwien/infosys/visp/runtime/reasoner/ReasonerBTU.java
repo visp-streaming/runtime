@@ -102,7 +102,9 @@ public class ReasonerBTU {
             if (action.equals(ScalingAction.SCALEUP)) {
                 pcm.scaleup(selectSuitableDockerHost(op, null), op);
             }
+
         }
+
         LOG.info("VISP - Finished container scaling");
 
         LOG.info("VISP - Start check if any Hosts need to be shut down");
@@ -132,12 +134,28 @@ public class ReasonerBTU {
                 if (btuEnd.isBefore(potentialHostTerminationTime)) {
                     LOG.info(dh.getName() + " arrives at the end of its BTU - initializing check scaledown procedure");
 
+
                     List<DockerContainer> containerToMigrate = dcr.findByHost(dh.getName());
-                    LOG.info(dh.getName() + " has " + containerToMigrate.size() + " containers which need to be migrated.");
+                    LOG.info(dh.getName() + " has " + containerToMigrate.size() + " containers which need to be migrated or scaled down.");
+
+                    //check if the system can also be scaled down
+                    TreeMap<String, Double> potentialScaledowns = reasonerUtility.selectOperatorTobeScaledDown();
+
+                    List<DockerContainer> remainingcontainer = new ArrayList<>(containerToMigrate);
+
+                    if (potentialScaledowns != null) {
+
+                        for (DockerContainer dc : containerToMigrate) {
+                            if (potentialScaledowns.containsKey(dc.getOperatorName())) {
+                                pcm.scaleDown(dc.getOperatorName());
+                                remainingcontainer.remove(dc);
+                            }
+                        }
+                    }
 
 
                     ResourceTriple migrationRequirements = new ResourceTriple();
-                    for (DockerContainer dc : containerToMigrate) {
+                    for (DockerContainer dc : remainingcontainer) {
                         migrationRequirements.incrementCores(dc.getCpuCores());
                         migrationRequirements.incrementMemory(dc.getMemory());
                         migrationRequirements.incrementStorage(Float.valueOf(dc.getStorage()));
@@ -146,7 +164,7 @@ public class ReasonerBTU {
                     Boolean migrationIsPossible = simulateMigration(dh);
 
                     //migrate Container
-                    for (DockerContainer dc : containerToMigrate) {
+                    for (DockerContainer dc : remainingcontainer) {
                         if (dc.getStatus() == null) {
                             dc.setStatus("running");
                         }
@@ -226,6 +244,15 @@ public class ReasonerBTU {
             }
             if (potentialScaledowns.size() < (containerMigrateSimulation.size() + 1)) {
                 //migration cannot be performed, since not enough containes can be scaled down; we assume that all containers have a similar size
+
+                if (potentialScaledowns.size()>0) {
+                    //TODO fix that constant value
+                    if (potentialScaledowns.firstEntry().getValue()>5) {
+                        //scale down the vms also when they cannot be migrated, wehn the scaledown values are very good; i.e. there is no load left
+                        return true;
+                    }
+                }
+
                 return false;
             }
         }
@@ -255,7 +282,6 @@ public class ReasonerBTU {
 
             String scaledownoperator = scaledowns.firstKey();
             while (scaledownoperator != null) {
-                //TODO use operator name for scaledown
                 pcm.scaleDown(scaledownoperator);
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
                 if (host != null) {
