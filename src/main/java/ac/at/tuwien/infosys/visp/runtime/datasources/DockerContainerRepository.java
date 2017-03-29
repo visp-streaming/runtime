@@ -22,6 +22,9 @@ public interface DockerContainerRepository extends JpaRepository<DockerContainer
 
     List<DockerContainer> findByHost(String host);
 
+    List<DockerContainer> findByHostAndStatus(String host, String status);
+
+
     @Query("SELECT dc FROM DockerContainer dc, DockerHost dh where dh.name = dc.host and dh.resourcepool = :resourcepool and dc.status = 'running' and dc.operatorName = :operatorname")
     List<DockerContainer> findAllRunningByOperatorNameAndResourcepool(@Param("operatorname") String operatorName, @Param("resourcepool") String resourcepool);
 

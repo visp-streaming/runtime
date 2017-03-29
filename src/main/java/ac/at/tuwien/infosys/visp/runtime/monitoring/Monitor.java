@@ -70,7 +70,15 @@ public class Monitor {
             qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator.getName(), queue, queueCount));
         }
 
-        return upscalingDuration(operator, max);
+        ScalingAction sa = upscalingDuration(operator, max);
+
+        if (sa == ScalingAction.DONOTHING) {
+            //assume that we may not have any monitoring information
+            if (max>queueUpscalingThreshold*5) {
+                return ScalingAction.SCALEUP;
+            }
+        }
+        return sa;
     }
 
     public void saveQueueCount(String operator, String infrastructureHost) {

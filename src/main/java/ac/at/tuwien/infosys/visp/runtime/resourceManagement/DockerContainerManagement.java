@@ -60,7 +60,7 @@ public class DockerContainerManagement {
     private static final Logger LOG = LoggerFactory.getLogger(DockerContainerManagement.class);
 
 
-    public void startContainer(DockerHost dh, Operator op) throws DockerException, InterruptedException {
+    public synchronized void startContainer(DockerHost dh, Operator op) throws DockerException, InterruptedException {
         /* Connect to docker server of the host */
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
@@ -136,7 +136,6 @@ public class DockerContainerManagement {
         dhr.save(dh);
 
         LOG.info("VISP - A new container with the ID: " + id + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dh.getName() + " has been started.");
-
     }
 
     public void removeContainer(DockerContainer dc) {
@@ -232,9 +231,7 @@ public class DockerContainerManagement {
             if (!usedPorts.contains(portStr)) {
                 return portStr;
             }
-
         }
-
         return null;
     }
 

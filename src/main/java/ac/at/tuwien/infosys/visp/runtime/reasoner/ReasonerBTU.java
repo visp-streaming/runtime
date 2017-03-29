@@ -144,15 +144,16 @@ public class ReasonerBTU {
                     List<DockerContainer> remainingcontainer = new ArrayList<>(containerToMigrate);
 
                     if (potentialScaledowns != null) {
-
                         for (DockerContainer dc : containerToMigrate) {
                             if (potentialScaledowns.containsKey(dc.getOperatorName())) {
-                                pcm.scaleDown(dc.getOperatorName());
-                                remainingcontainer.remove(dc);
+                                if (dcr.findByOperatorNameAndStatus(dc.getOperatorName(), "running").size() > 1) {
+                                    // ensure that at least one running container remains
+                                    pcm.triggerShutdown(dc);
+                                    remainingcontainer.remove(dc);
+                                }
                             }
                         }
                     }
-
 
                     ResourceTriple migrationRequirements = new ResourceTriple();
                     for (DockerContainer dc : remainingcontainer) {
@@ -203,7 +204,9 @@ public class ReasonerBTU {
                         }
                     }
 
-                    resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
+                   if (dcr.findByHostAndStatus(dh.getName(), "running").isEmpty()) {
+                        resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
+                    }
                 }
             }
         }
