@@ -210,12 +210,19 @@ public class TopologyUpdateHandler {
         return oldSources.equals(newSources);
     }
 
-    public boolean testDeploymentByFile(String filePath) {
+    public boolean testDeploymentByFile(String fileContent) {
         this.lock.lock();
         try {
             //File topologyFile = saveIncomingTopologyFile(filePath);
-            File topologyFile = new File(filePath);
-            topologyManagement.saveTestDeploymentFile(topologyFile, filePath.hashCode());
+
+            File temp = File.createTempFile("testdeployment_topology", ".txt");
+            BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
+            bw.write(fileContent);
+            bw.close();
+            incomingTopologyFilePath = temp.getAbsolutePath();
+            File topologyFile = new File(incomingTopologyFilePath);
+
+            topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
 
             String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
@@ -226,6 +233,8 @@ public class TopologyUpdateHandler {
                 LOG.error(errorMessage);
                 return false;
             }
+        } catch (IOException e) {
+            LOG.error("Not able to generate temp file", e);
         } finally {
             this.lock.unlock();
         }
