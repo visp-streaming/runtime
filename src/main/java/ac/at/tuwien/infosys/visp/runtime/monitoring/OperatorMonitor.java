@@ -94,10 +94,10 @@ public class OperatorMonitor {
 
     	/* Add also data source container */
     	/* TODO: Decouple data source from VISP-Runtime parameters */
-        ProcessingNodeMetricsMessage srcStats = getStatsFromDataSource();
+        /*ProcessingNodeMetricsMessage srcStats = getStatsFromDataSource();
         if (srcStats != null)
             stats.add(srcStats);
-    	
+    	*/
     	/* Process collected stats to obtain: 
     	 *  - processed messages per operatorType
     	 *  - received messages per operatorType
