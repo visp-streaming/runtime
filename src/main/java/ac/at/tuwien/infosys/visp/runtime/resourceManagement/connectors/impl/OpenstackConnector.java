@@ -123,7 +123,7 @@ public class OpenstackConnector extends ResourceConnector {
         }
 
         ServerCreate sc = Builders.server()
-                .name("dockerhost")
+                .name(dh.getName())
                 .flavor(flavor)
                 .image(config.getOpenstackProcessingHostImage())
                 .userData(Base64.encodeAsString(cloudInit))

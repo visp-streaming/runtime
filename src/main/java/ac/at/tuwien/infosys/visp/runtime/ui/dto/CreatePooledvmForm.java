@@ -6,6 +6,7 @@ public class CreatePooledvmForm {
     private String poolname;
     private String flavour;
     private Double cost;
+    private String instanceName;
 
     public String getPoolname() {
         return poolname;
@@ -29,5 +30,13 @@ public class CreatePooledvmForm {
 
     public void setCost(Double cost) {
         this.cost = cost;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
     }
 }

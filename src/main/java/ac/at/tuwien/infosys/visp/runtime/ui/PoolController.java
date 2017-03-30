@@ -78,6 +78,7 @@ public class PoolController {
         CreatePooledvmForm form = new CreatePooledvmForm();
         form.setCost(1.5);
         form.setFlavour("m2.medium");
+        form.setInstanceName("dockerhost");
 
         model.addAttribute("flavours", opc.getFlavours());
         model.addAttribute(form);
@@ -88,7 +89,7 @@ public class PoolController {
     @RequestMapping(value="/pooledvms/createPooledvm", method= RequestMethod.POST)
     public String userCreated(@ModelAttribute CreatePooledvmForm form, Model model) throws SchedulerException {
 
-        DockerHost dh = new DockerHost("dockerhost");
+        DockerHost dh = new DockerHost(form.getInstanceName());
         dh.setFlavour(form.getFlavour());
 
         dh = opc.startVM(dh);
@@ -108,7 +109,7 @@ public class PoolController {
 
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
-        model.addAttribute("message", "A new pooledVM has beeen started.");
+        model.addAttribute("message", "A new pooledVM has been started.");
         model.addAttribute("pools", vms);
 
         rp.updateResourceProvider();
