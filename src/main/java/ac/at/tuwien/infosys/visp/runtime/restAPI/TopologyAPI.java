@@ -129,13 +129,13 @@ public class TopologyAPI {
             LOG.warn("Warning - transmitted hash does not fit locally stored hash - will NOT commit");
             errorMessage = "invalid hash";
         } else {
-            LOG.debug("Hash was correct");
-            if(topologyUpdateHandler.testDeploymentByFile(topologyManagement.getTestDeploymentFile().getAbsolutePath())) {
-                topologyUpdateHandler.commitUpdate(localHash);
-            } else {
-                errorMessage = "Could not actually deploy topology file";
-                LOG.error(errorMessage);
-            }
+            LOG.info("Hash was correct");
+            //if(topologyUpdateHandler.testDeploymentByFile(topologyManagement.getTestDeploymentFile().getAbsolutePath())) {
+            topologyUpdateHandler.commitUpdate(localHash);
+            //} else {
+            //    errorMessage = "Could not actually deploy topology file";
+            //    LOG.error(errorMessage);
+            //}
         }
 
         jsonData.put("action", "commit");

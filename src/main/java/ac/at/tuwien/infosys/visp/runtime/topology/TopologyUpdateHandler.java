@@ -213,14 +213,14 @@ public class TopologyUpdateHandler {
     public boolean testDeploymentByFile(String fileContent) {
         this.lock.lock();
         try {
-            //File topologyFile = saveIncomingTopologyFile(filePath);
+            File topologyFile = saveIncomingTopologyFile(fileContent);
 
-            File temp = File.createTempFile("testdeployment_topology", ".txt");
-            BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
-            bw.write(fileContent);
-            bw.close();
-            incomingTopologyFilePath = temp.getAbsolutePath();
-            File topologyFile = new File(incomingTopologyFilePath);
+//            File temp = File.createTempFile("testdeployment_topology", ".txt");
+//            BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
+//            bw.write(fileContent);
+//            bw.close();
+//            incomingTopologyFilePath = temp.getAbsolutePath();
+//            File topologyFile = new File(incomingTopologyFilePath);
 
             topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
@@ -233,8 +233,6 @@ public class TopologyUpdateHandler {
                 LOG.error(errorMessage);
                 return false;
             }
-        } catch (IOException e) {
-            LOG.error("Not able to generate temp file", e);
         } finally {
             this.lock.unlock();
         }
@@ -534,6 +532,18 @@ public class TopologyUpdateHandler {
 
     public void commitUpdate(int localHash) {
         LOG.info("Commiting update with localHash " + localHash);
+
+        LOG.info("From previously stored deployment file: ");
+        String result;
+        try {
+            if(topologyManagement.getTestDeploymentFile().exists()) {
+                result = new String(Files.readAllBytes(topologyManagement.getTestDeploymentFile().toPath()));
+                LOG.info(result);
+            }
+        } catch (IOException e) {
+            LOG.error(e.getLocalizedMessage());
+        }
+
         // TODO: check if hashes match
         executeUpdate(topologyManagement.getTestDeploymentFile(),
                 computeListOfUpdates(topologyManagement.getTopology(),

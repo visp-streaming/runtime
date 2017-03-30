@@ -23,6 +23,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
@@ -249,6 +251,17 @@ public class TopologyManagement {
          * this method is called by the handling of a REST-call coming from another VISP instance.
          * It stores the topology-file for later deployment
          */
+
+        LOG.info("Saved test deployment file: ");
+        String result;
+        try {
+            if(topologyFile.exists()) {
+                result = new String(Files.readAllBytes(topologyFile.toPath()));
+                LOG.info(result);
+            }
+        } catch (IOException e) {
+            LOG.error(e.getLocalizedMessage());
+        }
 
         this.testDeploymentFile = topologyFile;
         this.testDeploymentHash = hashcode;
