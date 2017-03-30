@@ -13,6 +13,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.*;
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.joda.time.DateTime;
@@ -65,14 +66,27 @@ public class DockerContainerManagement {
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
 
         DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
+        String usedImage = "";
 
         /* Update the list of available docker images */
-        if (!dh.getAvailableImages().contains(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))) {
-            docker.pull(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
-            List<String> availableImages = dh.getAvailableImages();
-            availableImages.add(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
-            dh.setAvailableImages(availableImages);
-            dhr.save(dh);
+        if (!dh.getAvailableImages().contains(op.getType())) {
+            //check if type is a valid dockerimage
+            try {
+                docker.pull(op.getType());
+                List<String> availableImages = dh.getAvailableImages();
+                availableImages.add(op.getType());
+                dh.setAvailableImages(availableImages);
+                dhr.save(dh);
+                usedImage=op.getType();
+            } catch (ImageNotFoundException ex) {
+                LOG.info("Operator type docker image (" + op.getType() + ") is not available - falling back to default image: " + config.getProcessingNodeImage());
+                docker.pull(config.getProcessingNodeImage());
+                List<String> availableImages = dh.getAvailableImages();
+                availableImages.add(config.getProcessingNodeImage());
+                dh.setAvailableImages(availableImages);
+                dhr.save(dh);
+                usedImage=config.getProcessingNodeImage();
+            }
         }
 
         /* Configure environment variables */
@@ -109,7 +123,7 @@ public class DockerContainerManagement {
 
         final ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(operatorConfigurationBootstrap.getImage(dc.getOperatorType()))
+                .image(usedImage)
                 .exposedPorts(processingNodeServerPort)
                 .cmd("sh", "-c", "java -jar vispProcessingNode-0.0.1.jar -Djava.security.egd=file:/dev/./urandom")
                 .env(environmentVariables)
@@ -122,7 +136,7 @@ public class DockerContainerManagement {
 
         /* Save docker container information on repository */
         dc.setContainerid(id);
-        dc.setImage(operatorConfigurationBootstrap.getImage(dc.getOperatorType()));
+        dc.setImage(usedImage);
         dc.setHost(dh.getName());
         dc.setMonitoringPort(hostPort);
         dc.setStatus("running");
