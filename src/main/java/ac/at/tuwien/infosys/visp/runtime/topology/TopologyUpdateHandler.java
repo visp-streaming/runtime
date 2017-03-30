@@ -210,18 +210,10 @@ public class TopologyUpdateHandler {
         return oldSources.equals(newSources);
     }
 
-    public boolean testDeploymentByFile(String fileContent) {
+    public String testDeploymentByFile(String fileContent) {
         this.lock.lock();
         try {
             File topologyFile = saveIncomingTopologyFile(fileContent);
-
-//            File temp = File.createTempFile("testdeployment_topology", ".txt");
-//            BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
-//            bw.write(fileContent);
-//            bw.close();
-//            incomingTopologyFilePath = temp.getAbsolutePath();
-//            File topologyFile = new File(incomingTopologyFilePath);
-
             topologyManagement.saveTestDeploymentFile(topologyFile, fileContent.hashCode());
             List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
 
@@ -231,13 +223,13 @@ public class TopologyUpdateHandler {
                 String errorMessage = "Critical error - Could not deploy topology on remote instance " +
                         config.getRuntimeIP() + "; error: [" + ownDeploymentError + "]";
                 LOG.error(errorMessage);
-                return false;
+                return ownDeploymentError;
             }
         } finally {
             this.lock.unlock();
         }
         LOG.info("testDeployment is possible!");
-        return true;
+        return "ok";
     }
 
     public UpdateResult handleUpdateFromUser(String fileContent) throws UnsupportedEncodingException {
@@ -249,8 +241,22 @@ public class TopologyUpdateHandler {
          */
 
 
-        File topologyFile = saveIncomingTopologyFile(fileContent);
-        List<TopologyUpdate> updates = computeUpdatesFromNewTopologyFile();
+        File topologyFile;
+        List<TopologyUpdate> updates;
+
+        try {
+            fileContent = new String(Files.readAllBytes(
+                    Paths.get(topologyParser.generateTopologyFile(
+                            assignConcreteResourcePools(topologyParser.parseTopologyFromString(fileContent).topology)))));
+            topologyFile = saveIncomingTopologyFile(fileContent);
+            updates = computeUpdatesFromNewTopologyFile();
+        } catch (IOException e) {
+            LOG.error("Could not assign concrete resource pools for uploaded topology", e.getLocalizedMessage());
+            UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.DEPLOYMENT_NOT_POSSIBLE);
+            result.setErrorMessage("Deployment not possible - could not assign resource pools");
+            return result;
+        }
+
 
         // first check if local deployment is even possible - otherwise do not waste time to contact other instances
         String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
@@ -277,17 +283,11 @@ public class TopologyUpdateHandler {
             return result;
         }
 
-        try {
-            fileContent = new String(Files.readAllBytes(
-                    Paths.get(topologyParser.generateTopologyFile(
-                            assignConcreteResourcePools(topologyParser.parseTopologyFromString(fileContent).topology)))));
-            topologyFile = saveIncomingTopologyFile(fileContent);
-            updates = computeUpdatesFromNewTopologyFile();
-        } catch (IOException e) {
-            LOG.error("Could not assign concrete resource pools for uploaded topology", e.getLocalizedMessage());
-        }
+
 
         int hash = fileContent.hashCode();
+
+        List<String> collectedErrorMessages = new ArrayList<>();
 
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
@@ -300,6 +300,7 @@ public class TopologyUpdateHandler {
             if (!result.isDeploymentPossible()) {
                 allInvolvedRuntimesAgree = false;
                 listOfFailedRuntimes.add(runtime);
+                collectedErrorMessages.add("Runtime [" + runtime + "]: " + result.getErrorMessage());
             }
         }
 
@@ -322,7 +323,8 @@ public class TopologyUpdateHandler {
             sendAbortSignalToRuntimes(contactedRuntimes, hash);
             updateResult.setStatus(UpdateResult.UpdateStatus.DEPLOYMENT_NOT_POSSIBLE);
             updateResult.setDotPath(null);
-            updateResult.setErrorMessage("Deployment not possible for the following runtimes: " + String.join(", ", listOfFailedRuntimes));
+            updateResult.setErrorMessage("Deployment not possible for the following runtimes: " + String.join(", ", listOfFailedRuntimes) + "\n\n" +
+            String.join(";\n", collectedErrorMessages));
         }
         updateResult.dotPath = pngPath;
 

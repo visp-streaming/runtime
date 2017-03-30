@@ -77,7 +77,11 @@ public class TopologyAPI {
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(file.getBytes());
             String fileContent = IOUtils.toString(stream, "UTF-8");
-            deploymentPossible = topologyUpdateHandler.testDeploymentByFile(fileContent);
+            String deploymentResult = topologyUpdateHandler.testDeploymentByFile(fileContent);
+            deploymentPossible = "ok".equals(deploymentResult);
+            if(!deploymentPossible) {
+                errorMessage = deploymentResult;
+            }
         }
         catch (Exception e) {
             LOG.error("Deployment not possible: " + e.getLocalizedMessage());

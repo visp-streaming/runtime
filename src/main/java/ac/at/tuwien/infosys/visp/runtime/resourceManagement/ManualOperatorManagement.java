@@ -125,11 +125,7 @@ public class ManualOperatorManagement {
         }
 
         if (!deploymentPossible) {
-            String result = "";
-            for (String error : errorMessages) {
-                result+=error + "\n";
-            }
-            return result;
+            return String.join(";", errorMessages);
         }
 
         //check the resource requirements for the new operators for each pool respectively
@@ -171,11 +167,7 @@ public class ManualOperatorManagement {
             }
 
             if (!deploymentPossible) {
-                String result = "";
-                for (String error : errorMessages) {
-                    result+=error + "\n";
-                }
-                return result;
+                return String.join(";\n", errorMessages);
             }
         }
 
