@@ -3,18 +3,26 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.Sink;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
+import ac.at.tuwien.infosys.visp.common.resources.ResourcePoolUsage;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
+@DependsOn("configurationprovider")
 public class ManualOperatorManagement {
 
     @Autowired
@@ -27,7 +35,13 @@ public class ManualOperatorManagement {
     private ResourceUsage resourceUsage;
 
     @Autowired
+    private ResourceProvider resourceProvider;
+
+    @Autowired
     private ReasonerUtility reasonerUtility;
+
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(ManualOperatorManagement.class);
 
@@ -84,31 +98,88 @@ public class ManualOperatorManagement {
         pcm.removeAll(op, resourcePool);
     }
 
+    /**
+     *
+     * @param ops List of operators which are intended to be deployed
+     * @return either "ok" or a string containing error messages splitted by newlines
+     */
     public String testDeployment(List<Operator> ops) {
-        /**
-         * must return "ok" if deployment is possible, a nice error message otherwise
-         * input "ops" only contains operators for this runtime instance
-         */
-        return "ok";
-        //return "not enough RAM";
-        // TODO: check if specified resource pool exists
 
-        // TODO: for each resource pool
-        //List<> resourcePools = ResourceProvider
-//        ResourceTriple usage = resourceUsage.calculateUsageForPool(resourcepool).getPlannedResources();
-//
-//        for (Operator op : ops) {
-//            DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
-//            try {
-//                usage.decrementCores(dc.getCores());
-//                usage.decrementMemory(dc.getMemory());
-//                usage.decrementStorage(Float.valueOf(dc.getStorage()));
-//            } catch (Exception e) {
-//                LOG.warn(e.getLocalizedMessage());
-//                return false;
-//            }
-//        }
-//        return true;
+        Boolean deploymentPossible = true;
+        List<String> errorMessages = new ArrayList<>();
+
+        Map<String, String> pools = resourceProvider.getResourceProviders();
+
+        for (Operator op : ops) {
+            //check if all operators are assigned to the correct runtime
+            if (!op.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
+                errorMessages.add("Operator \"" + op.getName() + "\" is assigned to another VISP runtime \"" + op.getConcreteLocation().getIpAddress() + "\"");
+                deploymentPossible = false;
+            }
+
+            //check if all resource pools are available
+            if (!pools.containsKey(op.getConcreteLocation().getResourcePool())) {
+                errorMessages.add("Resourcepool \"" + op.getConcreteLocation().getResourcePool() + "\" for operator \"" + op.getName() + "\"");
+                deploymentPossible = false;
+            }
+        }
+
+        if (!deploymentPossible) {
+            String result = "";
+            for (String error : errorMessages) {
+                result+=error + "\n";
+            }
+            return result;
+        }
+
+        //check the resource requirements for the new operators for each pool respectively
+        for (String pool : resourceProvider.getResourceProviders().keySet()) {
+            List<Operator> currentOps = new ArrayList<>();
+
+            for (Operator op : ops) {
+                if (op.getConcreteLocation().getResourcePool().equals(pool)) {
+                    currentOps.add(op);
+                }
+            }
+
+            ResourceTriple requiredResources = new ResourceTriple();
+            for (Operator op : currentOps) {
+                DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
+                requiredResources.increment(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
+            }
+
+            ResourcePoolUsage usage = resourceUsage.calculateUsageForPool(pool);
+
+            ResourceTriple availableResources = new ResourceTriple(
+                    usage.getOverallResources().getCores() - usage.getPlannedResources().getCores(),
+                    usage.getOverallResources().getMemory() - usage.getPlannedResources().getMemory(),
+                    usage.getOverallResources().getStorage() - usage.getPlannedResources().getStorage());
+
+            if (availableResources.getCores()<requiredResources.getCores()) {
+                errorMessages.add("Resourcepool \"" + pool + "\" has too little CPU resources.");
+                deploymentPossible = false;
+            }
+
+            if (availableResources.getMemory()<requiredResources.getMemory()) {
+                errorMessages.add("Resourcepool \"" + pool + "\" has too little memory resources.");
+                deploymentPossible = false;
+            }
+
+            if (availableResources.getStorage()<requiredResources.getStorage()) {
+                errorMessages.add("Resourcepool \"" + pool + "\" has too little storage resources.");
+                deploymentPossible = false;
+            }
+
+            if (!deploymentPossible) {
+                String result = "";
+                for (String error : errorMessages) {
+                    result+=error + "\n";
+                }
+                return result;
+            }
+        }
+
+        return "ok";
     }
 
 
