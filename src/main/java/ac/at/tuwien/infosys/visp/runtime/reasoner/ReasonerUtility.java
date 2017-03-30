@@ -5,10 +5,7 @@ import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
@@ -51,6 +48,9 @@ public class ReasonerUtility {
 
     @Autowired
     private QueueMonitorRepository qmr;
+
+    @Autowired
+    private BTULoggingRepository btur;
 
 
     @Value("${visp.relaxationfactor}")
@@ -195,7 +195,7 @@ public class ReasonerUtility {
         for (Map.Entry<String, Integer> operatortype : operatorInstances.entrySet()) {
             String op = operatortype.getKey();
             // calculate instances impact factor
-            Integer instancefactor = (operatortype.getValue() - minInstances) / (maxInstances - minInstances);
+            Double instancefactor = (operatortype.getValue() - minInstances) / (maxInstances - minInstances) * 1.0;
             LOG.debug("InstanceFactor: # = " + operatortype.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
 
             //calculate qos impact factor
@@ -218,13 +218,17 @@ public class ReasonerUtility {
             }
 
             //calculate delayfactor
-            double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(operatortype.getKey())).getExpectedDuration();
+            Double expectedDuration = ((ProcessingOperator)topologyMgmt.getOperatorByIdentifier(operatortype.getKey())).getExpectedDuration();
+            if (expectedDuration == Double.NaN) {
+                expectedDuration = 100.0;
+            }
+
             Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
             LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 
             //calculate scaling actions factor
             Long scalings = scr.countByOperator(operatortype.getKey());
-            Long scalingFactor =  scalings / totalScalingActions;
+            Double scalingFactor =  scalings / totalScalingActions * 1.0;
             LOG.debug("ScalingFactor: scalingOperations = " + scalings + ", " + "totalScalings = " + totalScalingActions);
 
             QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
@@ -233,9 +237,16 @@ public class ReasonerUtility {
                 queueFactor = 10;
             }
 
+            Double instanceFactorWeighted = instancefactor * 2.0;
+            Double delayFactorWeighted = delayFactor * 1.0;
+            Double scalingFactorWeighted = scalingFactor * 0.5;
 
-            Double overallFactor = instancefactor * 2 - delayFactor - scalingFactor * 0.5 + queueFactor;
+            Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
             LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");
+
+            BTULogging btuLogging = new BTULogging(op, overallFactor, instancefactor, instanceFactorWeighted, operatortype.getValue(), maxInstances, minInstances, delayFactor, delayFactorWeighted, expectedDuration, avgDuration, relaxationfactor, penaltycosts, scalingFactor, scalingFactorWeighted, scalings, totalScalingActions, queueFactor, qm.getAmount());
+            btur.save(btuLogging);
+
 
             if (overallFactor < 0) {
                 continue;
