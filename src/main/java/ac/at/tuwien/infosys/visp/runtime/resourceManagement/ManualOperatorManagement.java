@@ -145,11 +145,16 @@ public class ManualOperatorManagement {
             }
 
             ResourcePoolUsage usage = resourceUsage.calculateUsageForPool(pool);
-
+            
+            /*
+            //Activate when also considering already running nodes
             ResourceTriple availableResources = new ResourceTriple(
                     usage.getOverallResources().getCores() - usage.getPlannedResources().getCores(),
                     usage.getOverallResources().getMemory() - usage.getPlannedResources().getMemory(),
                     usage.getOverallResources().getStorage() - usage.getPlannedResources().getStorage());
+            */
+
+            ResourceTriple availableResources = usage.getOverallResources();
 
             if (availableResources.getCores()<requiredResources.getCores()) {
                 errorMessages.add("Resourcepool \"" + pool + "\" has too little CPU resources.");
