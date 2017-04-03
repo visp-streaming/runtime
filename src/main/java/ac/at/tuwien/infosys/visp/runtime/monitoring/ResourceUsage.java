@@ -71,13 +71,14 @@ public class ResourceUsage {
             }
         }
 
-        actual.setMemory(actual.getMemory()/1024);
+        actual.setMemory(actual.getMemory() / 1024);
+        //CPUstats = usage in % of the assigned shares (from actual resources) from the monitor
+        actual.setCores(planned.getCores() * actual.getCores()/100);
 
         rp.setActualResources(actual);
         rp.setOverallResources(overall);
         rp.setPlannedResources(planned);
 
-        //CPUstats = usage in % of the assigned shares (from actual resources)
 
         return rp;
     }

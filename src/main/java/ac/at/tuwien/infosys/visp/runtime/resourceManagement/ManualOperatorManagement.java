@@ -145,7 +145,7 @@ public class ManualOperatorManagement {
             }
 
             ResourcePoolUsage usage = resourceUsage.calculateUsageForPool(pool);
-            
+
             /*
             //Activate when also considering already running nodes
             ResourceTriple availableResources = new ResourceTriple(

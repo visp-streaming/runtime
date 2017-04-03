@@ -26,8 +26,6 @@ public class ResourceAPI {
 
     @RequestMapping(value = {"/getLoad/{pool}"}, method = RequestMethod.GET)
     public ResourcePoolUsage getResourceAvailabilityForPool(@PathVariable String pool) {
-        //CPUstats = usage in % of the assigned shares (from actual resources)
-
         return resourceUsage.calculateUsageForPool(pool);
     }
 }
