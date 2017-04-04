@@ -247,10 +247,14 @@ public class ReasonerUtility {
 
             Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
             LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");
-            
-            BTULogging btuLogging = new BTULogging(op, overallFactor, instancefactor, instanceFactorWeighted, operatortype.getValue(), maxInstances, minInstances, delayFactor, delayFactorWeighted, expectedDuration, avgDuration, relaxationfactor, penaltycosts, scalingFactor, scalingFactorWeighted, scalings, totalScalingActions, queueFactor, qm.getAmount());
-            btur.save(btuLogging);
 
+
+            try {
+                BTULogging btuLogging = new BTULogging(op, overallFactor, instancefactor, instanceFactorWeighted, operatortype.getValue(), maxInstances, minInstances, delayFactor, delayFactorWeighted, expectedDuration, avgDuration, relaxationfactor, penaltycosts, scalingFactor, scalingFactorWeighted, scalings, totalScalingActions, queueFactor, qm.getAmount());
+                btur.save(btuLogging);
+            } catch (Exception e) {
+                LOG.error("could not save BTU logging information");
+            }
 
             if (overallFactor < 0) {
                 continue;
