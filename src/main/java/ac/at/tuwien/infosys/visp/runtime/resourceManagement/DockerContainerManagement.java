@@ -80,12 +80,14 @@ public class DockerContainerManagement {
                 usedImage=op.getType();
             } catch (ImageNotFoundException ex) {
                 LOG.info("Operator type docker image (" + op.getType() + ") is not available - falling back to default image: " + config.getProcessingNodeImage());
-                docker.pull(config.getProcessingNodeImage());
-                List<String> availableImages = dh.getAvailableImages();
-                availableImages.add(config.getProcessingNodeImage());
-                dh.setAvailableImages(availableImages);
-                dhr.save(dh);
-                usedImage=config.getProcessingNodeImage();
+                if (!dh.getAvailableImages().contains(config.getProcessingNodeImage())) {
+                    docker.pull(config.getProcessingNodeImage());
+                    List<String> availableImages = dh.getAvailableImages();
+                    availableImages.add(config.getProcessingNodeImage());
+                    dh.setAvailableImages(availableImages);
+                    dhr.save(dh);
+                    usedImage = config.getProcessingNodeImage();
+                }
             }
         }
 
