@@ -136,8 +136,9 @@ public class TopologyController {
             ResponseEntity<Integer> response = restTemplate
                     .exchange(builder.build().encode().toUri(), HttpMethod.POST, null, Integer.class);
             this.currentOptimizationTaskId = response.getBody();
+            LOG.info("Optimization task with id " + currentOptimizationTaskId + " created.");
         } catch(RestClientException e){
-            System.out.println("ODR Reasoner cannot be requested. Url: " + url);
+            LOG.error("ODR Reasoner cannot be requested. Url: " + url);
             return "ODR Reasoner invocation failed.";
         }
 
@@ -158,8 +159,10 @@ public class TopologyController {
         try {
             restTemplate
                     .exchange(builder.build().encode().toUri(), HttpMethod.DELETE, null, Void.class);
+            currentOptimizationTaskId = null;
+            LOG.info("Optimization Task with id: "+ currentOptimizationTaskId + " deleted." );
         } catch(RestClientException e){
-            System.out.println("ODR Reasoner cannot be requested. Url: " + url);
+            LOG.error("ODR Reasoner cannot be requested. Url: " + url);
         }
     }
 
