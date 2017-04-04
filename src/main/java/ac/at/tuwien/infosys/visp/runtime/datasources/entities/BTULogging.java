@@ -45,20 +45,20 @@ public class BTULogging {
     public BTULogging(String operatorName, Double overallFactor, Double instanceFactor, Double instanceFactorWeighted, Integer instances, Integer maxInstances, Integer minInstances, Double delayFactor, Double delayFactorWeighted, Double expectedDuration, Double avgDuration, Double relaxationFactor, Double penaltyCost, Double scalingFactor, double scalingFactorWeighted, Long scalings, Long totalscalings, Integer queueFactor, Integer queueLoad) {
         this.timeStamp = new DateTime(DateTimeZone.UTC);
         this.operatorName = operatorName;
-        this.overallFactor = overallFactor;
-        this.instanceFactor = instanceFactor;
-        this.instanceFactorWeighted = instanceFactorWeighted;
+        if (overallFactor == Double.NaN) { this.overallFactor = 0.0; } else { this.overallFactor = overallFactor; }
+        if (instanceFactor == Double.NaN) { this.instanceFactor = 0.0; } else { this.instanceFactor = instanceFactor; }
+        if (instanceFactorWeighted == Double.NaN) { this.instanceFactorWeighted = 0.0; } else { this.instanceFactorWeighted = instanceFactorWeighted; }
+        if (delayFactor == Double.NaN) { this.delayFactor = 0.0; } else { this.delayFactor = delayFactor; }
+        if (delayFactorWeighted == Double.NaN) { this.delayFactorWeighted = 0.0; } else { this.delayFactorWeighted = delayFactorWeighted; }
+        if (expectedDuration == Double.NaN) { this.expectedDuration = 0.0; } else { this.expectedDuration = expectedDuration; }
+        if (avgDuration == Double.NaN) { this.avgDuration = 0.0; } else { this.avgDuration = avgDuration; }
+        if (scalingFactor == Double.NaN) { this.scalingFactor = 0.0; } else { this.scalingFactor = scalingFactor; }
+        if (scalingFactorWeighted == Double.NaN) { this.scalingFactorWeighted = 0.0; } else { this.scalingFactorWeighted = scalingFactorWeighted; }
         this.instances = instances;
         this.maxInstances = maxInstances;
         this.minInstances = minInstances;
-        this.delayFactor = delayFactor;
-        this.delayFactorWeighted = delayFactorWeighted;
-        this.expectedDuration = expectedDuration;
-        this.avgDuration = avgDuration;
         this.relaxationFactor = relaxationFactor;
         this.penaltyCost = penaltyCost;
-        this.scalingFactor = scalingFactor;
-        this.scalingFactorWeighted = scalingFactorWeighted;
         this.scalings = scalings;
         this.totalscalings = totalscalings;
         this.queueFactor = queueFactor;

@@ -226,6 +226,10 @@ public class ReasonerUtility {
             Double delayFactor = (avgDuration / expectedDuration * relaxationfactor) * (1 + penaltycosts);
             LOG.debug("DurationFactor: avgDuration = " + avgDuration + ", " + "expectedDuration = " + expectedDuration + ", " + "relaxation = " + relaxationfactor + ", " + "penaltycost = " + penaltycosts);
 
+            if (delayFactor == Double.NaN) {
+                delayFactor = 0.0;
+            }
+
             //calculate scaling actions factor
             Long scalings = scr.countByOperator(operatortype.getKey());
             Double scalingFactor =  scalings / totalScalingActions * 1.0;
@@ -243,7 +247,7 @@ public class ReasonerUtility {
 
             Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
             LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");
-
+            
             BTULogging btuLogging = new BTULogging(op, overallFactor, instancefactor, instanceFactorWeighted, operatortype.getValue(), maxInstances, minInstances, delayFactor, delayFactorWeighted, expectedDuration, avgDuration, relaxationfactor, penaltycosts, scalingFactor, scalingFactorWeighted, scalings, totalScalingActions, queueFactor, qm.getAmount());
             btur.save(btuLogging);
 
