@@ -86,8 +86,8 @@ public class DockerContainerManagement {
                     availableImages.add(config.getProcessingNodeImage());
                     dh.setAvailableImages(availableImages);
                     dhr.save(dh);
-                    usedImage = config.getProcessingNodeImage();
                 }
+                usedImage = config.getProcessingNodeImage();
             }
         }
 
