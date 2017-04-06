@@ -99,8 +99,7 @@ public class ResourceUsage {
         //CPUstats = usage in % of the assigned shares (from actual resources)
         result.setMemory((int) dcm.getMemoryUsage());
 
-        //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
-        ResourceTriple planned = opconf.getExpected();
+        ResourceTriple planned = opconf.getExpected(dcm.getOperator());
         result.setStorage(planned.getStorage());
         result.setCores(planned.getCores() * dcm.getCpuUsage() / 100);
 
@@ -125,8 +124,7 @@ public class ResourceUsage {
             result.incrementCores(dcm.getCpuUsage());
             result.incrementMemory((int) dcm.getMemoryUsage());
 
-            //TODO replace storage as soon as Docker provides information about the size of a container and optionally also consider the size of the state
-            ResourceTriple planned = opconf.getExpected();
+            ResourceTriple planned = opconf.getExpected(dcm.getOperator());
             result.incrementStorage(planned.getStorage());
             counter++;
         }

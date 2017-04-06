@@ -55,7 +55,7 @@ public class OperatorAPI {
             opconfig.setActualDuration(duration/counter);
         }
 
-        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorType).getExpected());
+        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorType).getExpected(operatorType));
         opconfig.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorType(operatorType));
         return opconfig;
     }
@@ -87,7 +87,7 @@ public class OperatorAPI {
             opconfig.setActualDuration(duration/counter);
         }
 
-        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorName).getExpected());
+        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorName).getExpected(operatorName));
         opconfig.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorid(operatorName));
         return opconfig;
     }

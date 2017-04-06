@@ -26,17 +26,32 @@ public class OperatorConfigurationBootstrap {
 
     private String name;
 
-    //TODO replace this with actual resource usage and this should be only a fallback
-    private ResourceTriple expected = new ResourceTriple(0.5, 500,300F);
+    public ResourceTriple getExpected(String operatorType) {
+
+        switch (operatorType) {
+            case "calculateperformance" : return new ResourceTriple(0.05, 430, 300F);
+            case "calculateavailability" : return new ResourceTriple(0.05, 502, 300F);
+            case "calculatequality" : return new ResourceTriple(0.05, 527, 300F);
+            case "distributedata" : return new ResourceTriple(0.7, 452, 300F);
+            case "availability" : return new ResourceTriple(0.13, 573, 300F);
+            case "temperature" : return new ResourceTriple(0.05, 440, 300F);
+            case "warning" : return new ResourceTriple(0.05, 466, 300F);
+            case "generatereport" : return new ResourceTriple(0.05, 452, 300F);
+            case "calculateoee" : return new ResourceTriple(0.1, 464, 300F);
+            default: new ResourceTriple(0.5, 500,300F);
+        }
+
+        return new ResourceTriple(0.5, 500,300F);
+    }
 
     private Double incommingToOutgoingRatio = 0.5;
 
     public DockerContainer createDockerContainerConfiguration(String operator) {
-        return new DockerContainer(operator, operator, expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
+        return new DockerContainer(operator, operator, getExpected(operator).getCores(), getExpected(operator).getMemory(), Math.round(getExpected(operator).getStorage()));
     }
 
     public DockerContainer createDockerContainerConfiguration(Operator operator) {
-        return new DockerContainer(operator.getType(), operator.getName(), expected.getCores(), expected.getMemory(), Math.round(expected.getStorage()));
+        return new DockerContainer(operator.getType(), operator.getName(), getExpected(operator.getType()).getCores(), getExpected(operator.getType()).getMemory(), Math.round(getExpected(operator.getType()).getStorage()));
     }
 
 }
