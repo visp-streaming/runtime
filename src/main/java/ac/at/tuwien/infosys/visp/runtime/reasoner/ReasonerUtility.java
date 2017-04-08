@@ -232,7 +232,7 @@ public class ReasonerUtility {
 
             //calculate scaling actions factor
             Long scalings = scr.countByOperator(operatortype.getKey());
-            Double scalingFactor =  scalings / totalScalingActions * 1.0;
+            Double scalingFactor = Double.valueOf(scalings) / Double.valueOf(totalScalingActions);
             LOG.debug("ScalingFactor: scalingOperations = " + scalings + ", " + "totalScalings = " + totalScalingActions);
 
             QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
@@ -242,8 +242,8 @@ public class ReasonerUtility {
             }
 
             Double instanceFactorWeighted = instancefactor * 2.0;
-            Double delayFactorWeighted = delayFactor * 1.0;
-            Double scalingFactorWeighted = scalingFactor * 0.5;
+            Double delayFactorWeighted = delayFactor * 1.5;
+            Double scalingFactorWeighted = scalingFactor * 2.5;
 
             Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
             LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");

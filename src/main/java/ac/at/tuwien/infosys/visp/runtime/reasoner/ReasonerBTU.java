@@ -26,10 +26,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 
 @Service
@@ -96,7 +93,12 @@ public class ReasonerBTU {
         LOG.info("VISP - Start container scaling");
 
 
-        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
+        List<Operator> runningOperators = topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP());
+
+        //shuffle List not to prioritize the operators which are at the beginning of the config file and have an equal distribution for all operators
+        Collections.shuffle(runningOperators, new Random());
+
+        for (Operator op : runningOperators) {
             ScalingAction action = monitor.analyze(op);
 
             if (action.equals(ScalingAction.SCALEUP)) {
