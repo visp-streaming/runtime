@@ -165,7 +165,8 @@ public class OpenstackConnector extends ResourceConnector {
         dh.setName(server.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);
-        dh.setMemory(flavor.getRam());
+        //provide 10 % of buffer for ram, because the actual ram usage is fluctuating
+        dh.setMemory((int) (flavor.getRam() *  0.9));
         //size in GB
         dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);

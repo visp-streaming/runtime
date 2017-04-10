@@ -164,13 +164,16 @@ public class DockerContainerManagement {
             int maxTries = 5;
             while(true) {
                 try {
-                    docker.killContainer(dc.getContainerid());
+                    if (docker.ping().equals("OK")) {
+                        docker.killContainer(dc.getContainerid());
+                    }
                     break;
                 } catch (InterruptedException | DockerException e) {
                     LOG.warn("Could not kill a docker container - trying again.", e);
                     if (++count == maxTries) throw e;
                 }
-            }        } catch (DockerException | InterruptedException e) {
+            }
+        } catch (DockerException | InterruptedException e) {
             LOG.error("Could not kill the container", e);
         }
 

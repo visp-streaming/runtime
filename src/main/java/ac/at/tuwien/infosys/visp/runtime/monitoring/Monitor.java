@@ -10,17 +10,21 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
-import com.rabbitmq.client.AMQP;
+import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -57,8 +61,13 @@ public class Monitor {
         Integer min = 0;
 
         for (String queue : queues) {
-            //TODO test if this is actually working and whether they always use the real host for monitoring
-            Integer queueCount = getQueueCount(queue, operator.getConcreteLocation().getIpAddress());
+            QueueMonitor qm = getQueueCount(queue, operator);
+
+            if (qm == null) {
+                continue;
+            }
+
+            Integer queueCount = qm.getAmount();
             if (queueCount < min) {
                 min = queueCount;
             }
@@ -67,7 +76,7 @@ public class Monitor {
                 max = queueCount;
             }
 
-            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator.getName(), queue, queueCount));
+            qmr.save(qm);
         }
 
         ScalingAction sa = upscalingDuration(operator, max);
@@ -85,13 +94,10 @@ public class Monitor {
 
     	List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
 
+    	//TODO fixme
         for (String queue : queues) {
-        
-        	Integer queueCount = getQueueCount(queue, infrastructureHost);
-            qmr.save(new QueueMonitor(new DateTime(DateTimeZone.UTC), operator, queue, queueCount));
-        
+        	qmr.save(getQueueCount(queue, null));
         }
-
     }
 
     private ScalingAction upscalingDuration(Operator operator, Integer maxQueue) {
@@ -163,25 +169,35 @@ public class Monitor {
 
     
     
-    private Integer getQueueCount(final String name, String infrastructureHost) {
+    private QueueMonitor getQueueCount(String queueName, Operator op) {
+        String operatorName = op.getName();
+        String infrastructureHost = op.getConcreteLocation().getIpAddress();
 
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(infrastructureHost);
-        connectionFactory.setUsername(rabbitmqUsername);
-        connectionFactory.setPassword(rabbitmqPassword);
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .basicAuthorization(rabbitmqUsername, rabbitmqPassword)
+                .build();
 
-        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+        queueName = queueName.replace("/", "%2F");
+        queueName = queueName.replace(">", "%3E");
 
-        Integer queueLoad = 0;
+        String URI = "http://" + infrastructureHost + ":15672/api/queues/%2F/" + queueName;
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URI);
+        UriComponents components = builder.build(true);
+
+        ResponseEntity<BaseJsonNode> response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
+
+
         try {
-            AMQP.Queue.DeclareOk declareOk = admin.getRabbitTemplate().execute(channel -> channel.queueDeclarePassive(name));
-            queueLoad = declareOk.getMessageCount();
-            LOG.info("Current load for queue: " + name + " is " + queueLoad);
-        } catch (Exception e) {
-            LOG.warn("Queue \"" + name + "\" is not available.");
+            BaseJsonNode arrayNode = response.getBody();
+            Double incoming = arrayNode.findValue("message_state").findValue("publish_details").findValue("rate").asDouble();
+            Integer queueload = arrayNode.findValue("messages").asInt();
+            LOG.info("Current load for queue: " + queueName + " is " + queueload);
+            return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueName, queueload, incoming);
+        } catch (Exception ex) {
+            LOG.warn("Queue \"" + queueName + "\" is not available.");
         }
+    return null;
 
-        connectionFactory.destroy();
-
-        return queueLoad;
     }
 }

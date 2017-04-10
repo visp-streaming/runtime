@@ -23,11 +23,12 @@ public class QueueMonitor {
     private String operator;
     private String queue;
     private Integer amount;
+    private Double incomingRate;
 
     public QueueMonitor() {
     }
 
-    public QueueMonitor(DateTime time, String operator, String queue, Integer amount) {
+    public QueueMonitor(DateTime time, String operator, String queue, Integer amount, Double incomingRate) {
         this.time = time;
         this.operator = operator;
         this.queue = queue;
