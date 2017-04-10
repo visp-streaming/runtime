@@ -33,6 +33,7 @@ public class QueueMonitor {
         this.operator = operator;
         this.queue = queue;
         this.amount = amount;
+        this.incomingRate = incomingRate;
     }
 
 }

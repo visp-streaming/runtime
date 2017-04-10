@@ -190,11 +190,12 @@ public class Monitor {
 
         try {
             BaseJsonNode arrayNode = response.getBody();
-            Double incoming = arrayNode.findValue("message_state").findValue("publish_details").findValue("rate").asDouble();
+            Double incoming = arrayNode.findValue("message_stats").findValue("publish_details").findValue("rate").asDouble();
             Integer queueload = arrayNode.findValue("messages").asInt();
             LOG.info("Current load for queue: " + queueName + " is " + queueload);
             return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueName, queueload, incoming);
         } catch (Exception ex) {
+            ex.printStackTrace();
             LOG.warn("Queue \"" + queueName + "\" is not available.");
         }
     return null;
