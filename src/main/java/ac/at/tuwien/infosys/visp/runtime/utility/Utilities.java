@@ -3,7 +3,6 @@ package ac.at.tuwien.infosys.visp.runtime.utility;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
-import ac.at.tuwien.infosys.visp.runtime.reporting.ReportingScalingActivities;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.RabbitMqManager;
@@ -25,9 +24,6 @@ import java.util.LinkedHashMap;
 @Service
 @DependsOn({"configurationprovider", "resourceProvider"})
 public class Utilities {
-
-    @Autowired
-    private ReportingScalingActivities rsa;
 
     @Autowired
     private DockerHostRepository dhr;
@@ -58,9 +54,6 @@ public class Utilities {
 
     @Autowired
     private StringRedisTemplate template;
-
-    @Autowired
-    private ReportingCompressor compressor;
 
     @Autowired
     private TopologyManagement topologyManagement;
@@ -144,12 +137,6 @@ public class Utilities {
         }
     }
 
-    public void exportData() {
-        //TODO provide HTML interface to export Data
-        rsa.generateCSV();
-        compressor.zipIt();
-        compressor.cleanup();
-    }
 
     private void resetPooledVMs() {
         for (PooledVM vm : pvmr.findAll()) {

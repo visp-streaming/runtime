@@ -3,6 +3,7 @@ package ac.at.tuwien.infosys.visp.runtime.monitoring;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
@@ -19,8 +20,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
@@ -29,6 +32,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.List;
 
 @Service
+@DependsOn("configurationprovider")
 public class Monitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
@@ -54,6 +58,29 @@ public class Monitor {
     @Autowired
     private TopologyManagement topologyMgmt;
 
+    @Autowired
+    private Configurationprovider config;
+
+    @Scheduled(fixedRateString = "${visp.monitor.period}")
+    public void recordData() {
+        List<Operator> runningOperators = topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP());
+
+        for (Operator op : runningOperators) {
+            List<String> queues = topologyMgmt.getIncomingQueuesAsList(op.getName());
+
+            for (String queue : queues) {
+                QueueMonitor qm = getQueueCount(queue, op);
+
+                if (qm == null) {
+                    continue;
+                }
+
+                qmr.save(qm);
+            }
+        }
+    }
+
+
     public ScalingAction analyze(Operator operator) {
         List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator.getName());
 
@@ -75,8 +102,6 @@ public class Monitor {
             if (queueCount > max) {
                 max = queueCount;
             }
-
-            qmr.save(qm);
         }
 
         ScalingAction sa = upscalingDuration(operator, max);
@@ -187,15 +212,15 @@ public class Monitor {
         UriComponents components = builder.build(true);
 
         ResponseEntity<BaseJsonNode> response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
-        
+
         try {
             BaseJsonNode arrayNode = response.getBody();
             Double incoming = 0.0;
-            if (arrayNode.findValue("message_stats").findValue("publish_details")!=null) {
+            if (arrayNode.findValue("message_stats").findValue("publish_details") != null) {
                 incoming = arrayNode.findValue("message_stats").findValue("publish_details").findValue("rate").asDouble();
             }
             Integer queueload = arrayNode.findValue("messages").asInt();
-            LOG.info("Current load for queue: " + queueNameRaw + " is " + queueload);
+            LOG.debug("Current load for queue: " + queueNameRaw + " is " + queueload + ".");
             return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
         } catch (Exception ex) {
             LOG.warn("Queue \"" + queueNameRaw + "\" is not available.");

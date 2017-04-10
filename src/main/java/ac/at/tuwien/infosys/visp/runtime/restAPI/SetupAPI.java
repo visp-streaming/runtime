@@ -18,11 +18,6 @@ public class SetupAPI {
         utilities.clearAll();
     }
 
-    @RequestMapping(value = {"/export"}, method = RequestMethod.GET)
-    public void cleanup() {
-        utilities.exportData();
-    }
-
 }
 
 

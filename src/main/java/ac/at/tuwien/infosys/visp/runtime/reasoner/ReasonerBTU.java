@@ -92,7 +92,6 @@ public class ReasonerBTU {
 
         LOG.info("VISP - Start container scaling");
 
-
         List<Operator> runningOperators = topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP());
 
         //shuffle List not to prioritize the operators which are at the beginning of the config file and have an equal distribution for all operators
