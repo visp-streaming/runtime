@@ -177,6 +177,7 @@ public class Monitor {
                 .basicAuthorization(rabbitmqUsername, rabbitmqPassword)
                 .build();
 
+        String queueNameRaw = queueName;
         queueName = queueName.replace("/", "%2F");
         queueName = queueName.replace(">", "%3E");
 
@@ -186,17 +187,18 @@ public class Monitor {
         UriComponents components = builder.build(true);
 
         ResponseEntity<BaseJsonNode> response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
-
-
+        
         try {
             BaseJsonNode arrayNode = response.getBody();
-            Double incoming = arrayNode.findValue("message_stats").findValue("publish_details").findValue("rate").asDouble();
+            Double incoming = 0.0;
+            if (arrayNode.findValue("message_stats").findValue("publish_details")!=null) {
+                incoming = arrayNode.findValue("message_stats").findValue("publish_details").findValue("rate").asDouble();
+            }
             Integer queueload = arrayNode.findValue("messages").asInt();
-            LOG.info("Current load for queue: " + queueName + " is " + queueload);
-            return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueName, queueload, incoming);
+            LOG.info("Current load for queue: " + queueNameRaw + " is " + queueload);
+            return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            LOG.warn("Queue \"" + queueName + "\" is not available.");
+            LOG.warn("Queue \"" + queueNameRaw + "\" is not available.");
         }
     return null;
 
