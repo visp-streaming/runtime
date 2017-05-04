@@ -11,6 +11,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
@@ -216,11 +217,19 @@ public class Monitor {
         try {
             BaseJsonNode arrayNode = response.getBody();
             Double incoming = 0.0;
-            if (arrayNode.findValue("message_stats").findValue("publish_details") != null) {
-                incoming = arrayNode.findValue("message_stats").findValue("publish_details").findValue("rate").asDouble();
-            }
-            Integer queueload = arrayNode.findValue("messages").asInt();
+            Integer queueload = 0;
+            if (arrayNode!=null) {
+                JsonNode rateNode = arrayNode.findValue("message_stats").findValue("publish_details");
+
+                if (rateNode != null) {
+                    if (rateNode.findValue("rate")!=null) {
+                        incoming = rateNode.asDouble();
+                    }
+                }
+                
+            queueload = arrayNode.findValue("messages").asInt();
             LOG.debug("Current load for queue: " + queueNameRaw + " is " + queueload + ".");
+            }
             return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
         } catch (Exception ex) {
             LOG.warn("Queue \"" + queueNameRaw + "\" is not available.");
