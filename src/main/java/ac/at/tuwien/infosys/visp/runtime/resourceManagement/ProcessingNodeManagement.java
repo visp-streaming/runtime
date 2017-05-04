@@ -60,6 +60,8 @@ public class ProcessingNodeManagement {
                     break;
                 } catch (InterruptedException | DockerException e) {
                     LOG.warn("Could not start a docker container - trying again.", e);
+                    //increase port number to avoid any potential conflicts
+                    dcm.increasePortNumber(dh);
                     if (++count == maxTries) throw e;
                 }
             }

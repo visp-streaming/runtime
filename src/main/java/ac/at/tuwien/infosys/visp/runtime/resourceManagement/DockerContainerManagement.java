@@ -275,4 +275,11 @@ public class DockerContainerManagement {
         }
     }
 
+    public void increasePortNumber(DockerHost dh) {
+        List<String> usedPorts = dh.getUsedPorts();
+        usedPorts.add(getAvailablePortOnHost(dh));
+        dh.setUsedPorts(usedPorts);
+        dhr.save(dh);
+    }
+
 }
