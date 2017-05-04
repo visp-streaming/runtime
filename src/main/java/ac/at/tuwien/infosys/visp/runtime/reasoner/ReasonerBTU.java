@@ -13,6 +13,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
@@ -63,6 +64,9 @@ public class ReasonerBTU {
     @Autowired
     private Configurationprovider config;
 
+    @Autowired
+    private DockerContainerManagement dcm;
+
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
@@ -84,6 +88,18 @@ public class ReasonerBTU {
 
         pcm.removeContainerWhichAreFlaggedToShutdown();
 
+        //check for operators which failed to startup (e.g. due to little memory)
+
+        List<DockerContainer> checkContainers = dcr.findAll();
+
+        for (DockerContainer dc : checkContainers) {
+            if (!dcm.checkIfContainerIsRunning(dc)) {
+                dcm.removeContainer(dc);
+                sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "cleanup", dc.getHost()));
+            }
+        }
+
+
         for (String key : resourceProvider.getResourceProviders().keySet()) {
             resourceProvider.get(key).removeHostsWhichAreFlaggedToShutdown();
         }
@@ -103,7 +119,6 @@ public class ReasonerBTU {
             if (action.equals(ScalingAction.SCALEUP)) {
                 pcm.scaleup(selectSuitableDockerHost(op, null), op);
             }
-
         }
 
         LOG.info("VISP - Finished container scaling");

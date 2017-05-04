@@ -264,4 +264,15 @@ public class DockerContainerManagement {
         }
     }
 
+    public Boolean checkIfContainerIsRunning(DockerContainer dc) {
+        DockerHost dh = dhr.findFirstByName(dc.getHost());
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(5000).build();
+        try {
+            final ContainerInfo info = docker.inspectContainer(dc.getContainerid());
+            return info.state().running();
+        } catch (DockerException | InterruptedException e) {
+            return true;
+        }
+    }
+
 }
