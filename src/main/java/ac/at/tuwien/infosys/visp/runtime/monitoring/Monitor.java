@@ -223,10 +223,10 @@ public class Monitor {
 
                 if (rateNode != null) {
                     if (rateNode.findValue("rate")!=null) {
-                        incoming = rateNode.asDouble();
+                        incoming = rateNode.findValue("rate").asDouble();
                     }
                 }
-                
+
             queueload = arrayNode.findValue("messages").asInt();
             LOG.debug("Current load for queue: " + queueNameRaw + " is " + queueload + ".");
             }
