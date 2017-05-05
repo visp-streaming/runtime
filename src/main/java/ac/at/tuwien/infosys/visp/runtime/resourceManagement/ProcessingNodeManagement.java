@@ -109,12 +109,13 @@ public class ProcessingNodeManagement {
         triggerShutdown(operators.get(0));
     }
 
-    public void triggerShutdown(DockerContainer dc) {
-         dcm.markContainerForRemoval(dc);
-            dcm.executeCommand(dc, "cd ~ ; touch killme");
 
-            dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
-            sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
-            LOG.debug("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
+    public void triggerShutdown(DockerContainer dc) {
+        dcm.markContainerForRemoval(dc);
+        dcm.executeCommand(dc, "cd ~ ; touch killme");
+
+        dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
+        sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
+        LOG.debug("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
     }
 }

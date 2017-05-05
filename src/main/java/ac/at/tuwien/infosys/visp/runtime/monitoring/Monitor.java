@@ -82,6 +82,9 @@ public class Monitor {
     }
 
 
+
+
+
     public ScalingAction analyze(Operator operator) {
         List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator.getName());
 
@@ -115,6 +118,42 @@ public class Monitor {
         }
         return sa;
     }
+
+
+    public ScalingAction analyzeBasic(Operator operator, Integer upscaling, Integer downscaling) {
+        List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator.getName());
+
+        Integer max = 0;
+        Integer min = 0;
+
+        for (String queue : queues) {
+            QueueMonitor qm = getQueueCount(queue, operator);
+
+            if (qm == null) {
+                continue;
+            }
+
+            Integer queueCount = qm.getAmount();
+            if (queueCount < min) {
+                min = queueCount;
+            }
+
+            if (queueCount > max) {
+                max = queueCount;
+            }
+        }
+
+        if (max > upscaling) {
+            return ScalingAction.SCALEUP;
+        }
+
+        if (max > downscaling) {
+            return ScalingAction.SCALEDOWN;
+        }
+
+        return ScalingAction.DONOTHING;
+    }
+
 
     public void saveQueueCount(String operator, String infrastructureHost) {
 

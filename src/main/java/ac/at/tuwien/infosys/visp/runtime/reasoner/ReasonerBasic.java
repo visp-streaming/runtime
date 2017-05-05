@@ -1,9 +1,11 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
@@ -17,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @DependsOn({"configurationprovider","resourceProvider"})
@@ -68,11 +73,13 @@ public class ReasonerBasic {
         }
 
         LOG.info("VISP - Start Reasoner");
-        LOG.info("VISP - Start check if any Hosts need to be shut down");
+        LOG.info("VISP - Start check if any Hosts can be shut down");
 
         if (dhr.count() > 1) {
 
             for (DockerHost dh : dhr.findAll()) {
+
+                //TODO consider BTU for killing a VM
 
                 if (dcr.findByHost(dh.getName()).size()<1) {
                     resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
@@ -83,7 +90,7 @@ public class ReasonerBasic {
         LOG.info("VISP - Start Container scaleup ");
 
         for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
-            ScalingAction action = monitor.analyze(op);
+            ScalingAction action = monitor.analyzeBasic(op, 200, 0);
 
             if (action.equals(ScalingAction.SCALEUP)) {
                 try {
@@ -94,7 +101,34 @@ public class ReasonerBasic {
             }
 
             if (action.equals(ScalingAction.SCALEDOWN)) {
-                pcm.scaleDown(op.getName());
+
+                List<DockerContainer> operators = dcr.findByOperatorNameAndStatus(op.getName(), "running");
+
+                if (operators.size() < 2) {
+                    LOG.warn("Could not scale down because only one operator instance is left.");
+                    continue;
+                }
+
+                Map<DockerHost, ResourceTriple> resources = reasonerUtility.calculateFreeResourcesforHosts(null);
+
+                ResourceTriple mostResources = null;
+                DockerContainer loneliestOne = operators.get(0);
+
+                for (DockerContainer dc : operators) {
+                    if (mostResources == null) {
+                        mostResources = resources.get(dhr.findFirstByName(dc.getHost()));
+                        loneliestOne = dc;
+                    } else {
+                        ResourceTriple currentResources = resources.get(dhr.findFirstByName(dc.getHost()));
+                        if (currentResources.getMemory() > mostResources.getMemory()) {
+                            if (currentResources.getCores() > mostResources.getCores()) {
+                                mostResources = currentResources;
+                                loneliestOne = dc;
+                            }
+                        }
+                    }
+                }
+                pcm.triggerShutdown(loneliestOne);
             }
         }
 

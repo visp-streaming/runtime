@@ -350,6 +350,4 @@ public class ReasonerUtility {
         throw new Exception("not enough resources available");
     }
 
-
-
 }
