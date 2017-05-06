@@ -5,17 +5,22 @@ import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -54,6 +59,12 @@ public class ReasonerBasic {
     @Autowired
     private Configurationprovider config;
 
+    @Autowired
+    private ScalingActivityRepository sar;
+
+    @Value("${visp.btu}")
+    private Integer btu;
+
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
     /**
@@ -78,11 +89,16 @@ public class ReasonerBasic {
         if (dhr.count() > 1) {
 
             for (DockerHost dh : dhr.findAll()) {
-
-                //TODO consider BTU for killing a VM
-
                 if (dcr.findByHost(dh.getName()).size()<1) {
                     resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
+                }
+
+                DateTime btuEnd = new DateTime(dh.getBTUend());
+
+                if (btuEnd.isBefore(new DateTime(DateTimeZone.UTC))) {
+                    dh.setBTUend((btuEnd.plusSeconds(btu)));
+                    dhr.save(dh);
+                    sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                 }
             }
         }
@@ -96,7 +112,7 @@ public class ReasonerBasic {
                 try {
                     pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                 } catch (Exception e) {
-                    LOG.error(e.getLocalizedMessage());
+                    LOG.error(e.getMessage());
                 }
             }
 

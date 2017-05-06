@@ -150,7 +150,7 @@ public class ResourcePoolConnector extends ResourceConnector {
         pvmr.save(selectedVM);
 
         dhr.delete(dh);
-        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopWM", dh.getName()));
+        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "stopVM", dh.getName()));
     }
 
     private void deleteImage(DockerClient docker, Image img) {
