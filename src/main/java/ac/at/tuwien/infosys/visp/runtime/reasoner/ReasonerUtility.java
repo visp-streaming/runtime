@@ -242,7 +242,7 @@ public class ReasonerUtility {
             }
 
             Double instanceFactorWeighted = instancefactor * 2.0;
-            Double delayFactorWeighted = delayFactor * 1.5;
+            Double delayFactorWeighted = delayFactor * 3;
             Double scalingFactorWeighted = scalingFactor * 2.5;
 
             Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
