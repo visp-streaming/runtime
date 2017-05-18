@@ -16,7 +16,7 @@ public class ErrorMonitor {
 
     @RabbitListener(queues = "error")
     public void assign(Message message) {
-        LOG.warn("Processing Node Exception: " + message.getPayload());
+        LOG.debug("Processing Node Exception: " + message.getPayload());
     }
 
 }

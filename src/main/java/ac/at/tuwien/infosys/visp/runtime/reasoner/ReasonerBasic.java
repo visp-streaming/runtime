@@ -106,7 +106,16 @@ public class ReasonerBasic {
         LOG.info("VISP - Start Container scaleup ");
 
         for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
-            ScalingAction action = monitor.analyzeBasic(op, 200, 0);
+            ScalingAction action = monitor.analyzeBasic(op, 200, 5);
+
+            if (action.equals(ScalingAction.SCALEUPDOUBLE)) {
+                try {
+                    pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                    pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
+                } catch (Exception e) {
+                    LOG.error(e.getMessage());
+                }
+            }
 
             if (action.equals(ScalingAction.SCALEUP)) {
                 try {

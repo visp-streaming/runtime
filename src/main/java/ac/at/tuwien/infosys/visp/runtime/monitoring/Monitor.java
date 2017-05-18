@@ -143,11 +143,15 @@ public class Monitor {
             }
         }
 
+        if (max > (upscaling * 5)) {
+            return ScalingAction.SCALEUPDOUBLE;
+        }
+
         if (max > upscaling) {
             return ScalingAction.SCALEUP;
         }
 
-        if (max > downscaling) {
+        if (max < downscaling) {
             return ScalingAction.SCALEDOWN;
         }
 
