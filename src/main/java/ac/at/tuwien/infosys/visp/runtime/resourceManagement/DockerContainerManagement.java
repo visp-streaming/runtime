@@ -161,7 +161,7 @@ public class DockerContainerManagement {
 
         try {
             int count = 0;
-            int maxTries = 5;
+            int maxTries = 1;
             while(true) {
                 try {
                     if (docker.ping().equals("OK")) {
@@ -179,7 +179,7 @@ public class DockerContainerManagement {
 
         try {
             int count = 0;
-            int maxTries = 5;
+            int maxTries = 1;
             while(true) {
                 try {
                     docker.removeContainer(dc.getContainerid());

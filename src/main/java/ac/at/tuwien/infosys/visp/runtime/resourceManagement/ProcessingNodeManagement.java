@@ -53,7 +53,7 @@ public class ProcessingNodeManagement {
     public Boolean scaleup(DockerHost dh, Operator op) {
         try {
             int count = 0;
-            int maxTries = 5;
+            int maxTries = 3;
             while(true) {
                 try {
                     dcm.startContainer(dh, op);
