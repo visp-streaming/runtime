@@ -29,13 +29,13 @@ public class OperatorConfigurationBootstrap {
     public ResourceTriple getExpected(String operatorType) {
 
         switch (operatorType) {
-            case "calculateperformance" : return new ResourceTriple(0.05, 430, 300F);
-            case "calculateavailability" : return new ResourceTriple(0.05, 502, 300F);
-            case "calculatequality" : return new ResourceTriple(0.05, 527, 300F);
-            case "distributedata" : return new ResourceTriple(0.7, 452, 300F);
-            case "availability" : return new ResourceTriple(0.13, 573, 300F);
+            case "calculateperformance" : return new ResourceTriple(0.1, 480, 300F);
+            case "calculateavailability" : return new ResourceTriple(0.08, 502, 300F);
+            case "calculatequality" : return new ResourceTriple(0.07, 527, 300F);
+            case "distributedata" : return new ResourceTriple(0.7, 470, 300F);
+            case "availability" : return new ResourceTriple(0.2, 573, 300F);
             case "temperature" : return new ResourceTriple(0.05, 440, 300F);
-            case "warning" : return new ResourceTriple(0.05, 466, 300F);
+            case "warning" : return new ResourceTriple(0.07, 466, 300F);
             case "generatereport" : return new ResourceTriple(0.05, 452, 300F);
             case "calculateoee" : return new ResourceTriple(0.1, 464, 300F);
             default: new ResourceTriple(0.5, 500,300F);
