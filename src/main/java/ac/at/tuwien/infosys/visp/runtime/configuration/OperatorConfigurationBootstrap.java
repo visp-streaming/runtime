@@ -28,16 +28,18 @@ public class OperatorConfigurationBootstrap {
 
     public ResourceTriple getExpected(String operatorType) {
 
+        //TODO put them in a txt file
+
         switch (operatorType) {
-            case "calculateperformance" : return new ResourceTriple(0.1, 480, 300F);
-            case "calculateavailability" : return new ResourceTriple(0.08, 502, 300F);
-            case "calculatequality" : return new ResourceTriple(0.07, 527, 300F);
-            case "distributedata" : return new ResourceTriple(0.7, 470, 300F);
-            case "availability" : return new ResourceTriple(0.2, 573, 300F);
-            case "temperature" : return new ResourceTriple(0.05, 440, 300F);
-            case "warning" : return new ResourceTriple(0.07, 466, 300F);
-            case "generatereport" : return new ResourceTriple(0.05, 452, 300F);
-            case "calculateoee" : return new ResourceTriple(0.1, 464, 300F);
+            case "calculateperformance" : return new ResourceTriple(0.4, 534, 300F);
+            case "calculateavailability" : return new ResourceTriple(0.56, 417, 300F);
+            case "calculatequality" : return new ResourceTriple(0.42, 527, 300F);
+            case "distributedata" : return new ResourceTriple(1.2, 554, 300F);
+            case "availability" : return new ResourceTriple(0.4, 629, 300F);
+            case "temperature" : return new ResourceTriple(0.25, 515, 300F);
+            case "warning" : return new ResourceTriple(0.14, 509, 300F);
+            case "generatereport" : return new ResourceTriple(0.3, 452, 300F);
+            case "calculateoee" : return new ResourceTriple(0.4, 513, 300F);
             default: new ResourceTriple(0.5, 500,300F);
         }
 
