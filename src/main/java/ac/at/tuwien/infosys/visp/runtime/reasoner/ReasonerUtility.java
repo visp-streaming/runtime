@@ -63,6 +63,9 @@ public class ReasonerUtility {
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerUtility.class);
 
     public Boolean checkDeployment(DockerContainer dc, DockerHost dh) {
+        if (dh.getScheduledForShutdown()) {
+            return false;
+        }
         ResourceTriple ra = calculateFreeResourcesforHost(dh);
         return !(Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
     }
@@ -93,8 +96,10 @@ public class ReasonerUtility {
             }
 
             ResourceTriple rc = hostResourceUsage.get(dc.getHost());
-            rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
-            hostResourceUsage.put(dc.getHost(), rc);
+            if (rc != null) {
+                rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
+                hostResourceUsage.put(dc.getHost(), rc);
+            }
         }
 
         //calculate how much resources are left on a specific host

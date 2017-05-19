@@ -89,7 +89,7 @@ public class ReasonerBasic {
         if (dhr.count() > 1) {
 
             for (DockerHost dh : dhr.findAll()) {
-                if (dcr.findByHost(dh.getName()).size()<1) {
+                if (dcr.findByHost(dh.getName()).isEmpty()) {
                     resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
                 }
 
