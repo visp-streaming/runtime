@@ -59,12 +59,9 @@ public class VISPInstanceConfigurationAPI {
     @RequestMapping(value = {"/listConnections"}, method = RequestMethod.GET)
     public List<VISPConnectionDTO> connections() {
 
+        vcr.deleteAll();
+        vispConnectionsGenerator.generateConnections();
         List<VISPConnection> cons = (List<VISPConnection>) vcr.findAll();
-
-        if (cons.isEmpty()) {
-            vispConnectionsGenerator.generateConnections();
-            cons = (List<VISPConnection>) vcr.findAll();
-        }
 
         List<VISPConnectionDTO> result = new ArrayList<>();
 
