@@ -4,10 +4,20 @@ package ac.at.tuwien.infosys.visp.runtime.configuration;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Service
@@ -16,9 +26,11 @@ public class OperatorConfigurationBootstrap {
 
     public OperatorConfigurationBootstrap(String name) {
         this.name = name;
+        parseOperatorConfigurationData();
     }
 
     public OperatorConfigurationBootstrap() {
+        parseOperatorConfigurationData();
     }
 
     @Autowired
@@ -26,24 +38,18 @@ public class OperatorConfigurationBootstrap {
 
     private String name;
 
+    private Map<String, ResourceTriple> operatorConfiguration = new HashMap<>();
+
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorConfigurationBootstrap.class);
+
     public ResourceTriple getExpected(String operatorType) {
 
-        //TODO put them in a txt file
-
-        switch (operatorType) {
-            case "calculateperformance" : return new ResourceTriple(0.4, 534, 300F);
-            case "calculateavailability" : return new ResourceTriple(0.56, 417, 300F);
-            case "calculatequality" : return new ResourceTriple(0.42, 527, 300F);
-            case "distributedata" : return new ResourceTriple(1.2, 554, 300F);
-            case "availability" : return new ResourceTriple(0.4, 629, 300F);
-            case "temperature" : return new ResourceTriple(0.25, 515, 300F);
-            case "warning" : return new ResourceTriple(0.14, 509, 300F);
-            case "generatereport" : return new ResourceTriple(0.3, 452, 300F);
-            case "calculateoee" : return new ResourceTriple(0.4, 513, 300F);
-            default: new ResourceTriple(0.5, 500,300F);
+        if (operatorConfiguration.containsKey(operatorType)) {
+            return operatorConfiguration.get(operatorType);
+        } else {
+            //Default configuration as fallback
+            return new ResourceTriple(0.5, 500,300F);
         }
-
-        return new ResourceTriple(0.5, 500,300F);
     }
 
     private Double incommingToOutgoingRatio = 0.5;
@@ -54,6 +60,30 @@ public class OperatorConfigurationBootstrap {
 
     public DockerContainer createDockerContainerConfiguration(Operator operator) {
         return new DockerContainer(operator.getType(), operator.getName(), getExpected(operator.getType()).getCores(), getExpected(operator.getType()).getMemory(), Math.round(getExpected(operator.getType()).getStorage()));
+    }
+
+    public void parseOperatorConfigurationData() {
+
+        try {
+            String content = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/operatorConfiguration.json")));
+            final JsonNode arrNode = new ObjectMapper().readTree(content).get("operators");
+
+            if (arrNode.isArray()) {
+                for (final JsonNode objNode : arrNode) {
+                    String name = objNode.findValue("name").toString().replace("\"", "");
+                    Double cores = Double.valueOf(objNode.findValue("cores").toString());
+                    Integer memory = Integer.valueOf(objNode.findValue("memory").toString());
+                    Float storage = Float.valueOf(objNode.findValue("storage").toString());
+
+                    operatorConfiguration.put(name, new ResourceTriple(cores, memory, storage));
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Operator configuration could not be found.");
+        } catch (NumberFormatException e) {
+            LOG.error("Individual inputs for the operator configuration could not be parsed.");
+        }
+
     }
 
 }

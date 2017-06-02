@@ -1,5 +1,6 @@
 database.properties
 credential.properties
+operatorConfiguration.json
 reporting/*
 !reporting/report.txt
 

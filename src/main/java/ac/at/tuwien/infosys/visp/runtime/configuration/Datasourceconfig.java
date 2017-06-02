@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,12 +12,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 @Configuration
 public class Datasourceconfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(Datasourceconfig.class);
+
+    @Autowired
+    private CredentialProperties credentialProperties;
 
     @Bean
     public DataSource dataSource() {
@@ -24,8 +27,8 @@ public class Datasourceconfig {
 
         try {
 
-            if (Files.exists(Paths.get("database.properties"))) {
-                IP = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
+            if (Files.exists(Paths.get("runtimeConfiguration/database.properties"))) {
+                IP = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/database.properties")), StandardCharsets.UTF_8);
                 IP = IP.replaceAll("databaseIP=", "").trim();
                 IP = IP.replaceAll("database=", "").trim();
                 IP = IP.replaceAll("[\\r\\n]", "").trim();
@@ -41,17 +44,10 @@ public class Datasourceconfig {
 
         String uri = "jdbc:mysql://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
 
-        Properties prop = new Properties();
-        try {
-            prop.load(getClass().getClassLoader().getResourceAsStream("credential.properties"));
-        } catch (IOException e) {
-            LOG.error("Could not load credential properties.", e);
-        }
-
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.url(uri);
-        dataSourceBuilder.username(prop.getProperty("spring.datasource.username"));
-        dataSourceBuilder.password(prop.getProperty("spring.datasource.password"));
+        dataSourceBuilder.username(credentialProperties.getProperty("spring.datasource.username"));
+        dataSourceBuilder.password(credentialProperties.getProperty("spring.datasource.password"));
         return dataSourceBuilder.build();
     }
 

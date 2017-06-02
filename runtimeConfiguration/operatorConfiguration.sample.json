@@ -1,0 +1,57 @@
+{"operators" : [
+    {
+    "name" : "calculateperformance",
+    "cores" : 0.4,
+    "memory" : 534,
+    "storage" : 300
+    },
+    {
+    "name" : "calculateavailability",
+    "cores" : 0.56,
+    "memory" : 417,
+    "storage" : 300
+    },
+    {
+    "name" : "calculatequality",
+    "cores" : 0.42,
+    "memory" : 527,
+    "storage" : 300
+    },
+    {
+    "name" : "distributedata",
+    "cores" : 1.2,
+    "memory" : 554,
+    "storage" : 300
+    },
+    {
+    "name" : "availability",
+    "cores" : 0.4,
+    "memory" : 629,
+    "storage" : 300
+    },
+    {
+    "name" : "temperature",
+    "cores" : 0.25,
+    "memory" : 515,
+    "storage" : 300
+    },
+    {
+    "name" : "warning",
+    "cores" : 0.14,
+    "memory" : 509,
+    "storage" : 300
+    },
+    {
+    "name" : "generatereport",
+    "cores" : 0.3,
+    "memory" : 425,
+    "storage" : 300
+    },
+    {
+    "name" : "calculateoee",
+    "cores" : 0.4,
+    "memory" : 513,
+    "storage" : 300
+    }
+  ]}
+}

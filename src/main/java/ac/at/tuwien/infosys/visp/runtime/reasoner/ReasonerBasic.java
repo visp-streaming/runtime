@@ -9,7 +9,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;

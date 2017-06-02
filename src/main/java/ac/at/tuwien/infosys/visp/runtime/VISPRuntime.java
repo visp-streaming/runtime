@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@PropertySource(value = {"classpath:/credential.properties"})
+@PropertySource(value = {"file:runtimeConfiguration/credential.properties"})
 @DependsOn("datasourceconfig")
 public class VISPRuntime {
 

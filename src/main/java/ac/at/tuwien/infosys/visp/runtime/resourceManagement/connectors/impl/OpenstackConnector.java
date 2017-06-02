@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
+import ac.at.tuwien.infosys.visp.runtime.configuration.CredentialProperties;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
@@ -17,7 +18,10 @@ import org.joda.time.DateTimeZone;
 import org.openstack4j.api.Builders;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.model.common.ActionResponse;
-import org.openstack4j.model.compute.*;
+import org.openstack4j.model.compute.Flavor;
+import org.openstack4j.model.compute.FloatingIP;
+import org.openstack4j.model.compute.Server;
+import org.openstack4j.model.compute.ServerCreate;
 import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +34,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -47,6 +50,9 @@ public class OpenstackConnector extends ResourceConnector {
     private Integer BTU;
 
     @Autowired
+    private CredentialProperties credentialProperties;
+
+    @Autowired
     private ScalingActivityRepository sar;
 
     @Autowired
@@ -57,33 +63,17 @@ public class OpenstackConnector extends ResourceConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
-    private String OPENSTACK_KEYPAIR_NAME;
-
     private OSClient.OSClientV2 os;
 
     private void setup() {
 
-        Properties prop = new Properties();
-        try {
-            prop.load(getClass().getClassLoader().getResourceAsStream("credential.properties"));
-        } catch (IOException e) {
-            LOG.error("Could not load properties.", e);
-        }
-
-        String OPENSTACK_AUTH_URL = prop.getProperty("os.auth.url");
-        String OPENSTACK_USERNAME = prop.getProperty("os.username");
-        String OPENSTACK_PASSWORD = prop.getProperty("os.password");
-        String OPENSTACK_TENANT_NAME = prop.getProperty("os.tenant.name");
-        OPENSTACK_KEYPAIR_NAME = prop.getProperty("os.keypair.name");
-
-
         os = OSFactory.builderV2()
-                .endpoint(OPENSTACK_AUTH_URL)
-                .credentials(OPENSTACK_USERNAME, OPENSTACK_PASSWORD)
-                .tenantName(OPENSTACK_TENANT_NAME)
+                .endpoint(credentialProperties.getProperty("os.auth.url"))
+                .credentials(credentialProperties.getProperty("os.username"), credentialProperties.getProperty("os.password"))
+                .tenantName(credentialProperties.getProperty("os.tenant.name"))
                 .authenticate();
 
-        LOG.info("VISP - Successfully connected to " + OPENSTACK_AUTH_URL + " on tenant " + OPENSTACK_TENANT_NAME + " with user " + OPENSTACK_USERNAME);
+        LOG.info("VISP - Successfully connected to " + credentialProperties.getProperty("os.auth.url") + " on tenant " + credentialProperties.getProperty("os.tenant.name") + " with user " + credentialProperties.getProperty("os.username"));
     }
 
     public List<String> getFlavours() {
@@ -94,7 +84,6 @@ public class OpenstackConnector extends ResourceConnector {
         }
         return flavours;
     }
-
 
 
     @Override
@@ -127,7 +116,7 @@ public class OpenstackConnector extends ResourceConnector {
                 .flavor(flavor)
                 .image(config.getOpenstackProcessingHostImage())
                 .userData(Base64.encodeAsString(cloudInit))
-                .keypairName(OPENSTACK_KEYPAIR_NAME)
+                .keypairName(credentialProperties.getProperty("os.keypair.name"))
                 .addSecurityGroup("default")
                 .build();
 

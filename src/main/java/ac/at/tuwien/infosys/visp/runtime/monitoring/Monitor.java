@@ -8,7 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepositor
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
-import ac.at.tuwien.infosys.visp.runtime.entities.ScalingAction;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import com.fasterxml.jackson.databind.JsonNode;

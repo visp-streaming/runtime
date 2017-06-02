@@ -9,9 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 
-import java.io.IOException;
-import java.util.Properties;
-
 @Configuration
 @DependsOn("configurationprovider")
 public class RabbitMQConfiguration {
@@ -19,21 +16,17 @@ public class RabbitMQConfiguration {
     @Autowired
     private Configurationprovider config;
 
+    @Autowired
+    private CredentialProperties credentialProperties;
+
     private static final Logger LOG = LoggerFactory.getLogger(RabbitMQConfiguration.class);
 
     @Bean
     public CachingConnectionFactory rabbitConnectionFactory() {
         CachingConnectionFactory factory = new CachingConnectionFactory(config.getRabbitMQHost(), 5672);
 
-        Properties prop = new Properties();
-        try {
-            prop.load(getClass().getClassLoader().getResourceAsStream("credential.properties"));
-        } catch (IOException e) {
-            LOG.error("Could not load credential properties.", e);
-        }
-
-        factory.setUsername(prop.getProperty("spring.rabbitmq.username"));
-        factory.setPassword(prop.getProperty("spring.rabbitmq.password"));
+        factory.setUsername(credentialProperties.getProperty("spring.rabbitmq.username"));
+        factory.setPassword(credentialProperties.getProperty("spring.rabbitmq.password"));
 
         return factory;
     }
