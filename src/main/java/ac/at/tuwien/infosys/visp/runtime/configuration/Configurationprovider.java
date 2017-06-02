@@ -107,8 +107,8 @@ public class Configurationprovider {
             try {
                 // try to connect to database host
                 try {
-                    if (Files.exists(Paths.get("database.properties"))) {
-                        databaseIp = new String(Files.readAllBytes(Paths.get("database.properties")), StandardCharsets.UTF_8);
+                    if (Files.exists(Paths.get("runtimeConfiguration/database.properties"))) {
+                        databaseIp = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/database.properties")), StandardCharsets.UTF_8);
                         databaseIp = databaseIp.replaceAll("[\\r\\n]", "").trim();
                     }
                 } catch (IOException e2) {
@@ -152,7 +152,7 @@ public class Configurationprovider {
         List<String> lines = new ArrayList<>();
         lines.add(this.infrastructureIP);
         try {
-            Files.write(Paths.get("database.properties"), lines);
+            Files.write(Paths.get("runtimeConfiguration/database.properties"), lines);
         } catch (IOException e) {
             LOG.error(e.getLocalizedMessage());
         }
