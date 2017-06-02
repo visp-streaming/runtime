@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestMapping("/vispconfiguration")
 @RestController
@@ -51,13 +52,8 @@ public class VISPInstanceConfigurationAPI {
 
     @RequestMapping(value = {"/listResourcePools"}, method = RequestMethod.GET)
     public List<ResourcePoolUsage> instantiatedServices() {
-        List<ResourcePoolUsage> poolusage = new ArrayList<>();
-
-        for (String pool : pvmr.findDistinctPoolnames()) {
-            poolusage.add(resourceUsage.calculateUsageForPool(pool));
-        }
-
-        return poolusage;
+        return pvmr.findDistinctPoolnames()
+                .stream().map(i -> resourceUsage.calculateUsageForPool(i)).collect(Collectors.toList());
     }
 
     @RequestMapping(value = {"/listConnections"}, method = RequestMethod.GET)

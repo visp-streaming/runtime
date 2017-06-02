@@ -81,13 +81,11 @@ public class ManualOperatorManagement {
                     default:
                         pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                         break;
-
                 }
             }
         } catch (Exception e) {
             LOG.error(e.getLocalizedMessage());
         }
-
     }
 
     public synchronized void removeOperators(Operator op) {

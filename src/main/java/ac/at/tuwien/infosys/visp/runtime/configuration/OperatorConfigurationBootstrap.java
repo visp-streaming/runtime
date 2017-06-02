@@ -24,30 +24,24 @@ import java.util.Map;
 @DependsOn("configurationprovider")
 public class OperatorConfigurationBootstrap {
 
-    public OperatorConfigurationBootstrap(String name) {
-        this.name = name;
-        parseOperatorConfigurationData();
+    public OperatorConfigurationBootstrap() {
+        initializeOperatorConfiguration();
     }
 
-    public OperatorConfigurationBootstrap() {
-        parseOperatorConfigurationData();
-    }
+    public OperatorConfigurationBootstrap(Boolean noInitialization) { }
 
     @Autowired
     private Configurationprovider config;
-
-    private String name;
 
     private Map<String, ResourceTriple> operatorConfiguration = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(OperatorConfigurationBootstrap.class);
 
     public ResourceTriple getExpected(String operatorType) {
-
         if (operatorConfiguration.containsKey(operatorType)) {
             return operatorConfiguration.get(operatorType);
         } else {
-            //Default configuration as fallback
+            //Default configuration
             return new ResourceTriple(0.5, 500,300F);
         }
     }
@@ -62,10 +56,18 @@ public class OperatorConfigurationBootstrap {
         return new DockerContainer(operator.getType(), operator.getName(), getExpected(operator.getType()).getCores(), getExpected(operator.getType()).getMemory(), Math.round(getExpected(operator.getType()).getStorage()));
     }
 
-    public void parseOperatorConfigurationData() {
-
+    public void initializeOperatorConfiguration() {
         try {
             String content = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/operatorConfiguration.json")));
+            parseOperatorConfigurationData(content);
+        } catch (IOException e) {
+            LOG.error("Operator configuration could not be found.");
+        } catch (NumberFormatException e) {
+            LOG.error("Individual inputs for the operator configuration could not be parsed.");
+        }
+    }
+
+    public void parseOperatorConfigurationData(String content) throws IOException {
             final JsonNode arrNode = new ObjectMapper().readTree(content).get("operators");
 
             if (arrNode.isArray()) {
@@ -78,12 +80,6 @@ public class OperatorConfigurationBootstrap {
                     operatorConfiguration.put(name, new ResourceTriple(cores, memory, storage));
                 }
             }
-        } catch (IOException e) {
-            LOG.error("Operator configuration could not be found.");
-        } catch (NumberFormatException e) {
-            LOG.error("Individual inputs for the operator configuration could not be parsed.");
-        }
-
     }
 
 }

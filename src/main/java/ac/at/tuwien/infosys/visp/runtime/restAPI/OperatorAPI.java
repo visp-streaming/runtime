@@ -5,7 +5,6 @@ import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RequestMapping("/operators")
 @RestController
@@ -42,12 +39,9 @@ public class OperatorAPI {
             }
         }
 
-        List<ProcessingDuration> pds = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorType);
         Integer counter = 0;
-        Double duration = 0.0;
-        for (ProcessingDuration pd : pds) {
-            duration+=pd.getDuration();
-        }
+        Double duration = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorType).
+                stream().mapToDouble(i -> i.getDuration()).sum();
 
         if (counter == 0) {
             opconfig.setActualDuration(opconfig.getExpectedDuration());
@@ -55,7 +49,7 @@ public class OperatorAPI {
             opconfig.setActualDuration(duration/counter);
         }
 
-        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorType).getExpected(operatorType));
+        opconfig.setPlannedResources(new OperatorConfigurationBootstrap().getExpected(operatorType));
         opconfig.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorType(operatorType));
         return opconfig;
     }
@@ -74,12 +68,10 @@ public class OperatorAPI {
             }
         }
 
-        List<ProcessingDuration> pds = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorName);
         Integer counter = 0;
-        Double duration = 0.0;
-        for (ProcessingDuration pd : pds) {
-            duration+=pd.getDuration();
-        }
+        Double duration = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorName).
+                stream().mapToDouble(i -> i.getDuration()).sum();
+
 
         if (counter == 0) {
             opconfig.setActualDuration(opconfig.getExpectedDuration());
@@ -87,7 +79,7 @@ public class OperatorAPI {
             opconfig.setActualDuration(duration/counter);
         }
 
-        opconfig.setPlannedResources(new OperatorConfigurationBootstrap(operatorName).getExpected(operatorName));
+        opconfig.setPlannedResources(new OperatorConfigurationBootstrap().getExpected(operatorName));
         opconfig.setActualResources(resourceUsage.calculatelatestActualUsageForOperatorid(operatorName));
         return opconfig;
     }

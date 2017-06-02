@@ -26,7 +26,6 @@ public class Datasourceconfig {
         String IP = null;
 
         try {
-
             if (Files.exists(Paths.get("runtimeConfiguration/database.properties"))) {
                 IP = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/database.properties")), StandardCharsets.UTF_8);
                 IP = IP.replaceAll("databaseIP=", "").trim();

@@ -32,9 +32,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @DependsOn("configurationprovider")
@@ -66,7 +66,6 @@ public class OpenstackConnector extends ResourceConnector {
     private OSClient.OSClientV2 os;
 
     private void setup() {
-
         os = OSFactory.builderV2()
                 .endpoint(credentialProperties.getProperty("os.auth.url"))
                 .credentials(credentialProperties.getProperty("os.username"), credentialProperties.getProperty("os.password"))
@@ -78,11 +77,7 @@ public class OpenstackConnector extends ResourceConnector {
 
     public List<String> getFlavours() {
         setup();
-        List<String> flavours = new ArrayList<>();
-        for (Flavor flavour : os.compute().flavors().list()) {
-            flavours.add(flavour.getName());
-        }
-        return flavours;
+        return os.compute().flavors().list().stream().map(i -> i.getName()).collect(Collectors.toList());
     }
 
 

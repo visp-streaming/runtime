@@ -99,10 +99,8 @@ public class ReasonerBTU {
             }
         }
 
-
-        for (String key : resourceProvider.getResourceProviders().keySet()) {
-            resourceProvider.get(key).removeHostsWhichAreFlaggedToShutdown();
-        }
+        resourceProvider.getResourceProviders().keySet()
+                .forEach(i -> resourceProvider.get(i).removeHostsWhichAreFlaggedToShutdown());
 
         LOG.info("VISP - Start Reasoner");
 

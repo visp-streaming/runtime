@@ -5,6 +5,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfigurati
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,23 +17,16 @@ import javax.annotation.PreDestroy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.TimeoutException;
 
+@Data
 @Service
 public class Configurationprovider {
-
-    private String runtimeIP = null;
-    private String infrastructureIP = null;
-
-    private String openstackProcessingHostImage = null;
-    private String processingNodeImage = null;
-    private String reasoner = null;
 
     @Autowired
     private RuntimeConfigurationRepository rfr;
@@ -49,6 +43,12 @@ public class Configurationprovider {
     @Value("${spring.rabbitmq.password}")
     private String rabbitmqPassword;
 
+    private String runtimeIP = null;
+    private String infrastructureIP = null;
+    private String openstackProcessingHostImage = null;
+    private String processingNodeImage = null;
+    private String reasoner = null;
+
     private static final Logger LOG = LoggerFactory.getLogger(Configurationprovider.class);
 
     @PostConstruct
@@ -59,77 +59,60 @@ public class Configurationprovider {
         this.processingNodeImage = getData("processingNodeImage");
         this.reasoner = getData("reasoner");
 
-
-        if (this.runtimeIP==null) {
-                this.runtimeIP = getIp();
+        if (this.runtimeIP == null) {
+            this.runtimeIP = getIp();
         }
 
-        if (this.infrastructureIP==null) {
-            this.infrastructureIP = "127.0.0.1";
-
-            this.infrastructureIP = testcon(infrastructureIP);
-
+        if (this.infrastructureIP == null) {
+            this.infrastructureIP = testConnection("127.0.0.1");
         }
 
-        if (this.openstackProcessingHostImage ==null) {
+        if (this.openstackProcessingHostImage == null) {
             this.openstackProcessingHostImage = defaultOpenstackProcessingHostImage;
         }
 
-        if (this.processingNodeImage ==null) {
+        if (this.processingNodeImage == null) {
             this.processingNodeImage=defaultProcessingNodeImage;
         }
 
         if (this.reasoner == null) {
             this.reasoner = "none";
         }
-
     }
 
-    @SuppressWarnings("Duplicates")
-    private String testcon(String infrastructureIP) {
-        String databaseIp = null;
-
+    private String testConnection(String infrastructureIP) {
+        String databaseIP = null;
         try {
-            LOG.info("Trying to connect to " + infrastructureIP);
-            // try to connect to infrastructure host
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(infrastructureIP);
-            factory.setUsername(rabbitmqUsername);
-            factory.setPassword(rabbitmqPassword);
-            Connection connection;
-            connection = factory.newConnection();
-            Channel channel = connection.createChannel();
-            channel.close();
-            connection.close();
-            return infrastructureIP;
+            return validateURIForRabbitMQHost(infrastructureIP);
         } catch(Exception e) {
             LOG.info("Connection to  " + infrastructureIP + " failed");
             try {
                 // try to connect to database host
-                try {
-                    if (Files.exists(Paths.get("runtimeConfiguration/database.properties"))) {
-                        databaseIp = new String(Files.readAllBytes(Paths.get("runtimeConfiguration/database.properties")), StandardCharsets.UTF_8);
-                        databaseIp = databaseIp.replaceAll("[\\r\\n]", "").trim();
+                    Path databaseConfigFile = Paths.get("runtimeConfiguration/database.properties");
+                    if (Files.exists(databaseConfigFile)) {
+                        databaseIP = new String(Files.readAllBytes(databaseConfigFile), StandardCharsets.UTF_8).replaceAll("[\\r\\n]", "").trim();
                     }
-                } catch (IOException e2) {
-                    LOG.error(e2.getLocalizedMessage(), e2);
-                }
-                LOG.info("Trying to connect to " + databaseIp);
-
-                ConnectionFactory factory = new ConnectionFactory();
-                factory.setHost(databaseIp);
-                factory.setUsername(rabbitmqUsername);
-                factory.setPassword(rabbitmqPassword);
-                Connection connection;
-                connection = factory.newConnection();
-                Channel channel = connection.createChannel();
-                channel.close();
-                connection.close();
-                return databaseIp;
+                return validateURIForRabbitMQHost(databaseIP);
             } catch(Exception e1) {
                 throw new RuntimeException("Could neither connect to localhost nor to database IP");
             }
         }
+    }
+
+    private String validateURIForRabbitMQHost(String infrastructureIP) throws IOException, TimeoutException {
+        LOG.info("Trying to connect to " + infrastructureIP);
+        // try to connect to infrastructure host
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost(infrastructureIP);
+        factory.setUsername(rabbitmqUsername);
+        factory.setPassword(rabbitmqPassword);
+
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+        channel.close();
+        connection.close();
+
+        return infrastructureIP;
     }
 
     private String getData(String identifier) {
@@ -138,24 +121,6 @@ public class Configurationprovider {
             return rc.getValue();
         }
         return null;
-    }
-
-    @PreDestroy
-    public void storeDataToDB() {
-        storeSingle("runtimeIP", this.runtimeIP);
-        storeSingle("infrastructureIP", this.infrastructureIP);
-        storeSingle("openstackProcessingHostImage", this.openstackProcessingHostImage);
-        storeSingle("processingNodeImage", this.processingNodeImage);
-        storeSingle("reasoner", this.reasoner);
-
-
-        List<String> lines = new ArrayList<>();
-        lines.add(this.infrastructureIP);
-        try {
-            Files.write(Paths.get("runtimeConfiguration/database.properties"), lines);
-        } catch (IOException e) {
-            LOG.error(e.getLocalizedMessage());
-        }
     }
 
     private void storeSingle(String identifier, String value) {
@@ -168,80 +133,47 @@ public class Configurationprovider {
         }
     }
 
-
-    public String getRedisHost() {
-        return this.getInfrastructureIP();
-    }
-
-    public String getRabbitMQHost() {
-        return this.infrastructureIP;
-    }
-
-    public String getRuntimeIP() {
-        return runtimeIP;
-    }
-
-    public void setRuntimeIP(String runtimeIP) {
-        this.runtimeIP = runtimeIP;
-    }
-
-    public String getInfrastructureIP() {
-        return infrastructureIP;
-    }
-
-    public void setInfrastructureIP(String infrastructureIP) {
-        this.infrastructureIP = infrastructureIP;
-    }
-
-    public String getOpenstackProcessingHostImage() {
-        return openstackProcessingHostImage;
-    }
-
-    public void setOpenstackProcessingHostImage(String openstackProcessingHostImage) {
-        this.openstackProcessingHostImage = openstackProcessingHostImage;
-    }
-
-    public String getProcessingNodeImage() {
-        return processingNodeImage;
-    }
-
-    public void setProcessingNodeImage(String processingNodeImage) {
-        this.processingNodeImage = processingNodeImage;
-    }
-
-    public String getReasoner() {
-        return reasoner;
-    }
-
-    public void setReasoner(String reasoner) {
-        this.reasoner = reasoner;
-    }
-
     private String getIp() {
         //Try to identify IP for VISP runtime, if none is set
-        try {
-            URL whatismyip = new URL("http://checkip.amazonaws.com");
             BufferedReader in = null;
             try {
-                in = new BufferedReader(new InputStreamReader(
-                        whatismyip.openStream()));
+                in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()));
                 return in.readLine();
             } catch (IOException e) {
-                LOG.error(e.getLocalizedMessage());
+                LOG.error(e.getMessage());
             } finally {
                 if (in != null) {
                     try {
                         in.close();
                     } catch (IOException e) {
-                        LOG.error(e.getLocalizedMessage());
+                        LOG.error(e.getMessage());
                     }
                 }
             }
-        } catch (MalformedURLException e) {
-            LOG.error(e.getLocalizedMessage());
-        }
         return "127.0.0.1";
     }
 
+    @PreDestroy
+    public void storeDataToDB() {
+        storeSingle("runtimeIP", this.runtimeIP);
+        storeSingle("infrastructureIP", this.infrastructureIP);
+        storeSingle("openstackProcessingHostImage", this.openstackProcessingHostImage);
+        storeSingle("processingNodeImage", this.processingNodeImage);
+        storeSingle("reasoner", this.reasoner);
+
+        try {
+            Files.write(Paths.get("runtimeConfiguration/database.properties"), this.infrastructureIP.getBytes());
+        } catch (IOException e) {
+            LOG.error(e.getLocalizedMessage());
+        }
+    }
+
+    public String getRabbitMQHost() {
+        return infrastructureIP;
+    }
+
+    public String getRedisHost() {
+        return infrastructureIP;
+    }
 }
 

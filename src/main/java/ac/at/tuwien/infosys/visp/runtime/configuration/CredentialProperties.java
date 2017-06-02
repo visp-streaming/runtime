@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 
-
 @Configuration
 @PropertySource("file:runtimeConfiguration/credential.properties")
 public class CredentialProperties {
