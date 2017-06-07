@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Created by thomas on 24.03.2017.
- */
 @RequestMapping("/operatorMetrics")
 @RestController
 public class OperatorMetricsAPI {
