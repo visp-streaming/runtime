@@ -242,12 +242,12 @@ public class ReasonerUtility {
 
             QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
             Integer queueFactor = 0;
-            if (qm.getAmount() < 3) {
-                queueFactor = 15;
+            if (qm.getAmount() < 1) {
+                queueFactor = 10;
             }
 
             Double instanceFactorWeighted = instancefactor * 2.0;
-            Double delayFactorWeighted = delayFactor;// * 3;
+            Double delayFactorWeighted = delayFactor * 3;
             Double scalingFactorWeighted = scalingFactor * 2.5;
 
             Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
