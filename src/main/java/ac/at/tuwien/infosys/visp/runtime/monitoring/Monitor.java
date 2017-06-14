@@ -64,12 +64,8 @@ public class Monitor {
 
     @Scheduled(fixedRateString = "${visp.monitor.period}")
     public void recordData() {
-        List<Operator> runningOperators = topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP());
-
-        for (Operator op : runningOperators) {
-            List<String> queues = topologyMgmt.getIncomingQueuesAsList(op.getName());
-
-            for (String queue : queues) {
+        for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
+            for (String queue : topologyMgmt.getIncomingQueuesAsList(op.getName())) {
                 QueueMonitor qm = getQueueCount(queue, op);
 
                 if (qm == null) {
@@ -82,31 +78,10 @@ public class Monitor {
     }
 
 
-
-
-
     public ScalingAction analyze(Operator operator) {
         List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator.getName());
 
-        Integer max = 0;
-        Integer min = 0;
-
-        for (String queue : queues) {
-            QueueMonitor qm = getQueueCount(queue, operator);
-
-            if (qm == null) {
-                continue;
-            }
-
-            Integer queueCount = qm.getAmount();
-            if (queueCount < min) {
-                min = queueCount;
-            }
-
-            if (queueCount > max) {
-                max = queueCount;
-            }
-        }
+        Integer max = getMaximumQueueCount(operator, queues);
 
         ScalingAction sa = upscalingDuration(operator, max);
 
@@ -119,29 +94,10 @@ public class Monitor {
         return sa;
     }
 
-
     public ScalingAction analyzeBasic(Operator operator, Integer upscaling, Integer downscaling) {
         List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator.getName());
 
-        Integer max = 0;
-        Integer min = 0;
-
-        for (String queue : queues) {
-            QueueMonitor qm = getQueueCount(queue, operator);
-
-            if (qm == null) {
-                continue;
-            }
-
-            Integer queueCount = qm.getAmount();
-            if (queueCount < min) {
-                min = queueCount;
-            }
-
-            if (queueCount > max) {
-                max = queueCount;
-            }
-        }
+        Integer max = getMaximumQueueCount(operator, queues);
 
         if (max > (upscaling * 5)) {
             return ScalingAction.SCALEUPDOUBLE;
@@ -156,17 +112,6 @@ public class Monitor {
         }
 
         return ScalingAction.DONOTHING;
-    }
-
-
-    public void saveQueueCount(String operator, String infrastructureHost) {
-
-    	List<String> queues = topologyMgmt.getIncomingQueuesAsList(operator);
-
-    	//TODO fixme
-        for (String queue : queues) {
-        	qmr.save(getQueueCount(queue, null));
-        }
     }
 
     private ScalingAction upscalingDuration(Operator operator, Integer maxQueue) {
@@ -279,5 +224,28 @@ public class Monitor {
         }
     return null;
 
+    }
+
+    private Integer getMaximumQueueCount(Operator operator, List<String> queues) {
+        Integer max = 0;
+        Integer min = 0;
+
+        for (String queue : queues) {
+            QueueMonitor qm = getQueueCount(queue, operator);
+
+            if (qm == null) {
+                continue;
+            }
+
+            Integer queueCount = qm.getAmount();
+            if (queueCount < min) {
+                min = queueCount;
+            }
+
+            if (queueCount > max) {
+                max = queueCount;
+            }
+        }
+        return max;
     }
 }

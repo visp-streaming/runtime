@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,17 +60,10 @@ public class VISPInstanceConfigurationAPI {
 
         vcr.deleteAll();
         vispConnectionsGenerator.generateConnections();
-        List<VISPConnection> cons = (List<VISPConnection>) vcr.findAll();
 
-        List<VISPConnectionDTO> result = new ArrayList<>();
-
-        for (VISPConnection con : cons) {
-            result.add(new VISPConnectionDTO(con.getStart(), con.getEnd(), con.getDelay(), con.getDataRate(), con.getAvailability()));
-        }
-
-        return result;
+        return ((List<VISPConnection>) vcr.findAll()).stream()
+                .map(i -> new VISPConnectionDTO(i.getStart(), i.getEnd(), i.getDelay(), i.getDataRate(), i.getAvailability()))
+                .collect(Collectors.toList());
     }
-
-
 
 }

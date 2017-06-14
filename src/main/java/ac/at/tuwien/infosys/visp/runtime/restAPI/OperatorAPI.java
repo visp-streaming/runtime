@@ -1,6 +1,5 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
-import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
@@ -30,14 +29,11 @@ public class OperatorAPI {
     public OperatorConfiguration getOperatorConfigurationForOperatorType(@PathVariable String operatorType) {
         OperatorConfiguration opconfig =  new OperatorConfiguration(operatorType, 2400);
 
-        for (Operator operator : topologymgmt.getTopology().values()) {
-            if (operator.getType().equals(operatorType)) {
-                if (operator instanceof ProcessingOperator) {
-                    opconfig.setExpectedDuration(((ProcessingOperator) operator).getExpectedDuration());
-                    break;
-                }
-            }
-        }
+        topologymgmt.getTopology().values().stream()
+                .filter(i -> i.getType().equals(operatorType))
+                .filter(i -> i instanceof ProcessingOperator)
+                .findFirst()
+                .ifPresent(i -> opconfig.setExpectedDuration(((ProcessingOperator) i).getExpectedDuration()));
 
         Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorType).
@@ -59,20 +55,16 @@ public class OperatorAPI {
 
         OperatorConfiguration opconfig =  new OperatorConfiguration(operatorName, 2400);
 
-        for (Operator operator : topologymgmt.getTopology().values()) {
-            if (operator.getName().equals(operatorName)) {
-                if (operator instanceof ProcessingOperator) {
-                    opconfig.setExpectedDuration(((ProcessingOperator) operator).getExpectedDuration());
-                    break;
-                }
-            }
-        }
+        topologymgmt.getTopology().values().stream()
+                .filter(i -> i.getType().equals(operatorName))
+                .filter(i -> i instanceof ProcessingOperator)
+                .findFirst()
+                .ifPresent(i -> opconfig.setExpectedDuration(((ProcessingOperator) i).getExpectedDuration()));
 
         Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatorOrderByIdDesc(operatorName).
                 stream().mapToDouble(i -> i.getDuration()).sum();
-
-
+        
         if (counter == 0) {
             opconfig.setActualDuration(opconfig.getExpectedDuration());
         } else {

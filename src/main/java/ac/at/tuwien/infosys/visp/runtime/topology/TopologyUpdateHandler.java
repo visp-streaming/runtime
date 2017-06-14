@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 @Service
 @DependsOn("configurationprovider")
@@ -94,17 +95,12 @@ public class TopologyUpdateHandler {
          */
         TopologyParser.ParseResult incomingTopology = topologyParser.parseTopologyFromFileSystem(incomingTopologyFilePath);
         LOG.debug("Incoming topology contains the following entries:");
-        for (Map.Entry<String, Operator> entry : incomingTopology.topology.entrySet()) {
-            String name = entry.getKey();
-            Operator operator = entry.getValue();
-            LOG.debug(operator.toString());
-        }
+
+        incomingTopology.topology.entrySet().stream().forEach(i -> LOG.debug(i.getValue().toString()));
 
         List<TopologyUpdate> updates = computeListOfUpdates(topologyManagement.getTopology(), incomingTopology.topology);
         LOG.debug("Have to perform the following updates:");
-        for (TopologyUpdate update : updates) {
-            LOG.debug(update.toString());
-        }
+        updates.stream().forEach(i -> LOG.debug(i.toString()));
 
         return updates;
 
@@ -188,10 +184,7 @@ public class TopologyUpdateHandler {
             oldSources.add(o.getName());
         }
 
-        List<String> newSources = new ArrayList<>();
-        for (Operator o : newOperator.getSources()) {
-            newSources.add(o.getName());
-        }
+        List<String> newSources = newOperator.getSources().stream().map(i -> i.getName()).collect(Collectors.toList());
 
         if (oldSources == null && newSources == null) {
             return true;

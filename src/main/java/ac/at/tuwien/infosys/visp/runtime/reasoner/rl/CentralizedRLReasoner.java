@@ -208,8 +208,10 @@ public class CentralizedRLReasoner {
 					}
 			}
 			/* ************** DEBUG ************** */
-			
-			
+
+			/* record queuecount for topology */
+			rabbitMQMonitor.recordData();
+
 			/* Run -APE steps for each operatorType (in a concurrent way) */
 			for (String operatorName : topologyManager.getOperatorsAsList()) {
 				
@@ -219,8 +221,7 @@ public class CentralizedRLReasoner {
 				/* DEBUG: Save RL information */
 				saveQ(operatorName);
 				saveStateVisits(operatorName);
-				rabbitMQMonitor.saveQueueCount(operatorName, config.getInfrastructureIP());
-				
+
 		    	/* Do not scale pinned or cooling-down operators */
 				if (!canReconfigure(operatorName))
 					continue;

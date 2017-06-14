@@ -79,9 +79,8 @@ public class ReasonerBasic {
         availabilityWatchdog.checkAvailablitiyOfContainer();
         pcm.removeContainerWhichAreFlaggedToShutdown();
 
-        for (String key : resourceProvider.getResourceProviders().keySet()) {
-            resourceProvider.get(key).removeHostsWhichAreFlaggedToShutdown();
-        }
+        resourceProvider.getResourceProviders().keySet().stream()
+                .forEach(i -> resourceProvider.get(i).removeHostsWhichAreFlaggedToShutdown());
 
         LOG.info("VISP - Start Reasoner");
         LOG.info("VISP - Start check if any Hosts can be shut down");

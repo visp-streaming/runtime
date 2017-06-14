@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 public class ReasonerUtility {
@@ -74,20 +76,17 @@ public class ReasonerUtility {
     public ResourceTriple calculateFreeResourcesforHost(DockerHost dh) {
         ResourceTriple rc = new ResourceTriple(dh.getCores(), dh.getMemory(), dh.getStorage());
 
-        for (DockerContainer dc : dcr.findByHost(dh.getName())) {
-            rc.decrement(dc.getCpuCores(), dc.getMemory(), Float.valueOf(dc.getStorage()));
-        }
+        dcr.findByHost(dh.getName()).stream()
+                .forEach(i -> rc.decrement(i.getCpuCores(), i.getMemory(), Float.valueOf(i.getStorage())));
 
         return rc;
     }
 
     public Map<DockerHost, ResourceTriple> calculateFreeResourcesforHosts(DockerHost blacklistedHost) {
-        Map<String, ResourceTriple> hostResourceUsage = new HashMap<>();
         Map<DockerHost, ResourceTriple> freeResources = new HashMap<>();
 
-        for (DockerHost dh : dhr.findAll()) {
-            hostResourceUsage.put(dh.getName(), new ResourceTriple(dh.getCores(), dh.getMemory(), dh.getStorage()));
-        }
+        Map<String, ResourceTriple> hostResourceUsage = StreamSupport.stream(dhr.findAll().spliterator(), false)
+                .collect(Collectors.toMap(i -> i.getName(), i -> new ResourceTriple(i.getCores(), i.getMemory(), i.getStorage())));
 
         //collect current usage of cloud resources
         for (DockerContainer dc : dcr.findAll()) {
