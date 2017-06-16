@@ -91,7 +91,7 @@ public class AvailabilityWatchdog {
 
                         if (compensation.startsWith("mailto:")) {
                             try {
-                                compensation.replace("mailto:", "")
+                                compensation.replace("mailto:", "");
                                 //TODO send mail
                                 LOG.info("Redeployed complete topology.");
                             } catch (Exception e) {
