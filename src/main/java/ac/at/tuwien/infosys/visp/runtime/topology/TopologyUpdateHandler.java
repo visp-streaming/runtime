@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -285,6 +286,7 @@ public class TopologyUpdateHandler {
         boolean allInvolvedRuntimesAgree = true;
         List<String> contactedRuntimes = new ArrayList<>();
         List<String> listOfFailedRuntimes = new ArrayList<>();
+
         for (String runtime : involvedRuntimes) {
             // TODO: make for loop parallel
             LOG.debug("Contacting VISP runtime for test deployment: " + runtime);
@@ -380,13 +382,22 @@ public class TopologyUpdateHandler {
 
     private void sendCommitToRuntimes(List<String> contactedRuntimes, int hash) {
         LOG.debug("Sending commit signal to " + contactedRuntimes.size() + " runtimes");
-        for (String runtime : contactedRuntimes) {
-            RestTemplate restTemplate = new RestTemplate();
-            String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
-            LOG.debug("sending request to url: " + url);
-            Map commitResult = restTemplate.getForObject(url, Map.class);
-            LOG.debug("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
-        }
+
+        List<CompletableFuture<Boolean>> futures = contactedRuntimes.stream()
+                .map(t -> CompletableFuture.supplyAsync(() -> makeCommitRequest(t, hash)))
+                .collect(Collectors.toList());
+
+        List<Boolean> result = futures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+
+    }
+
+    private Boolean makeCommitRequest(String runtime, int hash) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://" + runtime + ":8080/commitTopologyUpdate?hash=" + hash;
+        LOG.debug("sending request to url: " + url);
+        Map commitResult = restTemplate.getForObject(url, Map.class);
+        LOG.debug("runtime " + runtime + " replied " + commitResult.get("errorMessage"));
+        return true;
     }
 
     private String executeUpdate(File topologyFile, List<TopologyUpdate> updates) {
