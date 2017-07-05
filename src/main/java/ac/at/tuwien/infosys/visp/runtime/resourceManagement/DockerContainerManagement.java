@@ -205,25 +205,25 @@ public class DockerContainerManagement {
         LOG.info("VISP - The container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + " was removed.");
     }
 
-    public String executeCommand(DockerContainer dc, String cmd)  {
-        LOG.info("in executeCommand for cmd: " + cmd);
+    public String executeCommand(DockerContainer dc, String cmd, Boolean resultExpected) throws DockerException, InterruptedException {
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         if(dh == null) {
             throw new RuntimeException("Could not find dockerhost by name: " + dc.getHost());
         }
 
-        try {
-            final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
-            final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
+        final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();
+        final ExecCreation execId = docker.execCreate(dc.getContainerid(), command, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
+
+        if (resultExpected) {
             final LogStream output = docker.execStart(execId.id());
             String result = output.readFully();
-            LOG.info("VISP - the command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
+            LOG.info("The command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost() + "with the result: " + result);
             return result;
-        } catch(Exception e) {
-            // this exception is a bug in the spotify docker lib
-            LOG.warn("Spotify lib bug");
-            return "<could not fetch result from docker-host>";
+        } else {
+            docker.execStart(execId.id());
+            LOG.info("The command " + cmd + " was executed on the container: " + dc.getContainerid() + " for the operatorType: " + dc.getOperatorType() + " on the host: " + dc.getHost());
+            return "no result available";
         }
     }
 

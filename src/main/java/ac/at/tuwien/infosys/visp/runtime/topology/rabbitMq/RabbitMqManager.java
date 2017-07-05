@@ -17,6 +17,7 @@ import ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq.entities.QueueResult;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +181,11 @@ public class RabbitMqManager {
 
             String command = "echo \"" + updateCommand + "\" >> ~/topologyUpdate; touch ~/topologyUpdate";
             LOG.debug("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
-                dcm.executeCommand(dc, command);
+            try {
+                dcm.executeCommand(dc, command, false);
+            } catch (DockerException | InterruptedException e) {
+                LOG.error("Could not execute command on container " + dc.getContainerid() + ": [" + command + "]");
+            }
         }
     }
 

@@ -112,7 +112,11 @@ public class ProcessingNodeManagement {
 
     public void triggerShutdown(DockerContainer dc) {
         dcm.markContainerForRemoval(dc);
-        dcm.executeCommand(dc, "cd ~ ; touch killme");
+        try {
+            dcm.executeCommand(dc, "cd ~ ; touch killme", false);
+        } catch (DockerException | InterruptedException e) {
+            LOG.error("Could not trigger shutdown on container: " + dc.getContainerid(), e);
+        }
 
         dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
         sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
