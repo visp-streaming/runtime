@@ -172,7 +172,6 @@ public class TopologyController {
         deleteCurrentOptimizationTask();
 
         // clear own topology:
-        utilities.clearAll();
 
         List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
 
@@ -198,6 +197,8 @@ public class TopologyController {
                 clearFails++;
             }
         }
+
+        utilities.clearAll();
 
         model.addAttribute("action", "clear");
         model.addAttribute("clearfails", clearFails);

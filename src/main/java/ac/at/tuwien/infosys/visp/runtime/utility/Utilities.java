@@ -71,6 +71,9 @@ public class Utilities {
     private ResourcePoolConnector rpc;
 
     @Autowired
+    private VISPInstanceRepository vir;
+
+    @Autowired
     private RabbitMqManager rabbitMqManager;
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
@@ -107,6 +110,7 @@ public class Utilities {
             qmr.deleteAll();
             pcr.deleteAll();
             dcmr.deleteAll();
+            vir.deleteAll();
 
             appMetRepos.deleteAll();
             opeMetRepos.deleteAll();
