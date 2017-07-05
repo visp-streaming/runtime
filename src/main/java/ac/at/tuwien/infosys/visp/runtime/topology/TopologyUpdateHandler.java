@@ -490,7 +490,7 @@ public class TopologyUpdateHandler {
         }
         int newInstances = 0;
         for (VISPInstance instance : allInstances.values()) {
-            VISPInstance vi = vir.findFirstByUri(instance.getIp());
+            VISPInstance vi = vir.findFirstByIp(instance.getIp());
             if (vi == null) {
                 vir.save(instance);
                 newInstances++;

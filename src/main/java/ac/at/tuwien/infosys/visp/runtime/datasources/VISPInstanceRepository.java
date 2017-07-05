@@ -6,7 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface VISPInstanceRepository extends CrudRepository<VISPInstance, Long> {
 
-    VISPInstance findFirstByUri(String uri);
+    VISPInstance findFirstByIp(String ip);
 
 
 }
