@@ -87,7 +87,7 @@ public class Monitor {
 
         if (sa == ScalingAction.DONOTHING) {
             //assume that we may not have any monitoring information
-            if (max>queueUpscalingThreshold*5) {
+            if (max > queueUpscalingThreshold * 5) {
                 return ScalingAction.SCALEUP;
             }
         }
@@ -181,8 +181,7 @@ public class Monitor {
         return ScalingAction.DONOTHING;
     }
 
-    
-    
+
     private QueueMonitor getQueueCount(String queueName, Operator op) {
         String operatorName = op.getName();
         String infrastructureHost = op.getConcreteLocation().getIpAddress();
@@ -204,25 +203,27 @@ public class Monitor {
 
         try {
             BaseJsonNode arrayNode = response.getBody();
+
             Double incoming = 0.0;
             Integer queueload = 0;
-            if (arrayNode!=null) {
-                JsonNode rateNode = arrayNode.findValue("message_stats").findValue("publish_details");
+            if (arrayNode != null) {
+                if (arrayNode.has("message_stats")) {
+                    JsonNode rateNode = arrayNode.findValue("message_stats").findValue("publish_details");
 
-                if (rateNode != null) {
-                    if (rateNode.findValue("rate")!=null) {
-                        incoming = rateNode.findValue("rate").asDouble();
+                    if (rateNode != null) {
+                        if (rateNode.findValue("rate") != null) {
+                            incoming = rateNode.findValue("rate").asDouble();
+                        }
                     }
-                }
 
-            queueload = arrayNode.findValue("messages").asInt();
-            LOG.debug("Current load for queue: " + queueNameRaw + " is " + queueload + ".");
+                    queueload = arrayNode.findValue("messages").asInt();
+                }
+                return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
             }
-            return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
         } catch (Exception ex) {
-            LOG.warn("Queue \"" + queueNameRaw + "\" is not available.");
+            LOG.error("No data available for queue: " + queueName);
         }
-    return null;
+        return null;
 
     }
 
