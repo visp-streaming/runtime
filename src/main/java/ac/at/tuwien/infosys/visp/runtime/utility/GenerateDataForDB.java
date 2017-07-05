@@ -48,7 +48,7 @@ public class GenerateDataForDB {
 
         //extern connections
         for (VISPInstance vispInstance : vir.findAll()) {
-            if(vispInstance.getUri().equals(config.getRuntimeIP())) {
+            if(vispInstance.getIp().equals(config.getRuntimeIP())) {
                 continue;
             }
 
@@ -62,11 +62,11 @@ public class GenerateDataForDB {
             //-1.0 represents not reachable
             Double delay = -1.0;
             try {
-                delay = pingUrl(vispInstance.getUri() + ":8080") / 1000;
+                delay = pingUrl(vispInstance.getIp() + ":8080") / 1000;
             } catch (IOException e) {
                 LOG.error(e.getLocalizedMessage());
             }
-            vcr.save(new VISPConnection(config.getRuntimeIP(), vispInstance.getUri(), delay, datarateExtern, availabilityExtern));
+            vcr.save(new VISPConnection(config.getRuntimeIP(), vispInstance.getIp(), delay, datarateExtern, availabilityExtern));
         }
     }
 

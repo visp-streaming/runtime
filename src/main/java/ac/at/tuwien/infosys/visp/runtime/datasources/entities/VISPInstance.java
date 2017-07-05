@@ -15,13 +15,13 @@ public class VISPInstance {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    private String uri;
+    private String ip;
 
     public VISPInstance() {
     }
 
-    public VISPInstance(String uri) {
-        this.uri = uri;
+    public VISPInstance(String ip) {
+        this.ip = ip;
     }
 }
 

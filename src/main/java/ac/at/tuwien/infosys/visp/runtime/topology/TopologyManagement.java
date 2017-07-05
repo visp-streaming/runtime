@@ -23,8 +23,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
@@ -288,13 +288,19 @@ public class TopologyManagement {
 
 
         for(VISPInstance instance : allVispInstances) {
-            if(instance.getUri().equals(config.getRuntimeIP())) {
+            if(instance.getIp().equals(config.getRuntimeIP())) {
                 continue;
             }
-            RestTemplate restTemplate = new RestTemplate();
-            String url = "http://" + instance.getUri() + ":8080/getTopology";
             try {
-                LOG.debug("Trying to retrieve topology from VISP instance " + instance.getUri() + "...");
+
+                if (!InetAddress.getByName(instance.getIp()).isReachable(5000)) {
+                    LOG.warn("VISP Instance " + instance.getIp() + " could not be used to get topology (probably offline)");
+                    continue;
+                }
+
+                RestTemplate restTemplate = new RestTemplate();
+                String url = "http://" + instance.getIp() + ":8080/getTopology";
+                LOG.debug("Trying to retrieve topology from VISP instance " + instance.getIp() + "...");
                 String topologyContent = restTemplate.getForObject(url, String.class);
                 if(topologyContent == null || topologyContent.equals("")) {
                     continue;
@@ -303,10 +309,10 @@ public class TopologyManagement {
                 TopologyParser.ParseResult pr = topologyParser.parseTopologyFromString(topologyContent);
                 this.topology = pr.topology;
                 this.setDotFile(pr.dotFile);
-                LOG.info("Successfully retrieved topology from VISP instance " + instance.getUri());
+                LOG.info("Successfully retrieved topology from VISP instance " + instance.getIp());
                 return true;
             } catch (Exception e) {
-                LOG.warn("VISP Instance " + instance.getUri() + " could not be used to get topology (probably offline)");
+                LOG.warn("VISP Instance " + instance.getIp() + " could not be used to get topology (probably offline)");
             }
         }
 

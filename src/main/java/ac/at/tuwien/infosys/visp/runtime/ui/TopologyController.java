@@ -29,9 +29,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -50,6 +50,9 @@ public class TopologyController {
     @Autowired
     private VISPInstanceRepository vir;
 
+    @Autowired
+    private Configurationprovider config;
+
     @Value("${visp.odr.host}")
     private String odrHost;
 
@@ -64,8 +67,7 @@ public class TopologyController {
 
     private Integer currentOptimizationTaskId;
 
-    @Autowired
-    private Configurationprovider config;
+
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -147,19 +149,18 @@ public class TopologyController {
     /**
      * deletes the current optimization task from ODR optimization scheduling (if present)
      */
-    public void deleteCurrentOptimizationTask() {
+    private void deleteCurrentOptimizationTask() {
         if (currentOptimizationTaskId == null) {
             return;
         }
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://" + odrHost + ":" + odrPort + "/odrApi/deleteOptTask";
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("taskId", currentOptimizationTaskId);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url).queryParam("taskId", currentOptimizationTaskId);
         try {
             restTemplate
                     .exchange(builder.build().encode().toUri(), HttpMethod.DELETE, null, Void.class);
-            currentOptimizationTaskId = null;
             LOG.info("Optimization Task with id: "+ currentOptimizationTaskId + " deleted." );
+            currentOptimizationTaskId = null;
         } catch(RestClientException e){
             LOG.error("ODR Reasoner cannot be requested. Url: " + url);
         }
@@ -167,33 +168,32 @@ public class TopologyController {
 
     @RequestMapping("/topology/clear")
     public String reinitialize(Model model) throws SchedulerException {
-
-        //delete if there is an existing optimization task;
         deleteCurrentOptimizationTask();
-
-        // clear own topology:
-
-        List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
-
-        LOG.debug("This instance currently knows of " + allVispInstances.size() + " other VISP instances...");
 
         int clearFails = 0;
 
-        for(VISPInstance instance : allVispInstances) {
-            if(instance.getUri().equals(config.getRuntimeIP())) {
+        for(VISPInstance instance : vir.findAll()) {
+            if(instance.getIp().equals(config.getRuntimeIP())) {
                 continue;
             }
-            LOG.debug("sending clear request to " + instance.getUri() + "...");
-            RestTemplate restTemplate = new RestTemplate();
+
             try {
-                String url = "http://" + instance.getUri() + ":8080/clear";
+                if (!InetAddress.getByName(instance.getIp()).isReachable(5000)) {
+                    LOG.error("VISP Instance " + instance.getIp() + " could not perform clear because host cannot be reached.");
+                    clearFails++;
+                    continue;
+                }
+
+                LOG.debug("sending clear request to " + instance.getIp() + "...");
+                RestTemplate restTemplate = new RestTemplate();
+                String url = "http://" + instance.getIp() + ":8080/clear";
                 Map clearResult = restTemplate.getForObject(url, Map.class);
                 String errorMessage = (String) clearResult.get("errorMessage");
                 if(errorMessage.equals("none")) {
-                    LOG.debug("VISP Instance " + instance.getUri() + " replied clear success");
+                    LOG.debug("VISP Instance " + instance.getIp() + " replied clear success");
                 }
             } catch (Exception e) {
-                LOG.error("VISP Instance " + instance.getUri() + " could not perform clear", e);
+                LOG.error("VISP Instance " + instance.getIp() + " could not perform clear", e);
                 clearFails++;
             }
         }

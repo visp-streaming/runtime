@@ -83,7 +83,7 @@ public class Configurationprovider {
     private String testConnection(String infrastructureIP) {
         String databaseIP = null;
         try {
-            return validateURIForRabbitMQHost(infrastructureIP);
+            return validateIPForRabbitMQHost(infrastructureIP);
         } catch(Exception e) {
             LOG.info("Connection to  " + infrastructureIP + " failed");
             try {
@@ -92,14 +92,14 @@ public class Configurationprovider {
                     if (Files.exists(databaseConfigFile)) {
                         databaseIP = new String(Files.readAllBytes(databaseConfigFile), StandardCharsets.UTF_8).replaceAll("[\\r\\n]", "").trim();
                     }
-                return validateURIForRabbitMQHost(databaseIP);
+                return validateIPForRabbitMQHost(databaseIP);
             } catch(Exception e1) {
                 throw new RuntimeException("Could neither connect to localhost nor to database IP");
             }
         }
     }
 
-    private String validateURIForRabbitMQHost(String infrastructureIP) throws IOException, TimeoutException {
+    private String validateIPForRabbitMQHost(String infrastructureIP) throws IOException, TimeoutException {
         LOG.info("Trying to connect to " + infrastructureIP);
         // try to connect to infrastructure host
         ConnectionFactory factory = new ConnectionFactory();
