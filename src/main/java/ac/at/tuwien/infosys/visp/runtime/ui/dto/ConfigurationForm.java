@@ -1,6 +1,9 @@
 package ac.at.tuwien.infosys.visp.runtime.ui.dto;
 
 
+import lombok.Data;
+
+@Data
 public class ConfigurationForm {
 
     private String runtimeip;
@@ -20,43 +23,4 @@ public class ConfigurationForm {
     public ConfigurationForm() {
     }
 
-    public String getRuntimeip() {
-        return runtimeip;
-    }
-
-    public void setRuntimeip(String runtimeip) {
-        this.runtimeip = runtimeip;
-    }
-
-    public String getInfrastructureip() {
-        return infrastructureip;
-    }
-
-    public void setInfrastructureip(String infrastructureip) {
-        this.infrastructureip = infrastructureip;
-    }
-
-    public String getOpenstackhostimageid() {
-        return openstackhostimageid;
-    }
-
-    public void setOpenstackhostimageid(String openstackhostimageid) {
-        this.openstackhostimageid = openstackhostimageid;
-    }
-
-    public String getProcessingimageid() {
-        return processingimageid;
-    }
-
-    public void setProcessingimageid(String processingimageid) {
-        this.processingimageid = processingimageid;
-    }
-
-    public String getReasoner() {
-        return reasoner;
-    }
-
-    public void setReasoner(String reasoner) {
-        this.reasoner = reasoner;
-    }
 }

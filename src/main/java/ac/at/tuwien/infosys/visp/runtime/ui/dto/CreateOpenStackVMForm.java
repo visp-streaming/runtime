@@ -1,6 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.ui.dto;
 
+import lombok.Data;
 
+@Data
 public class CreateOpenStackVMForm {
 
     private String poolname;
@@ -8,35 +10,4 @@ public class CreateOpenStackVMForm {
     private Double cost;
     private String instanceName;
 
-    public String getPoolname() {
-        return poolname;
-    }
-
-    public void setPoolname(String poolname) {
-        this.poolname = poolname;
-    }
-
-    public String getFlavour() {
-        return flavour;
-    }
-
-    public void setFlavour(String flavour) {
-        this.flavour = flavour;
-    }
-
-    public Double getCost() {
-        return cost;
-    }
-
-    public void setCost(Double cost) {
-        this.cost = cost;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-    }
 }

@@ -23,6 +23,7 @@ public class PooledVM {
     private String linkedhost;
     private Double cost;
     private Integer cpuFrequency;
+    private String type;
 
 
     public PooledVM() {

@@ -20,6 +20,7 @@
         <div class="panel-heading"></div>
         <div class="panel-body text-center">
             <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
+            <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
             <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
         </div>
     </div>
@@ -34,6 +35,7 @@
                     <tbody>
                         <tr>
                             <th class="vertmiddle col-md-3">ID</th>
+                            <th class="vertmiddle col-md-3">Type</th>
                             <th class="vertmiddle col-md-3">Pool</th>
                             <th class="vertmiddle col-md-3">URL</th>
                             <th class="vertmiddle col-md-2">Flavor</th>
@@ -41,6 +43,7 @@
                         </tr>
                         <tr th:each="host : ${hosts}">
                             <td class="vertmiddle col-md-3" th:text="${host.name}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${host.type}"></td>
                             <td class="vertmiddle col-md-3" th:text="${host.poolname}"></td>
                             <td class="vertmiddle col-md-3" th:text="${host.url}"
                                 th:if="${host.getAvailable() == true}"></td>

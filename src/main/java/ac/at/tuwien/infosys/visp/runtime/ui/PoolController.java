@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
+import ac.at.tuwien.infosys.visp.runtime.ui.dto.AddCustomHostForm;
 import ac.at.tuwien.infosys.visp.runtime.ui.dto.CreateOpenStackVMForm;
 import ac.at.tuwien.infosys.visp.runtime.ui.dto.PooledVMDTO;
 import org.quartz.SchedulerException;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Controller
 @DependsOn("configurationprovider")
@@ -61,7 +63,7 @@ public class PoolController {
         List<PooledVMDTO> vms = new ArrayList<>();
 
         for (PooledVM pvm : pvmr.findAll()) {
-            PooledVMDTO vm = new PooledVMDTO(pvm.getId(), pvm.getPoolname(), pvm.getName(), pvm.getUrl(), pvm.getFlavour(), true);
+            PooledVMDTO vm = new PooledVMDTO(pvm.getId(), pvm.getPoolname(), pvm.getName(), pvm.getType(), pvm.getUrl(), pvm.getFlavour(), true);
 
             if (!dcm.checkAvailabilityofDockerhost(pvm.getUrl())) {
                 vm.setAvailable(false);
@@ -73,7 +75,7 @@ public class PoolController {
     }
 
     @RequestMapping("/pooledvms/addOpenStackVM")
-    public String run(Model model) {
+    public String addOpenStackVM(Model model) {
 
         CreateOpenStackVMForm form = new CreateOpenStackVMForm();
         form.setCost(1.5);
@@ -86,8 +88,45 @@ public class PoolController {
         return "createOpenStackVM";
     }
 
+    @RequestMapping("/pooledvms/addCustomHost")
+    public String addCustomHost(Model model) {
+
+        AddCustomHostForm form = new AddCustomHostForm();
+        form.setCost(1.5);
+        form.setFrequency(2400);
+
+        model.addAttribute(form);
+
+        return "addCustomHost";
+    }
+
+    @RequestMapping(value="/pooledvms/createCustomHost", method= RequestMethod.POST)
+    public String createCustomHost(@ModelAttribute AddCustomHostForm form, Model model) throws SchedulerException {
+
+        PooledVM pvm = new PooledVM();
+        pvm.setName(form.getInstanceName() + "--" + UUID.randomUUID().toString());
+        pvm.setPoolname(form.getPoolname());
+        pvm.setUrl(form.getUrl());
+        pvm.setCores(form.getCores());
+        pvm.setMemory(form.getMemory());
+        pvm.setStorage(form.getStorage());
+        pvm.setFlavour("custom");
+        pvm.setCost(form.getCost());
+        pvm.setType("custom");
+        pvm.setCpuFrequency(form.getFrequency());
+        pvmr.save(pvm);
+
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+
+        model.addAttribute("message", "A new custom host has been added.");
+        model.addAttribute("hosts", vms);
+
+        rp.updateResourceProvider();
+        return "pooledvms";
+    }
+
     @RequestMapping(value="/pooledvms/createOpenStackVM", method= RequestMethod.POST)
-    public String userCreated(@ModelAttribute CreateOpenStackVMForm form, Model model) throws SchedulerException {
+    public String createOpenStackVM(@ModelAttribute CreateOpenStackVMForm form, Model model) throws SchedulerException {
 
         DockerHost dh = new DockerHost(form.getInstanceName());
         dh.setFlavour(form.getFlavour());
@@ -102,6 +141,7 @@ public class PoolController {
         pvm.setStorage(dh.getStorage());
         pvm.setFlavour(dh.getFlavour());
         pvm.setCost(form.getCost());
+        pvm.setType("openstack");
         dhr.delete(dh); //delete host again from docker hosts
         //TODO configure
         pvm.setCpuFrequency(2400);
@@ -124,9 +164,11 @@ public class PoolController {
         if (dhr.findFirstByName(pvm.getName()) != null) {
             model.addAttribute("message", "The pooled VM cannot not be deleted because there are still instances running.");
         } else {
-            opc.stopDockerHost(pvm.getName());
+            if (pvm.getType().equals("openstack")) {
+                opc.stopDockerHost(pvm.getName());
+            }
             pvmr.delete(pvm);
-            model.addAttribute("message", "The pooled VM has been deleted.");
+            model.addAttribute("message", "The host has been removed.");
         }
 
         rpp.updateResourceProvider();
@@ -143,12 +185,14 @@ public class PoolController {
 
         for (PooledVM pvm : pvmr.findAll()) {
             if (dhr.findFirstByName(pvm.getName()) != null) {
-                model.addAttribute("message", "The pooled VMs cannot not be deleted because there are still instances running.");
+                model.addAttribute("message", "The hosts cannot not be removed because there are still operators running.");
                 List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
                 model.addAttribute("hosts", vms);
                 return "pooledvms";
             } else {
-                opc.stopDockerHost(pvm.getName());
+                if (pvm.getType().equals("openstack")) {
+                    opc.stopDockerHost(pvm.getName());
+                }
                 pvmr.delete(pvm);
             }
         }
@@ -157,7 +201,7 @@ public class PoolController {
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
         model.addAttribute("hosts", vms);
-        model.addAttribute("message", "The pooled VMs have been deleted.");
+        model.addAttribute("message", "All hosts have been removed.");
 
         rp.updateResourceProvider();
         return "pooledvms";
