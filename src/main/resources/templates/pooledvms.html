@@ -17,46 +17,39 @@
    </div>
 
     <div class="panel panel-default">
-        <div class="panel-heading">Utility Operations</div>
+        <div class="panel-heading"></div>
         <div class="panel-body text-center">
-            <a class="btn btn-success" th:href="${'/pooledvms/addpooledvm'}">Add new pooled VM</a>
-            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Kill all pooled VMs</a>
+            <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
+            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
         </div>
     </div>
 
-    <th:block th:unless="${#arrays.length(pools) == 0}">
+    <th:block th:unless="${#arrays.length(hosts) == 0}">
 
         <div class="panel panel-default">
-            <div class="panel-heading">Deployed Pooled VMs
+            <div class="panel-heading">Hosts
             </div>
             <div class="panel-body">
                 <table class="table table-hover nohead">
                     <tbody>
                         <tr>
-                            <th class="vertmiddle col-md-3">Name</th>
+                            <th class="vertmiddle col-md-3">ID</th>
                             <th class="vertmiddle col-md-3">Pool</th>
                             <th class="vertmiddle col-md-3">URL</th>
                             <th class="vertmiddle col-md-2">Flavor</th>
-                            <th class="vertmiddle col-md-1">
-                                <div class="center-block">
-                                    Actions
-                                </div>
-                            </th>
+                            <th class="vertmiddle col-md-1"><div class="center-block">Actions</div></th>
                         </tr>
-                        <tr th:each="pool : ${pools}">
-
-
-
-                            <td class="vertmiddle col-md-3" th:text="${pool.getName()}"></td>
-                            <td class="vertmiddle col-md-3" th:text="${pool.getPoolname()}"></td>
-                            <td class="vertmiddle col-md-3" th:text="${pool.getUrl()}"
-                                th:if="${pool.getAvailable() == true}"></td>
-                            <td class="vertmiddle col-md-3 alert alert-danger" th:text="${pool.getUrl()}"
-                                th:if="${pool.getAvailable() == false}"></td>
-                            <td class="vertmiddle col-md-2" th:text="${pool.getFlavour()}"></td>
+                        <tr th:each="host : ${hosts}">
+                            <td class="vertmiddle col-md-3" th:text="${host.name}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${host.poolname}"></td>
+                            <td class="vertmiddle col-md-3" th:text="${host.url}"
+                                th:if="${host.getAvailable() == true}"></td>
+                            <td class="vertmiddle col-md-3 alert alert-danger" th:text="${host.url}"
+                                th:if="${host.getAvailable() == false}"></td>
+                            <td class="vertmiddle col-md-2" th:text="${host.flavour}"></td>
                             <td class="vertmiddle col-md-1">
                                 <div class="pull-right">
-                                    <a class="btn btn-danger" th:href="${'/pooledvms/kill/' + pool.getId()}">Kill</a>
+                                    <a class="btn btn-danger" th:href="${'/pooledvms/kill/' + host.id}">Kill</a>
                                 </div>
                             </td>
                         </tr>
@@ -66,8 +59,8 @@
         </div>
     </th:block>
 
-    <div class="emptystate" th:if="${#arrays.length(pools) == 0}">
-        <div class="emptystate-text">There are currently no pooled VMs running.</div>
+    <div class="emptystate" th:if="${#arrays.length(hosts) == 0}">
+        <div class="emptystate-text">Currently there are no hosts available.</div>
     </div>
 
 </th:block>

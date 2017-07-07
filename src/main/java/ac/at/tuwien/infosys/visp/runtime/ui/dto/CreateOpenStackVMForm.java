@@ -1,7 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.ui.dto;
 
 
-public class CreatePooledvmForm {
+public class CreateOpenStackVMForm {
 
     private String poolname;
     private String flavour;

@@ -8,7 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
-import ac.at.tuwien.infosys.visp.runtime.ui.dto.CreatePooledvmForm;
+import ac.at.tuwien.infosys.visp.runtime.ui.dto.CreateOpenStackVMForm;
 import ac.at.tuwien.infosys.visp.runtime.ui.dto.PooledVMDTO;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -53,7 +53,7 @@ public class PoolController {
     public String index(Model model) throws SchedulerException {
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
-        model.addAttribute("pools", vms);
+        model.addAttribute("hosts", vms);
         return "pooledvms";
     }
 
@@ -65,17 +65,17 @@ public class PoolController {
 
             if (!dcm.checkAvailabilityofDockerhost(pvm.getUrl())) {
                 vm.setAvailable(false);
-                LOG.error("The pooled VM with the URL " + pvm.getUrl() + " is not available.");
+                LOG.error("The VM with the URL " + pvm.getUrl() + " is not available.");
             }
             vms.add(vm);
         }
         return vms;
     }
 
-    @RequestMapping("/pooledvms/addpooledvm")
+    @RequestMapping("/pooledvms/addOpenStackVM")
     public String run(Model model) {
 
-        CreatePooledvmForm form = new CreatePooledvmForm();
+        CreateOpenStackVMForm form = new CreateOpenStackVMForm();
         form.setCost(1.5);
         form.setFlavour("m2.medium");
         form.setInstanceName("dockerhost");
@@ -83,11 +83,11 @@ public class PoolController {
         model.addAttribute("flavours", opc.getFlavours());
         model.addAttribute(form);
 
-        return "createPooledvm";
+        return "createOpenStackVM";
     }
 
-    @RequestMapping(value="/pooledvms/createPooledvm", method= RequestMethod.POST)
-    public String userCreated(@ModelAttribute CreatePooledvmForm form, Model model) throws SchedulerException {
+    @RequestMapping(value="/pooledvms/createOpenStackVM", method= RequestMethod.POST)
+    public String userCreated(@ModelAttribute CreateOpenStackVMForm form, Model model) throws SchedulerException {
 
         DockerHost dh = new DockerHost(form.getInstanceName());
         dh.setFlavour(form.getFlavour());
@@ -109,8 +109,8 @@ public class PoolController {
 
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
-        model.addAttribute("message", "A new pooledVM has been started.");
-        model.addAttribute("pools", vms);
+        model.addAttribute("message", "A new OpenStack VM has been started.");
+        model.addAttribute("hosts", vms);
 
         rp.updateResourceProvider();
         return "pooledvms";
@@ -132,7 +132,7 @@ public class PoolController {
         rpp.updateResourceProvider();
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
-        model.addAttribute("pools", vms);
+        model.addAttribute("hosts", vms);
 
         rp.updateResourceProvider();
         return "pooledvms";
@@ -145,7 +145,7 @@ public class PoolController {
             if (dhr.findFirstByName(pvm.getName()) != null) {
                 model.addAttribute("message", "The pooled VMs cannot not be deleted because there are still instances running.");
                 List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
-                model.addAttribute("pools", vms);
+                model.addAttribute("hosts", vms);
                 return "pooledvms";
             } else {
                 opc.stopDockerHost(pvm.getName());
@@ -156,7 +156,7 @@ public class PoolController {
         rpp.updateResourceProvider();
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
-        model.addAttribute("pools", vms);
+        model.addAttribute("hosts", vms);
         model.addAttribute("message", "The pooled VMs have been deleted.");
 
         rp.updateResourceProvider();
