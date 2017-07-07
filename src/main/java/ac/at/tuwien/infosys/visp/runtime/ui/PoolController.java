@@ -79,6 +79,7 @@ public class PoolController {
 
         CreateOpenStackVMForm form = new CreateOpenStackVMForm();
         form.setCost(1.5);
+        form.setFrequency(2400);
         form.setFlavour("m2.medium");
         form.setInstanceName("dockerhost");
 
@@ -141,10 +142,9 @@ public class PoolController {
         pvm.setStorage(dh.getStorage());
         pvm.setFlavour(dh.getFlavour());
         pvm.setCost(form.getCost());
+        pvm.setCpuFrequency(form.getFrequency());
         pvm.setType("openstack");
-        dhr.delete(dh); //delete host again from docker hosts
-        //TODO configure
-        pvm.setCpuFrequency(2400);
+        dhr.delete(dh); //delete host again from docker hosts table
         pvmr.save(pvm);
 
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();

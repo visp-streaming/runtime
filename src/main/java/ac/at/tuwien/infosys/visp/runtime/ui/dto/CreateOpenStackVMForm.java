@@ -9,5 +9,6 @@ public class CreateOpenStackVMForm {
     private String flavour;
     private Double cost;
     private String instanceName;
+    private Integer frequency;
 
 }
