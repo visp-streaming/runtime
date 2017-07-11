@@ -41,7 +41,7 @@ public class Datasourceconfig {
             IP = "127.0.0.1";
         }
 
-        String uri = "jdbc:mysql://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
+        String uri = "jdbc:mariadb://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
 
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.url(uri);
