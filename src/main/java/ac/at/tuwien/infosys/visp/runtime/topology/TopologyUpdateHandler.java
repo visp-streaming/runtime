@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationReposit
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.VISPInstance;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.TopologyException;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
 import ac.at.tuwien.infosys.visp.runtime.restAPI.dto.TestDeploymentDTO;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.SizeUpdate;
@@ -85,7 +86,8 @@ public class TopologyUpdateHandler {
             incomingTopologyFilePath = temp.getAbsolutePath();
             return new File(incomingTopologyFilePath);
         } catch (IOException e) {
-            throw new RuntimeException("Could not write topology to temporary file", e);
+            LOG.error("Could not write topology to temporary file", e);
+            throw new TopologyException("Could not write topology to temporary file");
         }
     }
 
@@ -213,7 +215,7 @@ public class TopologyUpdateHandler {
 
             String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
 
-            if(!ownDeploymentError.equals("ok")) {
+            if(!"ok".equals(ownDeploymentError)) {
                 String errorMessage = "Critical error - Could not deploy topology on remote instance " +
                         config.getRuntimeIP() + "; error: [" + ownDeploymentError + "]";
                 LOG.error(errorMessage);
@@ -255,7 +257,7 @@ public class TopologyUpdateHandler {
         // first check if local deployment is even possible - otherwise do not waste time to contact other instances
         String ownDeploymentError = manualOperatorMgmt.testDeployment(extractOwnOperators(topologyFile, config.getRuntimeIP()));
 
-        if(!ownDeploymentError.equals("ok")) {
+        if(!"ok".equals(ownDeploymentError)) {
             String errorMessage = "Critical error - Could not deploy topology on own instance; error: [" + ownDeploymentError + "]";
             LOG.error(errorMessage);
             UpdateResult result = new UpdateResult(null, null, UpdateResult.UpdateStatus.LOCAL_DEPLOYMENT_NOT_POSSIBLE);
@@ -305,7 +307,7 @@ public class TopologyUpdateHandler {
 
         if (allInvolvedRuntimesAgree) {
             if (contactedRuntimes.size() != involvedRuntimes.size()) {
-                throw new RuntimeException("Exception: number of involved and contacted runtimes must agree in case of commit");
+                throw new TopologyException("Exception: number of involved and contacted runtimes must agree in case of commit");
             }
             sendCommitToRuntimes(contactedRuntimes, hash);
             pngPath = executeUpdate(topologyFile, updates);
@@ -355,7 +357,7 @@ public class TopologyUpdateHandler {
                 String url = "http://" + runtime + ":8080/checkStatus";
                 Map abortResult = restTemplate.getForObject(url, Map.class);
                 String status = (String) abortResult.get("onlineStatus");
-                if (status.equals("online")) {
+                if ("online".equals(status)) {
                     isOnline = true;
                 }
             } catch (Exception e) {
@@ -443,7 +445,7 @@ public class TopologyUpdateHandler {
          */
 
         for (Operator op : topology.values()) {
-            if (!op.getConcreteLocation().getResourcePool().equals("*")) {
+            if (!"*".equals(op.getConcreteLocation().getResourcePool())) {
                 continue;
             }
             if (!op.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
@@ -459,12 +461,12 @@ public class TopologyUpdateHandler {
                             op.getName() + " on runtime " + op.getConcreteLocation());
                 } catch (Exception e) {
                     LOG.error("Error while querying VISP instance for list of resource pools", e);
-                    throw new RuntimeException("Could not query VISP instance for list of resource pools");
+                    throw new TopologyException("Could not query VISP instance for list of resource pools");
                 }
             } else {
                 List<String> allPools = pvmr.findDistinctPoolnames();
                 if (allPools.size() == 0) {
-                    throw new RuntimeException("No resource pools available for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
+                    throw new TopologyException("No resource pools available for operator " + op.getName() + " on runtime " + config.getRuntimeIP());
                 }
                 String resourcePool = allPools.get(new Random().nextInt(allPools.size()));
                 op.setConcreteLocation(new Operator.Location(op.getConcreteLocation().getIpAddress(), resourcePool));

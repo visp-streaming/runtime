@@ -15,7 +15,7 @@ public class OperatorConfigurationBootstrapTest {
 
     private OperatorConfigurationBootstrap operatorConfigurationBootstrap = new OperatorConfigurationBootstrap(false);
 
-    String correctInput = "{\"operators\" : [\n" +
+    private String correctInput = "{\"operators\" : [\n" +
             "    {\n" +
             "    \"name\" : \"calculateperformance\",\n" +
             "    \"cores\" : 0.4,\n" +
@@ -36,7 +36,7 @@ public class OperatorConfigurationBootstrapTest {
             "    }\n" +
             "]\n}";
 
-    String faultyInput = "{\"operators\" : [\n" +
+    private String faultyInput = "{\"operators\" : [\n" +
             "    {\n" +
             "    \"name\" : \"calculateperformance\",\n" +
             "    \"cores\" : \"xxx\",\n" +

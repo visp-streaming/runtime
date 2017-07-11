@@ -5,6 +5,8 @@ import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.TopologyException;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ManualOperatorManagement;
@@ -76,10 +78,10 @@ public class RabbitMqManager {
         // returns the name of the queue that is created for the communication between senderHost and consumerHost
         //return consumerHost + senderHost;
         if (senderOperator.contains("/") || consumerOperator.contains("/") || senderHost.contains("/")) {
-            throw new RuntimeException("Neither senderOperator, consumerOperator nor senderHost may contain slashes");
+            throw new TopologyException("Neither senderOperator, consumerOperator nor senderHost may contain slashes");
         }
         if (senderOperator.contains(">") || consumerOperator.contains(">") || senderHost.contains(">")) {
-            throw new RuntimeException("Neither senderOperator, consumerOperator nor senderHost may contain greater signs");
+            throw new TopologyException("Neither senderOperator, consumerOperator nor senderHost may contain greater signs");
         }
         return senderHost + "/" + senderOperator + ">" + consumerOperator;
 
@@ -173,7 +175,7 @@ public class RabbitMqManager {
             for (DockerContainer dc : dcr.findAll()) {
                 LOG.debug(dc.toString());
             }
-            throw new RuntimeException("Could not find docker containers for operator " + toOperatorId);
+            throw new ResourceException("Could not find docker containers for operator " + toOperatorId);
         }
         LOG.debug("Found " + dcs.size() + " matching containers for operator-name " + toOperatorId);
         for (DockerContainer dc : dcs) {
@@ -263,26 +265,16 @@ public class RabbitMqManager {
                     int oldSizeInt = 0;
                     int newSizeInt = 0;
                     switch (oldSize) {
-                        case SMALL:
-                            oldSizeInt = 1;
-                            break;
-                        case MEDIUM:
-                            oldSizeInt = 2;
-                            break;
-                        case LARGE:
-                            oldSizeInt = 4;
-                            break;
+                        case SMALL: oldSizeInt = 1; break;
+                        case MEDIUM: oldSizeInt = 2; break;
+                        case LARGE: oldSizeInt = 4; break;
+                        default: oldSizeInt = 1; break;
                     }
                     switch (newSize) {
-                        case SMALL:
-                            newSizeInt = 1;
-                            break;
-                        case MEDIUM:
-                            newSizeInt = 2;
-                            break;
-                        case LARGE:
-                            newSizeInt = 4;
-                            break;
+                        case SMALL: newSizeInt = 1; break;
+                        case MEDIUM: newSizeInt = 2; break;
+                        case LARGE: newSizeInt = 4; break;
+                        default: newSizeInt = 1; break;
                     }
 
 
@@ -302,7 +294,7 @@ public class RabbitMqManager {
                         }
                     }
 
-                } catch (Exception e) {
+                } catch (ResourceException e) {
                     LOG.error("Could not rescale operator " + op, e);
                 }
             }
@@ -478,7 +470,7 @@ public class RabbitMqManager {
             case UPDATE_SIZE:
                 return null;
             default:
-                throw new RuntimeException("Update type " + update.getUpdateType().toString() + " not yet implemented");
+                throw new TopologyException("Update type " + update.getUpdateType().toString() + " not yet implemented");
         }
 
     }

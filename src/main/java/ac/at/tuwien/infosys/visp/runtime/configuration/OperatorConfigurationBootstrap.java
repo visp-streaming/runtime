@@ -24,18 +24,21 @@ import java.util.Map;
 @DependsOn("configurationprovider")
 public class OperatorConfigurationBootstrap {
 
+    @Autowired
+    private Configurationprovider config;
+
+    private Map<String, ResourceTriple> operatorConfiguration = new HashMap<>();
+
+    private Double incommingToOutgoingRatio = 0.5;
+
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorConfigurationBootstrap.class);
+
     public OperatorConfigurationBootstrap() {
         initializeOperatorConfiguration();
     }
 
     public OperatorConfigurationBootstrap(Boolean noInitialization) { }
 
-    @Autowired
-    private Configurationprovider config;
-
-    private Map<String, ResourceTriple> operatorConfiguration = new HashMap<>();
-
-    private static final Logger LOG = LoggerFactory.getLogger(OperatorConfigurationBootstrap.class);
 
     public ResourceTriple getExpected(String operatorType) {
         if (operatorConfiguration.containsKey(operatorType)) {
@@ -46,7 +49,6 @@ public class OperatorConfigurationBootstrap {
         }
     }
 
-    private Double incommingToOutgoingRatio = 0.5;
 
     public DockerContainer createDockerContainerConfiguration(String operator) {
         return new DockerContainer(operator, operator, getExpected(operator).getCores(), getExpected(operator).getMemory(), Math.round(getExpected(operator).getStorage()));

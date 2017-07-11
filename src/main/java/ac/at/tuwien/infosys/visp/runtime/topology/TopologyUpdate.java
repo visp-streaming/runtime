@@ -1,6 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.TopologyException;
 import ac.at.tuwien.infosys.visp.runtime.topology.operatorUpdates.ChangeToBeExecuted;
 
 public class TopologyUpdate {
@@ -47,7 +48,7 @@ public class TopologyUpdate {
 
     public TopologyUpdate(String affectedHost, Action action, UpdateType updateType, Operator affectedOperator) {
         if(!action.equals(Action.UPDATE_OPERATOR)) {
-            throw new RuntimeException("Invalid constructor used for action " + action.toString());
+            throw new TopologyException("Invalid constructor used for action " + action.toString());
         }
         this.affectedHost = affectedHost;
         this.action = action;

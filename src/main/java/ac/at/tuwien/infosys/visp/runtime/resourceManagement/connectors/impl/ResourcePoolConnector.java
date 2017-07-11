@@ -6,6 +6,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -62,7 +63,7 @@ public class ResourcePoolConnector extends ResourceConnector {
 
         if (availableVM == null) {
             LOG.error("There are too little VMs in the resourcePool.");
-            throw new RuntimeException("There are too little VMs in the resourcePool.");
+            throw new ResourceException("There are too little VMs in the resourcePool.");
         }
 
         dh.setResourcepool(ressourcePoolName);

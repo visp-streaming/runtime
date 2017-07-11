@@ -87,7 +87,7 @@ public class Monitor {
 
         if (sa == ScalingAction.DONOTHING) {
             //assume that we may not have any monitoring information
-            if (max > queueUpscalingThreshold * 5) {
+            if (max > (queueUpscalingThreshold * 5)) {
                 return ScalingAction.SCALEUP;
             }
         }

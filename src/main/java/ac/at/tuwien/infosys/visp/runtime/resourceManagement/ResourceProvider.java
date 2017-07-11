@@ -48,11 +48,11 @@ public class ResourceProvider {
 
         String type = resourceProviders.get(identifier);
 
-        if (type.equals("openstack")) {
+        if ("openstack".equals(type)) {
             return openstackConnector;
         }
 
-        if (type.equals("pool")) {
+        if ("pool".equals(type)) {
             resourcePoolConnector.setRessourcePoolName(identifier);
             return resourcePoolConnector;
         }

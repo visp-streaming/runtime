@@ -209,7 +209,7 @@ public class DockerContainerManagement {
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
         if(dh == null) {
-            throw new RuntimeException("Could not find dockerhost by name: " + dc.getHost());
+            throw new DockerException("Could not find dockerhost by name: " + dc.getHost());
         }
 
         final DockerClient docker = DefaultDockerClient.builder().uri("http://" + dh.getUrl() + ":2375").connectTimeoutMillis(60000).build();

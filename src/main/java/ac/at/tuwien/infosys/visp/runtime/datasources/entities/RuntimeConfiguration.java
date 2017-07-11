@@ -13,11 +13,11 @@ public class RuntimeConfiguration {
     private long id;
 
     @Column(unique = true, name = "visp_key")
-    String key;
+    private String key;
 
-    @Column(name = "visp_value")
     @Lob
-    String value;
+    @Column(name = "visp_value")
+    private String value;
 
     public RuntimeConfiguration(String key, String value) {
         this.key = key;

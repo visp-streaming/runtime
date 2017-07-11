@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.configuration;
 
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -94,7 +95,7 @@ public class Configurationprovider {
                     }
                 return validateIPForRabbitMQHost(databaseIP);
             } catch(Exception e1) {
-                throw new RuntimeException("Could neither connect to localhost nor to database IP");
+                throw new ResourceException("Could neither connect to localhost nor to database IP");
             }
         }
     }

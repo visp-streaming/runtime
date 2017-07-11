@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
@@ -66,18 +67,18 @@ public class AvailabilityWatchdog {
                         if (compensation == null) {
                             compensation = "redeploySingle";
                         }
-                        if (compensation.equals("redeploySingle")) {
+                        if ("redeploySingle".equals(compensation)) {
                             dcm.removeContainer(dc);
                             try {
                                 pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                                 LOG.info("Redeployed container for operator \"" + op.getName() + "\".");
-                            } catch (Exception e) {
+                            } catch (ResourceException e) {
                                 LOG.error(e.getMessage());
                             }
                             continue;
                         }
 
-                        if (compensation.equals("redeployTopology")) {
+                        if ("redeployTopology".equals(compensation)) {
                             try {
                                 RuntimeConfiguration rc = rcr.findFirstByKey("last_topology_file");
                                 utilities.clearAll();
@@ -91,7 +92,7 @@ public class AvailabilityWatchdog {
 
                         if (compensation.startsWith("mailto:")) {
                             try {
-                                compensation.replace("mailto:", "");
+                                String mailaddress = compensation.replace("mailto:", "");
                                 //TODO send mail
                                 LOG.info("Redeployed complete topology.");
                             } catch (Exception e) {

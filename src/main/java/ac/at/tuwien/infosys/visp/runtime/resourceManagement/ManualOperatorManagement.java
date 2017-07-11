@@ -8,6 +8,7 @@ import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import org.slf4j.Logger;
@@ -83,8 +84,8 @@ public class ManualOperatorManagement {
                         break;
                 }
             }
-        } catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
+        } catch (ResourceException e) {
+            LOG.error(e.getMessage());
         }
     }
 

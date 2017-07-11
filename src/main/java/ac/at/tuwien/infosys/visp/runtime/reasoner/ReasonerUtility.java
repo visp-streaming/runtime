@@ -6,6 +6,7 @@ import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.*;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
@@ -69,7 +70,7 @@ public class ReasonerUtility {
             return false;
         }
         ResourceTriple ra = calculateFreeResourcesforHost(dh);
-        return !(Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory()) < 1);
+        return 1 <= Math.min(ra.getCores() / dc.getCpuCores(), ra.getMemory() / dc.getMemory());
     }
 
 
@@ -338,7 +339,7 @@ public class ReasonerUtility {
      * simple selection mechanism to select the next best dockerhost for a current VISP instance considering all resources pools, which are assigne to this instance
      *
      */
-    public DockerHost selectSuitableDockerHost(Operator op) throws Exception {
+    public DockerHost selectSuitableDockerHost(Operator op) throws ResourceException {
         DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
 
         for (DockerHost dh : dhr.findByResourcepool(op.getConcreteLocation().getResourcePool())) {
@@ -351,7 +352,7 @@ public class ReasonerUtility {
             return dh;
         }
 
-        throw new Exception("not enough resources available");
+        throw new ResourceException("not enough resources available");
     }
 
 }

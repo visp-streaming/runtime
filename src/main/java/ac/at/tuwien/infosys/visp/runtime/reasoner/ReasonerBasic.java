@@ -9,9 +9,10 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
+import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@DependsOn({"configurationprovider","resourceProvider"})
+@DependsOn({"configurationprovider", "resourceProvider"})
 public class ReasonerBasic {
 
     @Autowired
@@ -111,7 +112,7 @@ public class ReasonerBasic {
                 try {
                     pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
                     pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
-                } catch (Exception e) {
+                } catch (ResourceException e) {
                     LOG.error(e.getMessage());
                 }
             }
@@ -119,7 +120,7 @@ public class ReasonerBasic {
             if (action.equals(ScalingAction.SCALEUP)) {
                 try {
                     pcm.scaleup(reasonerUtility.selectSuitableDockerHost(op), op);
-                } catch (Exception e) {
+                } catch (ResourceException e) {
                     LOG.error(e.getMessage());
                 }
             }
@@ -144,11 +145,10 @@ public class ReasonerBasic {
                         loneliestOne = dc;
                     } else {
                         ResourceTriple currentResources = resources.get(dhr.findFirstByName(dc.getHost()));
-                        if (currentResources.getMemory() > mostResources.getMemory()) {
-                            if (currentResources.getCores() > mostResources.getCores()) {
-                                mostResources = currentResources;
-                                loneliestOne = dc;
-                            }
+                        if ((currentResources.getMemory() > mostResources.getMemory()) &&
+                                (currentResources.getCores() > mostResources.getCores())) {
+                            mostResources = currentResources;
+                            loneliestOne = dc;
                         }
                     }
                 }
