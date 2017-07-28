@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>at.tuwien.infosys.visp</groupId>
     <artifactId>runtime</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>jar</packaging>
 
     <name>visp</name>
@@ -15,7 +14,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>1.5.4.RELEASE</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <properties>
@@ -45,7 +44,7 @@
         <connection>scm:git:https://github.com/visp-streaming/runtime</connection>
         <developerConnection>scm:git:git@github.com:visp-streaming/runtime</developerConnection>
         <url>https://github.com/visp-streaming/runtime</url>
-        <tag>HEAD</tag>
+        <tag>runtime-0.1</tag>
     </scm>
 
     <dependencies>
