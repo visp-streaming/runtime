@@ -1,6 +1,6 @@
 FROM jeanblanchard/java:8
 MAINTAINER Christoph Hochreiner <ch.hochreiner@gmail.com>
-COPY target/runtime-0.1-SNAPSHOT.jar app.jar
+COPY target/runtime.jar app.jar
 COPY runtimeConfiguration runtimeConfiguration
 RUN sh -c 'touch /app.jar'
 ENV JAVA_OPTS=""
