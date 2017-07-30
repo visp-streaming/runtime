@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>at.tuwien.infosys.visp</groupId>
+    <groupId>ac.at.tuwien.infosys.visp</groupId>
     <artifactId>runtime</artifactId>
     <version>0.2-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -23,7 +23,7 @@
         <joda.version>2.9.9</joda.version>
         <visp.common.version>0.3</visp.common.version>
         <visp.topologyParser.version>1.4</visp.topologyParser.version>
-        <spotify.docker.version>8.8.0</spotify.docker.version>
+        <spotify.docker.version>8.8.1</spotify.docker.version>
         <quartz.version>2.3.0</quartz.version>
         <apache.commons.lang.version>3.6</apache.commons.lang.version>
         <apache.commons.io.version>2.5</apache.commons.io.version>
@@ -34,8 +34,8 @@
         <jackson.dataformat.cvs.version>2.9.0.pr4</jackson.dataformat.cvs.version>
         <webjars.version>3.3.7-1</webjars.version>
         <lombok.version>1.16.18</lombok.version>
-        <junit.jupiter.version>5.0.0-M5</junit.jupiter.version>
-        <dockerfile.maven.version>1.3.2</dockerfile.maven.version>
+        <junit.jupiter.version>5.0.0-M6</junit.jupiter.version>
+        <dockerfile.maven.version>1.3.4</dockerfile.maven.version>
         <mariadb.java.client.version>2.0.3</mariadb.java.client.version>
         <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     </properties>
