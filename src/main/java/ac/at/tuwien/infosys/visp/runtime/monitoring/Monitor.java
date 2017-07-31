@@ -13,6 +13,7 @@ import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.Open
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BaseJsonNode;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -184,7 +186,12 @@ public class Monitor {
 
     private QueueMonitor getQueueCount(String queueName, Operator op) {
         String operatorName = op.getName();
-        String infrastructureHost = op.getConcreteLocation().getIpAddress();
+        String infrastructureHost = config.getRabbitMQHost();
+
+        //only consider the operators which are managed for this specific VISP Runtime
+        if (!op.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
+            return null;
+        }
 
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .basicAuthorization(rabbitmqUsername, rabbitmqPassword)
@@ -195,11 +202,26 @@ public class Monitor {
         queueName = queueName.replace(">", "%3E");
 
         String URI = "http://" + infrastructureHost + ":15672/api/queues/%2F/" + queueName;
+        
+        ResponseEntity<BaseJsonNode> response;
+        try {
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URI);
+            UriComponents components = builder.build(true);
 
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URI);
-        UriComponents components = builder.build(true);
+            response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
+        } catch (HttpClientErrorException e) {
+            //Handle those metrics, which are hosted on another VISP Runtime
+            URI = "http://" + StringUtils.substringBefore(queueName, "%2F") + ":15672/api/queues/%2F/" + queueName;
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URI);
+            UriComponents components = builder.build(true);
 
-        ResponseEntity<BaseJsonNode> response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
+            try {
+                response = restTemplate.exchange(components.toUri(), HttpMethod.GET, null, BaseJsonNode.class);
+            } catch (Exception e1) {
+                LOG.error("Could not fetch Monitoring data for URL: " + URI);
+                return null;
+            }
+        }
 
         try {
             BaseJsonNode arrayNode = response.getBody();
