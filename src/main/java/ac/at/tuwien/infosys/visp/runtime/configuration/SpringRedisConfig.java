@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import redis.clients.jedis.JedisShardInfo;
 
 @Configuration
 @DependsOn("configurationprovider")
@@ -19,9 +20,10 @@ public class SpringRedisConfig {
 
     @Bean
     public JedisConnectionFactory connectionFactory() {
-        JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
-        connectionFactory.setHostName(config.getInfrastructureIP());
-        connectionFactory.setPort(6379);
+        JedisShardInfo jedisconfig = new JedisShardInfo(config.getInfrastructureIP(), 6379);
+
+
+        JedisConnectionFactory connectionFactory = new JedisConnectionFactory(jedisconfig);
         return connectionFactory;
     }
 

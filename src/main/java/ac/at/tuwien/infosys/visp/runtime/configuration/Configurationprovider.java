@@ -65,7 +65,7 @@ public class Configurationprovider {
         }
 
         if (this.infrastructureIP == null) {
-            this.infrastructureIP = testConnection("127.0.0.1");
+            this.infrastructureIP = "localhost";
         }
 
         if (this.openstackProcessingHostImage == null) {
@@ -73,7 +73,7 @@ public class Configurationprovider {
         }
 
         if (this.processingNodeImage == null) {
-            this.processingNodeImage=defaultProcessingNodeImage;
+            this.processingNodeImage = defaultProcessingNodeImage;
         }
 
         if (this.reasoner == null) {
@@ -151,7 +151,7 @@ public class Configurationprovider {
                     }
                 }
             }
-        return "127.0.0.1";
+        return "localhost";
     }
 
     @PreDestroy

@@ -31,15 +31,16 @@ public class Datasourceconfig {
                 IP = IP.replaceAll("databaseIP=", "").trim();
                 IP = IP.replaceAll("database=", "").trim();
                 IP = IP.replaceAll("[\\r\\n]", "").trim();
-                LOG.info("Using database at IP " + IP);
             }
         } catch (IOException e) {
             LOG.error(e.getLocalizedMessage());
         }
 
-        if (IP == null) {
-            IP = "127.0.0.1";
+        if ((IP == null) || ("".equals(IP))) {
+            IP = "localhost";
         }
+
+        LOG.info("Using database at IP " + IP);
 
         String uri = "jdbc:mariadb://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
 
