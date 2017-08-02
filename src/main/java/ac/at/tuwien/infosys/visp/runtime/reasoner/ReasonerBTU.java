@@ -304,7 +304,12 @@ public class ReasonerBTU {
                 if (host != null) {
                     break;
                 }
-                scaledownoperator = reasonerUtility.selectOperatorTobeScaledDown().firstKey();
+                scaledowns = reasonerUtility.selectOperatorTobeScaledDown();
+                if (scaledowns == null) {
+                    break;
+                }
+                
+                scaledownoperator = scaledowns.firstKey();
             }
 
             if (blackListedHost != null) {
