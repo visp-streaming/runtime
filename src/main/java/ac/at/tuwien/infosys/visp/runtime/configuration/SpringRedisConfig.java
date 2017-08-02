@@ -20,7 +20,7 @@ public class SpringRedisConfig {
 
     @Bean
     public JedisConnectionFactory connectionFactory() {
-        JedisShardInfo jedisconfig = new JedisShardInfo(config.getInfrastructureIP(), 6379);
+        JedisShardInfo jedisconfig = new JedisShardInfo(config.getRedisHost(), 6379);
 
 
         JedisConnectionFactory connectionFactory = new JedisConnectionFactory(jedisconfig);

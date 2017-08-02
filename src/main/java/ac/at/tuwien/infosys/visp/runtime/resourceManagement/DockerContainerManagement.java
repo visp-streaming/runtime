@@ -95,7 +95,7 @@ public class DockerContainerManagement {
         List<String> environmentVariables = new ArrayList<>();
         String outgoingHost = op.getConcreteLocation().getIpAddress().equals(config.getRabbitMQHost()) ? config.getRuntimeIP() : op.getConcreteLocation().getIpAddress(); // generalized deployment
         environmentVariables.add("SPRING_RABBITMQ_OUTGOING_HOST=" + outgoingHost);
-        environmentVariables.add("SPRING_REDIS_HOST=" + config.getRedisHost());
+        environmentVariables.add("SPRING_REDIS_HOST=" + config.getRedisOperatorHost());
         environmentVariables.add("OUTGOINGEXCHANGE=" + op.getName());
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());

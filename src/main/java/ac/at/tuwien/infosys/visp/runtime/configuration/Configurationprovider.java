@@ -170,11 +170,21 @@ public class Configurationprovider {
     }
 
     public String getRabbitMQHost() {
-        return infrastructureIP;
+            return infrastructureIP;
     }
 
     public String getRedisHost() {
-        return infrastructureIP;
+            return infrastructureIP;
     }
+
+    public String getRedisOperatorHost() {
+        if ("localhost".equals(infrastructureIP)) {
+            return runtimeIP;
+        } else {
+            return infrastructureIP;
+        }
+    }
+
+
 }
 
