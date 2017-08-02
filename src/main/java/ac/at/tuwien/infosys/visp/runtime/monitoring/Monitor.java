@@ -202,7 +202,7 @@ public class Monitor {
         queueName = queueName.replace(">", "%3E");
 
         String URI = "http://" + infrastructureHost + ":15672/api/queues/%2F/" + queueName;
-        
+
         ResponseEntity<BaseJsonNode> response;
         try {
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(URI);

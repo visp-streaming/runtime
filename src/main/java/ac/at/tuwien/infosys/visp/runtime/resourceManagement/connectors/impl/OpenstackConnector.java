@@ -117,7 +117,24 @@ public class OpenstackConnector extends ResourceConnector {
 
         Server server = os.compute().servers().boot(sc);
 
-        String uri = server.getAccessIPv4();
+        String severID = server.getId();
+
+        Server bootedServer = os.compute().servers().get(server.getId());
+
+        while (true) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+
+            }
+            if (bootedServer.getStatus() == Server.Status.ACTIVE) {
+                break;
+            }
+            bootedServer = os.compute().servers().get(server.getId());
+        }
+
+
+        String uri = bootedServer.getAddresses().getAddresses("private").get(0).getAddr();
 
         if (PUBLICIPUSAGE) {
             FloatingIP freeIP = null;
@@ -138,7 +155,7 @@ public class OpenstackConnector extends ResourceConnector {
                 //TODO remove if openstack behaves again
             }
 
-            ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(server, freeIP.getFloatingIpAddress());
+            ActionResponse ipresponse = os.compute().floatingIps().addFloatingIP(bootedServer, freeIP.getFloatingIpAddress());
             if (!ipresponse.isSuccess()) {
                 LOG.error("IP could not be retrieved:" + ipresponse.getFault());
             }
@@ -146,7 +163,7 @@ public class OpenstackConnector extends ResourceConnector {
         }
 
         dh.setResourcepool("openstack");
-        dh.setName(server.getId());
+        dh.setName(bootedServer.getId());
         dh.setUrl(uri);
         dh.setCores(flavor.getVcpus() + 0.0);
         //provide 10 % of buffer for ram, because the actual ram usage is fluctuating
