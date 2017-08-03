@@ -10,9 +10,9 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.AvailabilityWatchdog;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.Monitor;
+import ac.at.tuwien.infosys.visp.runtime.monitoring.entities.ScalingAction;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ProcessingNodeManagement;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
@@ -114,9 +114,15 @@ public class ReasonerBTU {
         for (Operator op : runningOperators) {
             ScalingAction action = monitor.analyze(op);
 
+            if (action.equals(ScalingAction.SCALEUPDOUBLE)) {
+                pcm.scaleup(selectSuitableDockerHost(op, null), op);
+                pcm.scaleup(selectSuitableDockerHost(op, null), op);
+            }
+
             if (action.equals(ScalingAction.SCALEUP)) {
                 pcm.scaleup(selectSuitableDockerHost(op, null), op);
             }
+
         }
 
         LOG.info("VISP - Finished container scaling");
@@ -308,7 +314,7 @@ public class ReasonerBTU {
                 if (scaledowns == null) {
                     break;
                 }
-                
+
                 scaledownoperator = scaledowns.firstKey();
             }
 

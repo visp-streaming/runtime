@@ -127,10 +127,14 @@ public class Monitor {
         }
 
         if (pds.get(0).getDuration() * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
+
+            if (maxQueue * 5 > queueUpscalingThreshold) {
+                return ScalingAction.SCALEUPDOUBLE;
+            }
+
             if (maxQueue > queueUpscalingThreshold) {
                 return ScalingAction.SCALEUP;
             }
-
         }
 
         Integer count = 4;
