@@ -10,5 +10,6 @@ public class CreateOpenStackVMForm {
     private Double cost;
     private String instanceName;
     private Integer frequency;
+    private Integer instancecount;
 
 }

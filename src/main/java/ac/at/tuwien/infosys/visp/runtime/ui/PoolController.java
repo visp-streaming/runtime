@@ -82,6 +82,7 @@ public class PoolController {
         form.setFrequency(2400);
         form.setFlavour("m2.medium");
         form.setInstanceName("dockerhost");
+        form.setInstancecount(1);
 
         model.addAttribute("flavours", opc.getFlavours());
         model.addAttribute(form);
@@ -129,23 +130,25 @@ public class PoolController {
     @RequestMapping(value="/pooledvms/createOpenStackVM", method= RequestMethod.POST)
     public String createOpenStackVM(@ModelAttribute CreateOpenStackVMForm form, Model model) throws SchedulerException {
 
-        DockerHost dh = new DockerHost(form.getInstanceName());
-        dh.setFlavour(form.getFlavour());
+        for (int i = 0; i<= form.getInstancecount();i++) {
+            DockerHost dh = new DockerHost(form.getInstanceName());
+            dh.setFlavour(form.getFlavour());
 
-        dh = opc.startVM(dh);
-        PooledVM pvm = new PooledVM();
-        pvm.setName(dh.getName());
-        pvm.setPoolname(form.getPoolname());
-        pvm.setUrl(dh.getUrl());
-        pvm.setCores(dh.getCores());
-        pvm.setMemory(dh.getMemory());
-        pvm.setStorage(dh.getStorage());
-        pvm.setFlavour(dh.getFlavour());
-        pvm.setCost(form.getCost());
-        pvm.setCpuFrequency(form.getFrequency());
-        pvm.setType("openstack");
-        dhr.delete(dh); //delete host again from docker hosts table
-        pvmr.save(pvm);
+            dh = opc.startVM(dh);
+            PooledVM pvm = new PooledVM();
+            pvm.setName(dh.getName());
+            pvm.setPoolname(form.getPoolname());
+            pvm.setUrl(dh.getUrl());
+            pvm.setCores(dh.getCores());
+            pvm.setMemory(dh.getMemory());
+            pvm.setStorage(dh.getStorage());
+            pvm.setFlavour(dh.getFlavour());
+            pvm.setCost(form.getCost());
+            pvm.setCpuFrequency(form.getFrequency());
+            pvm.setType("openstack");
+            dhr.delete(dh); //delete host again from docker hosts table
+            pvmr.save(pvm);
+        }
 
         List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
 
