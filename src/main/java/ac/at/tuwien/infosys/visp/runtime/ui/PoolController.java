@@ -130,7 +130,7 @@ public class PoolController {
     @RequestMapping(value="/pooledvms/createOpenStackVM", method= RequestMethod.POST)
     public String createOpenStackVM(@ModelAttribute CreateOpenStackVMForm form, Model model) throws SchedulerException {
 
-        for (int i = 0; i<= form.getInstancecount();i++) {
+        for (int i = 1; i<= form.getInstancecount(); i++) {
             DockerHost dh = new DockerHost(form.getInstanceName());
             dh.setFlavour(form.getFlavour());
 

@@ -19,6 +19,7 @@ public class OperatorMetricsAPI {
     @Autowired
     private OperatorQoSMetricsRepository operatorQosRepository;
 
+    @Deprecated
     @RequestMapping(value = {"/getLastMetrics/name/{operatorName}"}, method = RequestMethod.GET)
     public List<OperatorQoSMetricsDTO> getLast10OperatorQosMetricsByName(@PathVariable String operatorName) {
        List<OperatorQoSMetrics> metricsList = operatorQosRepository.findFirst10ByNameOrderByTimestampDesc(operatorName);

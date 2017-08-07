@@ -20,7 +20,7 @@ public class ProcessingDurationMonitor {
 
     @RabbitListener(queues = "processingduration")
     public void assign(Message message) {
-        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), message.getHeader(), Double.parseDouble(message.getPayload())));
+        pcr.save(new ProcessingDuration(new DateTime(DateTimeZone.UTC), message.getHeader(), Double.parseDouble(message.getPayload()), message.getContainerid()));
     }
 
 }

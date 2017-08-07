@@ -22,14 +22,16 @@ public class ProcessingDuration {
 
     private String operator;
     private Double duration;
+    private String containerid;
 
     public ProcessingDuration() {
     }
 
-    public ProcessingDuration(DateTime time, String operator, Double duration) {
+    public ProcessingDuration(DateTime time, String operator, Double duration, String containerid) {
         this.time = time;
         this.operator = operator;
         this.duration = duration;
+        this.containerid = containerid;
     }
 
 }
