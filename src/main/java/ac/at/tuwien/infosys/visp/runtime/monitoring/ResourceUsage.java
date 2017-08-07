@@ -83,13 +83,13 @@ public class ResourceUsage {
         return rp;
     }
 
-    public ResourceTriple calculatelatestActualUsageForOperatorType(String operator) {
-        DockerContainerMonitor dcm = dcmr.findFirstByOperatorOrderByTimestampDesc(operator);
+    public ResourceTriple calculatelatestActualUsageForOperatorType(String operatorType) {
+        DockerContainerMonitor dcm = dcmr.findFirstByOperatortypeOrderByTimestampDesc(operatorType);
         return getResourceTriple(dcm);
     }
 
-    public ResourceTriple calculatelatestActualUsageForOperatorid(String operatorid) {
-        DockerContainerMonitor dcm = dcmr.findFirstByOperatoridOrderByTimestampDesc(operatorid);
+    public ResourceTriple calculatelatestActualUsageForOperatorName(String operatorName) {
+        DockerContainerMonitor dcm = dcmr.findFirstByOperatornameOrderByTimestampDesc(operatorName);
         return getResourceTriple(dcm);
     }
 
@@ -99,7 +99,7 @@ public class ResourceUsage {
         //CPUstats = usage in % of the assigned shares (from actual resources)
         result.setMemory((int) dcm.getMemoryUsage());
 
-        ResourceTriple planned = opconf.getExpected(dcm.getOperator());
+        ResourceTriple planned = opconf.getExpected(dcm.getOperatortype());
         result.setStorage(planned.getStorage());
         result.setCores(planned.getCores() * dcm.getCpuUsage() / 100);
 
@@ -107,12 +107,12 @@ public class ResourceUsage {
     }
 
     public ResourceTriple calculateAverageUsageForOperatorType(String operator) {
-        List<DockerContainerMonitor> recordings = dcmr.findByOperator(operator);
+        List<DockerContainerMonitor> recordings = dcmr.findByOperatortype(operator);
         return getResourceTriple(recordings);
     }
 
     public ResourceTriple calculateAverageUsageForOperatorID(String operatorid) {
-        List<DockerContainerMonitor> recordings = dcmr.findByOperatorid(operatorid);
+        List<DockerContainerMonitor> recordings = dcmr.findByOperatorname(operatorid);
         return getResourceTriple(recordings);
     }
 
@@ -124,7 +124,7 @@ public class ResourceUsage {
             result.incrementCores(dcm.getCpuUsage());
             result.incrementMemory((int) dcm.getMemoryUsage());
 
-            ResourceTriple planned = opconf.getExpected(dcm.getOperator());
+            ResourceTriple planned = opconf.getExpected(dcm.getOperatortype());
             result.incrementStorage(planned.getStorage());
             counter++;
         }

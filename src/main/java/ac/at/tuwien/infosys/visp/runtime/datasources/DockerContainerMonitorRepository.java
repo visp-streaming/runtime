@@ -9,12 +9,12 @@ import java.util.List;
 public interface DockerContainerMonitorRepository extends CrudRepository<DockerContainerMonitor, Long> {
 
     DockerContainerMonitor findFirstByContaineridOrderByTimestampDesc(String containerid);
-    List<DockerContainerMonitor> findByOperator(String operator);
-    List<DockerContainerMonitor> findByOperatorid(String operatorid);
+    List<DockerContainerMonitor> findByOperatortype(String operator);
+    List<DockerContainerMonitor> findByOperatorname(String operatorid);
 
 
-    DockerContainerMonitor findFirstByOperatorOrderByTimestampDesc(String operator);
-    DockerContainerMonitor findFirstByOperatoridOrderByTimestampDesc(String operator);
+    DockerContainerMonitor findFirstByOperatortypeOrderByTimestampDesc(String operator);
+    DockerContainerMonitor findFirstByOperatornameOrderByTimestampDesc(String operator);
 
 
 

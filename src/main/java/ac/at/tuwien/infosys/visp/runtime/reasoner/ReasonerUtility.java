@@ -204,7 +204,7 @@ public class ReasonerUtility {
             LOG.debug("InstanceFactor: # = " + operatortype.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
 
             //calculate qos impact factor
-            List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(op);
+            List<ProcessingDuration> pds = pcr.findFirst5ByOperatortypeOrderByIdDesc(op);
 
             Double avgDuration = 0.0;
             Integer counter = 0;

@@ -19,20 +19,23 @@ public class DockerContainerMonitor {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
+
+    private String operatortype;
+    private String operatorname;
     private String containerid;
-    private String operator;
-    private String operatorid;
 
     private double cpuUsage;
     private double memoryUsage;
+    private double networkUpload;
+    private double networkDownload;
 
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime timestamp;
 
-    public DockerContainerMonitor(String containerid, String operator, String operatorid) {
+    public DockerContainerMonitor(String operatorType, String operatorName, String containerid) {
+        this.operatortype = operatorType;
+        this.operatorname = operatorName;
         this.containerid = containerid;
-        this.operator = operator;
-        this.operatorid = operatorid;
         this.timestamp = new DateTime(DateTimeZone.UTC);
     }
 

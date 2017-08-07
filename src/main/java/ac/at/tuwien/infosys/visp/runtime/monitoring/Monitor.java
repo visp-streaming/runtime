@@ -117,7 +117,7 @@ public class Monitor {
     }
 
     private ScalingAction upscalingDuration(Operator operator, Integer maxQueue) {
-        List<ProcessingDuration> pds = pcr.findFirst5ByOperatorOrderByIdDesc(operator.getName());
+        List<ProcessingDuration> pds = pcr.findFirst5ByOperatornameOrderByIdDesc(operator.getName());
 
         if (pds.isEmpty()) {
             if (operator instanceof Source) {

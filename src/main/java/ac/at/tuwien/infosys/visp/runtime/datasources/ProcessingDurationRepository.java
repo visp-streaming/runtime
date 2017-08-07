@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface ProcessingDurationRepository extends CrudRepository<ProcessingDuration, Long> {
 
-    List<ProcessingDuration> findFirst5ByOperatorOrderByIdDesc(String operator);
+    List<ProcessingDuration> findFirst5ByOperatortypeOrderByIdDesc(String operatortype);
+    List<ProcessingDuration> findFirst5ByOperatornameOrderByIdDesc(String operatorname);
 
 }

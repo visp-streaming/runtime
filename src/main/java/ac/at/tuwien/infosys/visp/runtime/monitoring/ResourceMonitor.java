@@ -52,7 +52,9 @@ public class ResourceMonitor {
         final DockerClient docker = DefaultDockerClient.builder().uri(connectionUri).connectTimeoutMillis(60000).build();
         ContainerStats stats;
 
-        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getContainerid(), dc.getOperatorType(), dc.getOperatorName());
+
+
+        DockerContainerMonitor dcm = new DockerContainerMonitor(dc.getOperatorType(), dc.getOperatorName(), dc.getContainerid());
 
         try {
             stats = docker.stats(dc.getContainerid());
@@ -64,6 +66,14 @@ public class ResourceMonitor {
 
             dcm.setCpuUsage(cpuUsage);
             dcm.setMemoryUsage((stats.memoryStats().usage() / 1024 / 1024));
+
+            if (stats.network()!=null) {
+                dcm.setNetworkDownload((double) stats.network().rxBytes());
+                dcm.setNetworkUpload((double) stats.network().txBytes());
+            } else {
+                dcm.setNetworkDownload(-1);
+                dcm.setNetworkUpload(-1);
+            }
 
             dcmr.save(dcm);
 

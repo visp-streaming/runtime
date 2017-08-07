@@ -20,16 +20,18 @@ public class ProcessingDuration {
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     private DateTime time;
 
-    private String operator;
+    private String operatortype;
+    private String operatorname;
     private Double duration;
     private String containerid;
 
     public ProcessingDuration() {
     }
 
-    public ProcessingDuration(DateTime time, String operator, Double duration, String containerid) {
+    public ProcessingDuration(DateTime time, String operatortype, String operatorname, String containerid, Double duration) {
         this.time = time;
-        this.operator = operator;
+        this.operatortype = operatortype;
+        this.operatorname = operatorname;
         this.duration = duration;
         this.containerid = containerid;
     }
