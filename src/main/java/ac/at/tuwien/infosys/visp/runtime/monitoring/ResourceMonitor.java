@@ -67,9 +67,9 @@ public class ResourceMonitor {
             dcm.setCpuUsage(cpuUsage);
             dcm.setMemoryUsage((stats.memoryStats().usage() / 1024 / 1024));
 
-            if (stats.network()!=null) {
-                dcm.setNetworkDownload((double) stats.network().rxBytes());
-                dcm.setNetworkUpload((double) stats.network().txBytes());
+            if (stats.networks()!=null) {
+                dcm.setNetworkDownload((double) stats.networks().get("eth0").rxBytes());
+                dcm.setNetworkUpload((double) stats.networks().get("eth0").txBytes());
             } else {
                 dcm.setNetworkDownload(-1);
                 dcm.setNetworkUpload(-1);
