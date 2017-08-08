@@ -61,6 +61,7 @@ public class OperatorAPI {
         QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(operatorType);
 
         opconfig.setIncomingRate(qm.getIncomingRate());
+        opconfig.setDeliveryRate(qm.getDeliveryRate());
         opconfig.setItemsWaiting(qm.getAmount());
 
         DockerContainerMonitor dcm = dcmr.findFirstByOperatortypeOrderByTimestampDesc(operatorType);

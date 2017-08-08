@@ -1,13 +1,13 @@
 package ac.at.tuwien.infosys.visp.runtime.datasources.entities;
 
-import lombok.Data;
-import org.hibernate.annotations.Type;
-import org.joda.time.DateTime;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+
+import lombok.Data;
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
 
 @Data
 @Entity
@@ -24,16 +24,19 @@ public class QueueMonitor {
     private String queue;
     private Integer amount;
     private Double incomingRate;
+    private Double deliveryRate;
+
 
     public QueueMonitor() {
     }
 
-    public QueueMonitor(DateTime time, String operator, String queue, Integer amount, Double incomingRate) {
+    public QueueMonitor(DateTime time, String operator, String queue, Integer amount, Double incomingRate, Double deliveryRate) {
         this.time = time;
         this.operator = operator;
         this.queue = queue;
         this.amount = amount;
         this.incomingRate = incomingRate;
+        this.deliveryRate = deliveryRate;
     }
 
 }

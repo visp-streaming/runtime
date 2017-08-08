@@ -1,5 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
+import java.util.List;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
@@ -31,8 +33,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.util.List;
 
 @Service
 @DependsOn("configurationprovider")
@@ -231,6 +231,7 @@ public class Monitor {
             BaseJsonNode arrayNode = response.getBody();
 
             Double incoming = 0.0;
+            Double delivered = 0.0;
             Integer queueload = 0;
             if (arrayNode != null) {
                 if (arrayNode.has("message_stats")) {
@@ -242,9 +243,17 @@ public class Monitor {
                         }
                     }
 
+                    JsonNode deliveryNode = arrayNode.findValue("message_stats").findValue("deliver_get_details");
+
+                    if (deliveryNode != null) {
+                        if (deliveryNode.findValue("rate") != null) {
+                            delivered = deliveryNode.findValue("rate").asDouble();
+                        }
+                    }
+
                     queueload = arrayNode.findValue("messages").asInt();
                 }
-                return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming);
+                return new QueueMonitor(new DateTime(DateTimeZone.UTC), operatorName, queueNameRaw, queueload, incoming, delivered);
             }
         } catch (Exception ex) {
             LOG.error("No data available for queue: " + queueName);
