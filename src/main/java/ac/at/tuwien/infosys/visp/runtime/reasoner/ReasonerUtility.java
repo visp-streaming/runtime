@@ -1,11 +1,28 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
-import ac.at.tuwien.infosys.visp.runtime.datasources.*;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.*;
+import ac.at.tuwien.infosys.visp.runtime.datasources.BTULoggingRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.BTULogging;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
 import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
@@ -17,10 +34,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Service
 public class ReasonerUtility {
@@ -200,7 +213,7 @@ public class ReasonerUtility {
         for (Map.Entry<String, Integer> operatortype : operatorInstances.entrySet()) {
             String op = operatortype.getKey();
             // calculate instances impact factor
-            Double instancefactor = (operatortype.getValue() - minInstances) / (maxInstances - minInstances) * 1.0;
+            Double instancefactor = (double)(operatortype.getValue() - minInstances) / (double)(maxInstances - minInstances) * 1.0;
             LOG.debug("InstanceFactor: # = " + operatortype.getValue() + ", " + "min = " + minInstances + ", " + "max = " + maxInstances);
 
             //calculate qos impact factor
@@ -243,15 +256,15 @@ public class ReasonerUtility {
             QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
             Integer queueFactor = 0;
             if (qm.getAmount() < 1) {
-                queueFactor = 10;
+                queueFactor = 100;
             }
 
-            Double instanceFactorWeighted = instancefactor * 2.0;
-            Double delayFactorWeighted = delayFactor * 3;
-            Double scalingFactorWeighted = scalingFactor * 2.5;
+            Double instanceFactorWeighted = instancefactor * 1.0;
+            Double delayFactorWeighted = delayFactor * 1.0;
+            Double scalingFactorWeighted = scalingFactor * 1.0;
 
-            Double overallFactor = instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
-            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 2 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 0.5 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 0.5 + ")");
+            Double overallFactor = 1 + instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
+            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 1.0 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor * 1.0 + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 1.0 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 1.0 + ")");
 
 
             try {

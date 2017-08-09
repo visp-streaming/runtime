@@ -1,5 +1,13 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.TreeMap;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
@@ -26,8 +34,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 
 @Service
@@ -226,7 +232,14 @@ public class ReasonerBTU {
 
                    if (dcr.findByHostAndStatus(dh.getName(), "running").isEmpty()) {
                         resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
-                    }
+                   } else {
+                       LOG.info("Could not shutdown Dockerhost: " + dh.getName() + "because there are still containers running on it.");
+                       dh.setBTUend((btuEnd.plusSeconds(btu)));
+                       dhr.save(dh);
+                       sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
+                       LOG.info("the host: " + dh.getName() + " was leased for another BTU");
+
+                   }
                 }
             }
         }
@@ -271,7 +284,7 @@ public class ReasonerBTU {
                 if (potentialScaledowns.size()>0) {
                     //TODO fix that constant value
                     if (potentialScaledowns.firstEntry().getValue()>5) {
-                        //scale down the vms also when they cannot be migrated, wehn the scaledown values are very good; i.e. there is no load left
+                        //scale down the vms also when they cannot be migrated, when the scaledown values are very good; i.e. there is no load left
                         return true;
                     }
                 }
@@ -289,6 +302,10 @@ public class ReasonerBTU {
             LOG.error("op name = null");
         }
 
+
+        HashMap<String, Integer> alreadyScaledOperators = new HashMap<>();
+
+
         DockerContainer dc = opConfig.createDockerContainerConfiguration(op);
         DockerHost host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
 
@@ -305,6 +322,26 @@ public class ReasonerBTU {
 
             String scaledownoperator = scaledowns.firstKey();
             while (scaledownoperator != null) {
+
+                // only perform two scaledown operations for the same type to avoid oscillating effects
+                if (alreadyScaledOperators.containsKey(scaledownoperator)) {
+                    Integer scaledownOperations =  alreadyScaledOperators.get(scaledownoperator);
+
+                    if (scaledownOperations >= 2) {
+                        scaledowns.remove(scaledownoperator);
+                        if (!scaledowns.isEmpty()) {
+                            scaledownoperator = scaledowns.firstKey();
+                        } else {
+                            return resourceProvider.get(op.getConcreteLocation().getResourcePool()).startVM(null);
+                        }
+                        continue;
+                    } else {
+                        alreadyScaledOperators.put(scaledownoperator, (scaledownOperations + 1));
+                    }
+                } else {
+                    alreadyScaledOperators.put(scaledownoperator, 1);
+                }
+
                 pcm.scaleDown(scaledownoperator);
                 host = reasonerUtility.selectSuitableHostforContainer(dc, blackListedHost);
                 if (host != null) {
@@ -315,6 +352,9 @@ public class ReasonerBTU {
                     break;
                 }
 
+                if (scaledowns.isEmpty()) {
+                    break;
+                }
                 scaledownoperator = scaledowns.firstKey();
             }
 

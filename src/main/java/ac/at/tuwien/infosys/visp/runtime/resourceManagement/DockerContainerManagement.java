@@ -1,6 +1,11 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
@@ -14,7 +19,12 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.ExecCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import jersey.repackaged.com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -24,11 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @DependsOn("configurationprovider")
@@ -100,6 +105,9 @@ public class DockerContainerManagement {
         environmentVariables.add("INCOMINGQUEUES=" + topologyManagement.getIncomingQueues(op.getName()));
         environmentVariables.add("ROLE=" + op.getType());
         environmentVariables.add("OPERATOR_SUBSCRIBED_OPERATORS=" + topologyManagement.getDownstreamOperators(op.getName()));
+        environmentVariables.add("OPERATORNAME=" + op.getName());
+        environmentVariables.add("OPERATORTYPE=" + op.getType());
+
 
         /* Configure docker container */
         Double vmCores = dh.getCores();

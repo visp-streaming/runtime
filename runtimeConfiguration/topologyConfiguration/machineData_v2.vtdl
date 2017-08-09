@@ -42,7 +42,7 @@
     type             = "distributedata",
     outputFormat     = "machinedata",
     stateful         = false,
-    expectedDuration = 900,
+    expectedDuration = 1500,
     size             = small,
     queueThreshold   = 100
  }
