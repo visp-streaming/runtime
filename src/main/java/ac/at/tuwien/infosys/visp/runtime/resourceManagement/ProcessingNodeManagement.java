@@ -1,5 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
+import java.util.List;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -7,6 +9,7 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
+import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -15,8 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 
 @Service
@@ -36,6 +37,9 @@ public class ProcessingNodeManagement {
 
     @Autowired
     private DockerHostRepository dhr;
+
+    @Autowired
+    private ReasonerUtility reasonerUtility;
 
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
@@ -121,5 +125,6 @@ public class ProcessingNodeManagement {
         dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
         sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
         LOG.debug("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
+
     }
 }

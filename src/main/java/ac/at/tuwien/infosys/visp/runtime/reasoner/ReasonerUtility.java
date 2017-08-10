@@ -23,12 +23,14 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ProcessingDuration;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
 import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.LeastLoadedHostFirstComparator;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.internal.ResourceAvailability;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.ResourceProvider;
 import ac.at.tuwien.infosys.visp.runtime.topology.TopologyManagement;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +69,9 @@ public class ReasonerUtility {
 
     @Autowired
     private BTULoggingRepository btur;
+
+    @Autowired
+    private ScalingActivityRepository sar;
 
 
     @Value("${visp.relaxationfactor}")
@@ -263,7 +268,16 @@ public class ReasonerUtility {
             Double delayFactorWeighted = delayFactor * 1.0;
             Double scalingFactorWeighted = scalingFactor * 1.0;
 
-            Double overallFactor = 1 + instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor;
+
+            //scaling prohibition factor: if upscaling occured within last 3 minutes - do not scale down
+
+            Double stopScaling = 0.0;
+            if (!checkLastScalingForDownscaling(op)) {
+                stopScaling = 200.0;
+            }
+
+
+            Double overallFactor = 1 + instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor - stopScaling;
             LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 1.0 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor * 1.0 + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 1.0 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 1.0 + ")");
 
 
@@ -367,5 +381,24 @@ public class ReasonerUtility {
 
         throw new ResourceException("not enough resources available");
     }
+
+
+    /*
+    check if operator has been scaled up just recently and require a 3 minute cooldown phase for downscaling
+     */
+    public Boolean checkLastScalingForDownscaling(String operator) {
+        ScalingActivity sa = sar.findFirstByOperatorAndScalingActivityOrderByIdDesc(operator, "scaleup");
+
+        if (sa == null) {
+            return true;
+        }
+
+        if (sa.getTime().plusMinutes(3).isAfter(new DateTime(DateTimeZone.UTC))) {
+            return false;
+        }
+
+        return true;
+        }
+
 
 }

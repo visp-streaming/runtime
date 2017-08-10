@@ -120,6 +120,7 @@ public class ReasonerBTU {
         for (Operator op : runningOperators) {
             ScalingAction action = monitor.analyze(op);
 
+
             if (action.equals(ScalingAction.SCALEUPDOUBLE)) {
                 pcm.scaleup(selectSuitableDockerHost(op, null), op);
                 pcm.scaleup(selectSuitableDockerHost(op, null), op);
@@ -139,6 +140,7 @@ public class ReasonerBTU {
         // Check whether any hosts reach the end of their BTU (within the last 5 % of their BTU)
         /////////////////////
 
+        hostLoop:
         if (dhr.count() > 1) {
 
             for (DockerHost dh : dhr.findAll()) {
@@ -158,6 +160,19 @@ public class ReasonerBTU {
 
                 //BTU would end within 5 %
                 if (btuEnd.isBefore(potentialHostTerminationTime)) {
+
+                    ScalingActivity sa = sar.findFirstByScalingActivityOrderByIdDesc("startVM");
+
+                    //Do not scale down a vm is one has just been started 3 min ago
+                    if (sa.getTime().plusMinutes(3).isAfter(new DateTime(DateTimeZone.UTC))) {
+                        LOG.info("Could not shutdown Dockerhost: " + dh.getName() + " -- one was started in less than 3 min ago.");
+                        dh.setBTUend((btuEnd.plusSeconds(btu)));
+                        dhr.save(dh);
+                        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
+                        LOG.info("the host: " + dh.getName() + " was leased for another BTU");
+                        break;
+                    }
+
                     LOG.info(dh.getName() + " arrives at the end of its BTU - initializing check scaledown procedure");
 
 
@@ -215,11 +230,7 @@ public class ReasonerBTU {
                         DockerHost selectedHost = selectSuitableDockerHost(operator, dh);
                         if (!migrationIsPossible || selectedHost.equals(dh)) {
                                 LOG.info("the host " + dh.getName() + " could not be scaled down, since the container could not be migrated.");
-                                dh.setBTUend((btuEnd.plusSeconds(btu)));
-                                dhr.save(dh);
-                                sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
-                                LOG.info("the host: " + dh.getName() + " was leased for another BTU");
-                                return;
+                                break;
                         } else {
                             //Migrate container
                             Operator op = topologyMgmt.getOperatorByIdentifier(dc.getOperatorName());
@@ -238,7 +249,6 @@ public class ReasonerBTU {
                        dhr.save(dh);
                        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                        LOG.info("the host: " + dh.getName() + " was leased for another BTU");
-
                    }
                 }
             }
@@ -327,7 +337,7 @@ public class ReasonerBTU {
                 if (alreadyScaledOperators.containsKey(scaledownoperator)) {
                     Integer scaledownOperations =  alreadyScaledOperators.get(scaledownoperator);
 
-                    if (scaledownOperations >= 2) {
+                    if (scaledownOperations >= 1) {
                         scaledowns.remove(scaledownoperator);
                         if (!scaledowns.isEmpty()) {
                             scaledownoperator = scaledowns.firstKey();
