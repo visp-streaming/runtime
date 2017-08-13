@@ -25,7 +25,7 @@
                 <div class="form-group">
                     <label for="runtimeip" class="col-sm-2 control-label">Runtime IP</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="runtimeip" name="runtimeip" th:field="*{runtimeip}" th:value="${configurationForm.getRuntimeip()}"  required="true"/>
+                        <input type="text" class="form-control" id="runtimeip" name="runtimeip" th:field="*{runtimeip}" th:value="${configurationForm.runtimeip}"  required="true"/>
                     </div>
                 </div>
 
@@ -39,14 +39,14 @@
                 <div class="form-group">
                     <label for="openstackhostimageid" class="col-sm-2 control-label">Openstack Host Image ID</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="openstackhostimageid" name="openstackhostimageid" th:field="*{openstackhostimageid}" th:value="${configurationForm.getOpenstackhostimageid()}"  required="true"/>
+                        <input type="text" class="form-control" id="openstackhostimageid" name="openstackhostimageid" th:field="*{openstackhostimageid}" th:value="${configurationForm.openstackhostimageid}"  required="true"/>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="processingimageid" class="col-sm-2 control-label">Processing Image ID</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="processingimageid" name="processingimageid" th:field="*{processingimageid}" th:value="${configurationForm.getProcessingimageid()}"  required="true"/>
+                        <input type="text" class="form-control" id="processingimageid" name="processingimageid" th:field="*{processingimageid}" th:value="${configurationForm.processingimageid}"  required="true"/>
                     </div>
                 </div>
 
@@ -55,8 +55,15 @@
                     <div class="col-sm-10">
                         <select id="reasoner" class="form-control" th:field="*{reasoner}">
                             <option th:each="rs : ${reasoners}" th:value="${rs}"
-                                    th:selected="${configurationForm.getReasoner() != null and configurationForm.getReasoner().equals(rs)}" th:text="${rs}"></option>
+                                    th:selected="${configurationForm.reasoner != null and configurationForm.getReasoner().equals(rs)}" th:text="${rs}"></option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="btu" class="col-sm-2 control-label">VM BTU (sec)</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="btu" name="btu" th:field="*{btu}" th:value="${configurationForm.btu}"  required="true"/>
                     </div>
                 </div>
 

@@ -1,5 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import java.util.List;
+import java.util.Map;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.resources.ResourceTriple;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
@@ -21,13 +24,9 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
 
 @Service
 @DependsOn({"configurationprovider", "resourceProvider"})
@@ -63,9 +62,6 @@ public class ReasonerBasic {
     @Autowired
     private ScalingActivityRepository sar;
 
-    @Value("${visp.btu}")
-    private Integer btu;
-
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBasic.class);
 
     /**
@@ -96,7 +92,7 @@ public class ReasonerBasic {
                 DateTime btuEnd = new DateTime(dh.getBTUend());
 
                 if (btuEnd.isBefore(new DateTime(DateTimeZone.UTC))) {
-                    dh.setBTUend((btuEnd.plusSeconds(btu)));
+                    dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
                     dhr.save(dh);
                     sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                 }

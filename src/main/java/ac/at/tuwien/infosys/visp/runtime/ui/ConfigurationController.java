@@ -1,6 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
+import java.util.Arrays;
+
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.ui.dto.ConfigurationForm;
 import org.quartz.SchedulerException;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.util.Arrays;
-
 @Controller
 @DependsOn("configurationprovider")
 public class ConfigurationController {
@@ -28,7 +28,7 @@ public class ConfigurationController {
     @RequestMapping("/configuration")
     public String configuration(Model model) {
 
-        ConfigurationForm configurationForm = new ConfigurationForm(config.getRuntimeIP(), config.getInfrastructureIP(), config.getOpenstackProcessingHostImage(), config.getProcessingNodeImage(), config.getReasoner());
+        ConfigurationForm configurationForm = new ConfigurationForm(config.getRuntimeIP(), config.getInfrastructureIP(), config.getOpenstackProcessingHostImage(), config.getProcessingNodeImage(), config.getReasoner(), config.getBtu());
 
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", configurationForm);
@@ -43,6 +43,8 @@ public class ConfigurationController {
         config.setOpenstackProcessingHostImage(form.getOpenstackhostimageid());
         config.setProcessingNodeImage(form.getProcessingimageid());
         config.setReasoner(form.getReasoner());
+        config.setBtu(form.getBtu());
+
 
         config.storeDataToDB();
 

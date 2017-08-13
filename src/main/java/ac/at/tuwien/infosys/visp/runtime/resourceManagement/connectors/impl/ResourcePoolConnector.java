@@ -1,11 +1,16 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -21,19 +26,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 
 @Service
 public class ResourcePoolConnector extends ResourceConnector {
 
     @Value("${visp.simulated.startuptime}")
     private Integer startuptime;
-
-    @Value("${visp.btu}")
-    private Integer BTU;
 
     @Value("${visp.computational.resources.cleanuppool}")
     private Boolean cleanupPool;
@@ -45,6 +43,9 @@ public class ResourcePoolConnector extends ResourceConnector {
 
     @Autowired
     private PooledVMRepository pvmr;
+
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
@@ -75,7 +76,7 @@ public class ResourcePoolConnector extends ResourceConnector {
         dh.setName(availableVM.getName());
 
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
-        btuEnd = btuEnd.plusSeconds(BTU + (startuptime / 1000));
+        btuEnd = btuEnd.plusSeconds(Integer.valueOf(config.getBtu()) + (startuptime / 1000));
         dh.setBTUend(btuEnd);
 
 

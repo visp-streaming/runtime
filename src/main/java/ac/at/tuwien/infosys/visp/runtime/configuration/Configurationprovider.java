@@ -1,5 +1,18 @@
 package ac.at.tuwien.infosys.visp.runtime.configuration;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.RuntimeConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.exceptions.ResourceException;
@@ -12,18 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.TimeoutException;
 
 @Data
 @Service
@@ -49,6 +50,7 @@ public class Configurationprovider {
     private String openstackProcessingHostImage = null;
     private String processingNodeImage = null;
     private String reasoner = null;
+    private String btu = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(Configurationprovider.class);
 
@@ -59,6 +61,7 @@ public class Configurationprovider {
         this.openstackProcessingHostImage = getData("openstackProcessingHostImage");
         this.processingNodeImage = getData("processingNodeImage");
         this.reasoner = getData("reasoner");
+        this.btu = getData("btu");
 
         if (this.runtimeIP == null) {
             this.runtimeIP = getIp();
@@ -79,6 +82,12 @@ public class Configurationprovider {
         if (this.reasoner == null) {
             this.reasoner = "none";
         }
+
+        if (this.btu == null) {
+            //default value = 600 sec
+            this.btu = String.valueOf(600);
+        }
+
     }
 
     private String testConnection(String infrastructureIP) {
@@ -161,6 +170,7 @@ public class Configurationprovider {
         storeSingle("openstackProcessingHostImage", this.openstackProcessingHostImage);
         storeSingle("processingNodeImage", this.processingNodeImage);
         storeSingle("reasoner", this.reasoner);
+        storeSingle("btu", this.btu);
 
         try {
             Files.write(Paths.get("runtimeConfiguration/database.properties"), this.infrastructureIP.getBytes());

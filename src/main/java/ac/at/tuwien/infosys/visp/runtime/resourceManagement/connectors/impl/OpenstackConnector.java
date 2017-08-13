@@ -1,6 +1,12 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl;
 
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.CredentialProperties;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -30,12 +36,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 @Service
 @DependsOn("configurationprovider")
 public class OpenstackConnector extends ResourceConnector {
@@ -45,9 +45,6 @@ public class OpenstackConnector extends ResourceConnector {
 
     @Value("${visp.openstack.publicip}")
     private Boolean PUBLICIPUSAGE;
-
-    @Value("${visp.btu}")
-    private Integer BTU;
 
     @Autowired
     private CredentialProperties credentialProperties;
@@ -172,7 +169,7 @@ public class OpenstackConnector extends ResourceConnector {
         dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
-        btuEnd = btuEnd.plusSeconds(BTU);
+        btuEnd = btuEnd.plusSeconds(Integer.valueOf(config.getBtu()));
         dh.setBTUend(btuEnd);
 
 

@@ -76,8 +76,6 @@ public class ReasonerBTU {
     @Value("${visp.shutdown.graceperiod}")
     private Integer graceperiod;
 
-    @Value("${visp.btu}")
-    private Integer btu;
 
     @Autowired
     private ScalingActivityRepository sar;
@@ -151,7 +149,7 @@ public class ReasonerBTU {
                 DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
 
                 //ensure that the host has enough time to shut down
-                Integer remainingfivepercent = (int) (btu * 0.05);
+                Integer remainingfivepercent = (int) (Integer.valueOf(config.getBtu()) * 0.05);
                 if (remainingfivepercent < graceperiod * 2) {
                     remainingfivepercent = graceperiod * 2;
                 }
@@ -166,7 +164,7 @@ public class ReasonerBTU {
                     //Do not scale down a vm is one has just been started 3 min ago
                     if (sa.getTime().plusMinutes(3).isAfter(new DateTime(DateTimeZone.UTC))) {
                         LOG.info("Could not shutdown Dockerhost: " + dh.getName() + " -- one was started in less than 3 min ago.");
-                        dh.setBTUend((btuEnd.plusSeconds(btu)));
+                        dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
                         dhr.save(dh);
                         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                         LOG.info("the host: " + dh.getName() + " was leased for another BTU");
@@ -245,7 +243,7 @@ public class ReasonerBTU {
                         resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
                    } else {
                        LOG.info("Could not shutdown Dockerhost: " + dh.getName() + "because there are still containers running on it.");
-                       dh.setBTUend((btuEnd.plusSeconds(btu)));
+                       dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
                        dhr.save(dh);
                        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                        LOG.info("the host: " + dh.getName() + " was leased for another BTU");
