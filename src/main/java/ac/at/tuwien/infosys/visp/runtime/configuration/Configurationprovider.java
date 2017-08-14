@@ -58,6 +58,10 @@ public class Configurationprovider {
     private Integer shutdowngrace = null;
     private Integer reasoninginterval = null;
     private Integer upscalingthreshold = null;
+    private Boolean openstackondemand = false;
+    private Boolean publicip = false;
+    private Boolean cleanupresourcepools = true;
+
 
     private static final Logger LOG = LoggerFactory.getLogger(Configurationprovider.class);
 
@@ -90,6 +94,9 @@ public class Configurationprovider {
         this.shutdowngrace = getDataAsInt("shutdowngrace");
         this.reasoninginterval = getDataAsInt("resoninginterval");
         this.upscalingthreshold = getDataAsInt("upscalingthreshold");
+        this.openstackondemand = getDataAsBoolean("openstackondemand");
+        this.publicip = getDataAsBoolean("publicip");
+        this.cleanupresourcepools = getDataAsBoolean("cleanupresourcepools");
 
 
         if (this.runtimeIP == null) {
@@ -147,6 +154,18 @@ public class Configurationprovider {
             this.upscalingthreshold = 30;
         }
 
+        if (this.openstackondemand == null) {
+            this.openstackondemand = false;
+        }
+
+        if (this.publicip == null) {
+            this.publicip = false;
+        }
+
+        if (this.cleanupresourcepools == null) {
+            this.cleanupresourcepools = true;
+        }
+
     }
 
     private String testConnection(String infrastructureIP) {
@@ -200,6 +219,18 @@ public class Configurationprovider {
         return null;
     }
 
+    private Boolean getDataAsBoolean(String identifier) {
+        RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
+        if (rc != null) {
+            if ("true".equals(rc.getValue())) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
     private void storeSingle(String identifier, String value) {
         RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
         if (rc == null) {
@@ -216,6 +247,22 @@ public class Configurationprovider {
             rfr.saveAndFlush(new RuntimeConfiguration(identifier, String.valueOf(value)));
         } else {
             rc.setValue(String.valueOf(value));
+            rfr.saveAndFlush(rc);
+        }
+    }
+
+    private void storeSingle(String identifier, Boolean value) {
+        RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
+        String stringvalue = "false";
+
+        if (value) {
+            stringvalue = "true";
+        }
+
+        if (rc == null) {
+            rfr.saveAndFlush(new RuntimeConfiguration(identifier, stringvalue));
+        } else {
+            rc.setValue(stringvalue);
             rfr.saveAndFlush(rc);
         }
     }
@@ -254,6 +301,9 @@ public class Configurationprovider {
         storeSingle("shutdowngrace", this.shutdowngrace);
         storeSingle("reasoninginterval", this.reasoninginterval);
         storeSingle("upscalingthreshold", this.upscalingthreshold);
+        storeSingle("openstackondemand", this.openstackondemand);
+        storeSingle("publicip", this.publicip);
+        storeSingle("cleanupresourcepools", this.cleanupresourcepools);
 
         try {
             Files.write(Paths.get("runtimeConfiguration/database.properties"), this.infrastructureIP.getBytes());

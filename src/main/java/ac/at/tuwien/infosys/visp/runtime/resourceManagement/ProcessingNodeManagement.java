@@ -10,17 +10,18 @@ import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.ScalingActivity;
-import ac.at.tuwien.infosys.visp.runtime.reasoner.ReasonerUtility;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 
 @Service
+@DependsOn("configurationprovider")
 public class ProcessingNodeManagement {
 
     @Autowired
@@ -34,9 +35,6 @@ public class ProcessingNodeManagement {
 
     @Autowired
     private DockerHostRepository dhr;
-
-    @Autowired
-    private ReasonerUtility reasonerUtility;
 
     @Autowired
     private Configurationprovider config;

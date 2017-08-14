@@ -1,20 +1,23 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
 
-import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
-import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
-import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
+import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.ResourceConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
+import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.ResourcePoolConnector;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.stereotype.Service;
+
 @Service
+@DependsOn("configurationprovider")
 public class ResourceProvider {
 
     @Autowired
@@ -26,16 +29,16 @@ public class ResourceProvider {
     @Autowired
     private ResourcePoolConnector resourcePoolConnector;
 
-    @Value("${visp.computational.resources.openstack}")
-    private Boolean openstackUsage;
-
     private Map<String, String> resourceProviders = new HashMap<>();
+
+    @Autowired
+    private Configurationprovider config;
 
     @PostConstruct
     public void init() {
         resourceProviders = new HashMap<>();
 
-        if (openstackUsage) {
+        if (config.getOpenstackondemand()) {
             resourceProviders.put("openstack", "openstack");
         }
 

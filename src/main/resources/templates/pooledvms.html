@@ -10,11 +10,16 @@
         <span th:text="${message}"></span>
     </div>
 
-    <div class="text-center">
-        <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
-        <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
-        <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
+    <div class="card card-default">
+        <div class="card-body text-center">
+            <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
+            <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
+            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
+        </div>
     </div>
+
+    <div class="form-text"></div>
+
 
     <th:block th:unless="${#arrays.length(hosts) == 0}">
 
@@ -54,8 +59,10 @@
         </div>
     </th:block>
 
-    <div class="emptystate" th:if="${#arrays.length(hosts) == 0}">
-        <div class="emptystate-text">Currently there are no hosts available.</div>
+    <div class="card card-default"  th:if="${#arrays.length(hosts) == 0}">
+        <div class="card-body text-center">
+            Currently there are no hosts available.
+        </div>
     </div>
 
 </th:block>

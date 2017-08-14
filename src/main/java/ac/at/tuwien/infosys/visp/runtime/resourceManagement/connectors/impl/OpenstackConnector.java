@@ -31,16 +31,12 @@ import org.openstack4j.openstack.OSFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 @Service
 @DependsOn("configurationprovider")
 public class OpenstackConnector extends ResourceConnector {
-
-    @Value("${visp.openstack.publicip}")
-    private Boolean PUBLICIPUSAGE;
 
     @Autowired
     private CredentialProperties credentialProperties;
@@ -126,7 +122,7 @@ public class OpenstackConnector extends ResourceConnector {
 
         String uri = bootedServer.getAddresses().getAddresses("private").get(0).getAddr();
 
-        if (PUBLICIPUSAGE) {
+        if (config.getPublicip()) {
             FloatingIP freeIP = null;
 
             for (FloatingIP ip : os.compute().floatingIps().list()) {

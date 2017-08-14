@@ -21,10 +21,12 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
+@DependsOn("configurationprovider")
 public class AvailabilityWatchdog {
 
     private static final Logger LOG = LoggerFactory.getLogger(AvailabilityWatchdog.class);

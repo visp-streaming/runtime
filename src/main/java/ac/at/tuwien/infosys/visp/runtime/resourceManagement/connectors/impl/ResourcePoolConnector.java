@@ -22,15 +22,11 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
 @Service
 public class ResourcePoolConnector extends ResourceConnector {
-
-    @Value("${visp.computational.resources.cleanuppool}")
-    private Boolean cleanupPool;
 
     private String ressourcePoolName;
 
@@ -121,7 +117,7 @@ public class ResourcePoolConnector extends ResourceConnector {
             }
         }
 
-        if (cleanupPool) {
+        if (config.getCleanupresourcepools()) {
             List<Image> availableImages = new ArrayList<>();
             List<Image> danglingImages = new ArrayList<>();
 

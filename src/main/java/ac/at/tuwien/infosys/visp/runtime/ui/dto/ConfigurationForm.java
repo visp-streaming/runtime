@@ -18,6 +18,10 @@ public class ConfigurationForm {
     private Integer shutdowngrace;
     private Integer reasoninginterval;
     private Integer upscalingthreshold;
+    private Boolean openstackondemand;
+    private Boolean publicip;
+    private Boolean cleanupresourcepools;
+
 
     public ConfigurationForm() {
     }

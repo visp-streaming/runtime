@@ -41,20 +41,9 @@ public class ConfigurationController {
         configurationForm.setShutdowngrace(config.getShutdowngrace());
         configurationForm.setReasoninginterval(config.getReasoninginterval());
         configurationForm.setUpscalingthreshold(config.getUpscalingthreshold());
-
-
-
-
-        /**
-         * use
-         *         private Integer monitoringperiod;
-         private Integer availabilitycheck;
-         private Integer simulatestartup;
-         private Integer shutdowngrace;
-         private Integer resoninginterval;
-         private  Integer upscalingthreshold;
-         */
-
+        configurationForm.setOpenstackondemand(config.getOpenstackondemand());
+        configurationForm.setPublicip(config.getPublicip());
+        configurationForm.setCleanupresourcepools(config.getCleanupresourcepools());
 
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", configurationForm);
@@ -76,7 +65,9 @@ public class ConfigurationController {
         config.setShutdowngrace(form.getShutdowngrace());
         config.setReasoninginterval(form.getReasoninginterval());
         config.setUpscalingthreshold(form.getUpscalingthreshold());
-
+        config.setOpenstackondemand(form.getOpenstackondemand());
+        config.setPublicip(form.getPublicip());
+        config.setCleanupresourcepools(form.getCleanupresourcepools());
 
         config.storeDataToDB();
 

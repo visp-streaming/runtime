@@ -7,41 +7,41 @@
 
 <body>
 <th:block layout:fragment="content">
-        <div th:if="${action != null}" class="alert alert-success">
-            <h4 class="alert-heading">Clean successful!</h4>
-            <strong>Success!</strong> <p>Topology is now empty.</p>
-            <p>Number of unsuccessful clear requests: <span th:text="${clearfails}"></span> (see logs for details)</p>
-        </div>
+    <div th:if="${action != null}" class="alert alert-success">
+        <h4 class="alert-heading">Cleanup successful!</h4>
+        <strong>Success!</strong>
+        <p>Topology is now empty.</p>
+        <p>Number of unsuccessful clear requests: <span th:text="${clearfails}"></span> (see logs for details)</p>
+    </div>
 
-        <div th:if="${updateResult == null AND action == null}" class="alert alert-danger">
-            <h4 class="alert-heading">Update was not successful!</h4>
-            <strong>Error</strong> Could not process updates - please check the logs.
-        </div>
+    <div th:if="${updateResult == null AND action == null}" class="alert alert-danger">
+        <h4 class="alert-heading">Update was not successful!</h4>
+        <strong>Error</strong> Could not process updates - please check the logs.
+    </div>
 
 
-        <div th:if="${updateResult != null}" class="card-header">Update Results:</div>
-        <div th:if="${updateResult != null}" class="card-body">
-            <div th:if="${updateResult.errorMessage == ''}">
-                <p th:if="${updateResult.updatesPerformed.size() == 0}">The topology does not need to be changed.</p>
-                <p th:if="${updateResult.updatesPerformed.size() != 0}">The following updates were executed:</p>
-                <div th:each="update : ${updateResult.updatesPerformed}">
-                    <div class="alert"
-                         th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +
+    <div th:if="${updateResult != null}" class="card-header">Update Results:</div>
+    <div th:if="${updateResult != null}" class="card-body">
+        <div th:if="${updateResult.errorMessage == ''}">
+            <p th:if="${updateResult.updatesPerformed.size() == 0}">The topology does not need to be changed.</p>
+            <p th:if="${updateResult.updatesPerformed.size() != 0}">The following updates were executed:</p>
+            <div th:each="update : ${updateResult.updatesPerformed}">
+                <div class="alert"
+                     th:classappend="${(#strings.contains(update.action,'ADD_OPERATOR') ? 'alert-success' : '') +
                      (#strings.contains(update.action,'UPDATE_OPERATOR') ? ' alert-info' : '') +
                      (#strings.contains(update.action,'REMOVE_OPERATOR') ? ' alert-danger' : '')}">
-                        <strong th:text="${update.action}"></strong>
-                        <span>  </span>
-                        <span th:text="${update.affectedOperatorId}"></span><span> at host </span>
-                        <span th:text="${update.affectedHost}"></span>
-                    </div>
+                    <strong th:text="${update.action}"></strong>
+                    <span>  </span>
+                    <span th:text="${update.affectedOperatorId}"></span><span> at host </span>
+                    <span th:text="${update.affectedHost}"></span>
                 </div>
-                <h3>The following topology is now in place: </h3>
-                <div id="topologyFigure"></div>
             </div>
-            <div th:if="${updateResult.errorMessage != ''}">
-                <div class="alert alert-danger">
-                    <strong>Error</strong> <span th:text="${updateResult.errorMessage}"></span>.
-                </div>
+            <h3>The following topology is now in place: </h3>
+            <div id="topologyFigure"></div>
+        </div>
+        <div th:if="${updateResult.errorMessage != ''}">
+            <div class="alert alert-danger">
+                <strong>Error</strong> <span th:text="${updateResult.errorMessage}"></span>.
             </div>
         </div>
     </div>
@@ -52,8 +52,8 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         var dotContent = [[${dotContent}]];
-        if(dotContent) {
-            image = Viz(dotContent, { format: "png-image-element" });
+        if (dotContent) {
+            image = Viz(dotContent, {format: "png-image-element"});
             document.getElementById("topologyFigure").appendChild(image);
         }
 
