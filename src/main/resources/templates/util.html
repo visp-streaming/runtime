@@ -7,18 +7,16 @@
 <th:block layout:fragment="content">
 
     <div class="message" th:if="${message != null}">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-            </div>
-            <div class="panel-body">
+        <div class="card card-info">
+            <div class="card-body">
                 <span th:text="${message}"></span>
             </div>
         </div>
    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Utility Operations</div>
-        <div class="panel-body">
+    <div class="card card-default">
+        <div class="card-title">Utility Operations</div>
+        <div class="card-body">
             <span><a class="btn btn-danger" th:href="${'/util/clear'}">Clear Topology</a></span>
 
         </div>

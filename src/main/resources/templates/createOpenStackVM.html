@@ -6,51 +6,51 @@
 <body>
 <th:block layout:fragment="content">
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Create a new OpenStack VM</div>
-        <div class="panel-body">
+    <div class="card card-default">
+        <div class="card-header">Create a new OpenStack VM</div>
+        <div class="card-body">
             <form method="post" th:action="@{/pooledvms/createOpenStackVM}" th:object="${createOpenStackVMForm}" class="form-horizontal">
 
-                <div class="form-group">
-                    <label for="poolname" class="col-sm-2 control-label">Pool Name</label>
+                <div class="form-group row">
+                    <label for="poolname" class="col-sm-2 form-control-label">Pool Name</label>
                     <div class="col-sm-10">
                         <input type="text" class="form-control" id="poolname" name="poolname" th:field="*{poolname}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="instanceName" class="col-sm-2 control-label">Instance Name</label>
+                <div class="form-group row">
+                    <label for="instanceName" class="col-sm-2 form-control-label">Instance Name</label>
                     <div class="col-sm-10">
                         <input type="text" class="form-control" id="instanceName" name="instanceName" th:field="*{instanceName}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="flavour" class="col-sm-2 control-label">Flavour</label>
+                <div class="form-group row">
+                    <label for="flavour" class="col-sm-2 form-control-label">Flavour</label>
                     <div class="col-sm-10">
-                        <select id="flavour" name="flavour" class="form-control" th:field="*{flavour}">
+                        <select id="flavour" name="flavour" class="custom-select" th:field="*{flavour}">
                             <option th:each="fl : ${flavours}" th:value="${fl}"
                                     th:selected="${createOpenStackVMForm.flavour != null and createOpenStackVMForm.flavour.equals(fl)}" th:text="${fl}"></option>
                         </select>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="cost" class="col-sm-2 control-label">Cost</label>
+                <div class="form-group row">
+                    <label for="cost" class="col-sm-2 form-control-label">Cost</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="cost" th:id="cost" th:name="cost" th:value="${createOpenStackVMForm.cost}" step="0.1"  required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="frequency" class="col-sm-2 control-label">CPU-Frequency</label>
+                <div class="form-group row">
+                    <label for="frequency" class="col-sm-2 form-control-label">CPU-Frequency</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="frequency" th:id="frequency" th:name="frequency" th:value="${createOpenStackVMForm.frequency}" step="1"  required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="instancecount" class="col-sm-2 control-label">Instance Count</label>
+                <div class="form-group row">
+                    <label for="instancecount" class="col-sm-2 form-control-label">Instance Count</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="instancecount" th:id="instancecount" th:name="instancecount" th:value="${createOpenStackVMForm.instancecount}" step="1" min="1" max="5" required="true"/>
                     </div>
@@ -58,7 +58,7 @@
 
                 <div class="form-buttons">
                     <div class="btn-group">
-                        <button type="submit" class="btn btn-primary">Start new OpenStack VM</button>
+                        <button type="submit" class="btn btn-success">Start new OpenStack VM</button>
                     </div>
                 </div>
             </form>

@@ -5,13 +5,11 @@
 
 <body>
 <th:block layout:fragment="content">
-    <div class="jumbotron">
-        This webpage allows to configure this VISP Runtime instance.
-    </div>
+    <div class="card">
+        <div class="card-heading"></div>
+        <div class="card-body text-center">
+            <h4 class="card-title">This webpage allows to configure this VISP Runtime instance.</h4>
 
-    <div class="panel panel-default">
-        <div class="panel-heading"></div>
-        <div class="panel-body text-center">
             <a class="btn btn-info" href="https://visp-streaming.github.io" target="_blank">Documentation</a>
             <a class="btn btn-info" th:href="${rabbitmqMonitoring}" target="_blank">RabbitMQ Monitoring</a>
         </div>

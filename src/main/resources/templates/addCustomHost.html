@@ -6,62 +6,62 @@
 <body>
 <th:block layout:fragment="content">
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Add a new custom Host</div>
-        <div class="panel-body">
+    <div class="card card-default">
+        <div class="card-header">Add a new Custom Host</div>
+        <div class="card-body">
             <form method="post" th:action="@{/pooledvms/createCustomHost}" th:object="${addCustomHostForm}" class="form-horizontal">
 
-                <div class="form-group">
-                    <label for="instanceName" class="col-sm-2 control-label">Instance Name</label>
+                <div class="form-group row">
+                    <label for="instanceName" class="col-sm-2 form-control-label">Instance Name</label>
                     <div class="col-sm-10">
                         <input type="text" class="form-control" id="instanceName" name="instanceName" th:field="*{instanceName}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="poolname" class="col-sm-2 control-label">Pool Name</label>
+                <div class="form-group row">
+                    <label for="poolname" class="col-sm-2 form-control-label">Pool Name</label>
                     <div class="col-sm-10">
                         <input type="text" class="form-control" id="poolname" name="poolname" th:field="*{poolname}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="url" class="col-sm-2 control-label">Host-IP</label>
+                <div class="form-group row">
+                    <label for="url" class="col-sm-2 form-control-label">Host-IP</label>
                     <div class="col-sm-10">
                         <input type="text" class="form-control" id="url" name="url" th:field="*{url}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="storage" class="col-sm-2 control-label">Storage</label>
+                <div class="form-group row">
+                    <label for="storage" class="col-sm-2 form-control-label">Storage</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="storage" name="storage" th:field="*{storage}" step="1" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="memory" class="col-sm-2 control-label">Memory</label>
+                <div class="form-group row">
+                    <label for="memory" class="col-sm-2 form-control-label">Memory</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="memory" name="memory" th:field="*{memory}" step="1" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="cores" class="col-sm-2 control-label">CPU-cores</label>
+                <div class="form-group row">
+                    <label for="cores" class="col-sm-2 form-control-label">CPU-cores</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="cores" name="cores" th:field="*{cores}" step="0.1" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="cost" class="col-sm-2 control-label">Cost</label>
+                <div class="form-group row">
+                    <label for="cost" class="col-sm-2 form-control-label">Cost</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="cost" th:id="cost" th:name="cost" th:value="${addCustomHostForm.cost}" step="0.1"  required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="frequency" class="col-sm-2 control-label">CPU-Frequency</label>
+                <div class="form-group row">
+                    <label for="frequency" class="col-sm-2 form-control-label">CPU-Frequency</label>
                     <div class="col-sm-10">
                         <input type="number" class="form-control" id="frequency" th:id="frequency" th:name="frequency" th:value="${addCustomHostForm.frequency}" step="1"  required="true"/>
                     </div>
@@ -69,7 +69,7 @@
 
                 <div class="form-buttons">
                     <div class="btn-group">
-                        <button type="submit" class="btn btn-primary">Add new custom Host</button>
+                        <button type="submit" class="btn btn-success">Add new Custom Host</button>
                     </div>
                 </div>
             </form>

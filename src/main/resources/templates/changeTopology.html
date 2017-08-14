@@ -6,39 +6,44 @@
 
 <body>
 <th:block layout:fragment="content">
-
     <div class="row">
         <div class="col-md-8">
-            <div class="panel panel-default">
-                <div class="panel-heading">Apply new Topology</div>
-                <div class="panel-body text-center">
-                    <form action="/topology/uploadTopologyGUIOnly" method="POST" enctype="multipart/form-data">
-                        <div class="input-group">
-                            <input type="file" name="file" class="form-control" required="true"/>
-                            <span class="input-group-btn">
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </span>
+            <div class="card card-default">
+                <div class="card-header">Apply Topology Update</div>
+                <div class="card-body text-center">
+
+                    <form action="/topology/uploadTopologyGUIOnly" method="POST" enctype="multipart/form-data" class="form-inline">
+                        <div class="form-group text-left">
+                            <label class="custom-file">
+                                <input type="file" id="file2" class="custom-file-input" required="true" />
+                                <span class="custom-file-control"></span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">Upload</button>
                         </div>
                     </form>
+
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">Utility Operations</div>
-                <div class="panel-body text-center">
+            <div class="card card-default">
+                <div class="card-header">Utility Operations</div>
+                <div class="card-body text-center">
                     <span><a class="btn btn-danger" th:href="${'/topology/clear'}">Clear Topology</a></span>
                 </div>
-                <div class="panel-body text-center">
+                <div class="card-body text-center">
                     <span><a class="btn btn-primary" id="odrOptimization" th:href="${'/topology/optimizePlacements'}">Trigger ODR Optimization <br /><span class="badge">requires active ODR Instance</span></a></span>
                 </div>
             </div>
         </div>
     </div>
+    <div class="form-text"></div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Current Topology</div>
-        <div class="panel-body">
+    <div class="card card-default">
+        <div class="card-header">Current Topology</div>
+        <div class="card-body">
             <div id="topologyFigure"></div>
             <div th:if="${emptyTopology}" class="alert alert-info">
                 <strong>Info: </strong>

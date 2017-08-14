@@ -1,8 +1,100 @@
+/*
+ * Base structure
+ */
+
+/* Move down content because we have a fixed navbar that is 3.5rem tall */
+body {
+    padding-top: 3.5rem;
+}
+
+/*
+ * Typography
+ */
+
+h1 {
+    margin-bottom: 20px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid #eee;
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
+    position: fixed;
+    top: 51px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    border-right: 1px solid #eee;
+}
+
+/* Sidebar navigation */
+.sidebar {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.sidebar .nav {
+    margin-bottom: 20px;
+}
+
+.sidebar .nav-item {
+    width: 100%;
+}
+
+.sidebar .nav-item + .nav-item {
+    margin-left: 0;
+}
+
+.sidebar .nav-link {
+    border-radius: 0;
+    color: #000000;
+}
+
+.sidebar li a:hover {
+    background: #eee;
+}
+
+.sidebar li a.active {
+    background: #ddd;
+}
+
+.sidebar .nav-link.active {
+    background: #ddd;
+    color: #000000;
+}
+
+.sidebar .nav-item.active {
+    background: #ddd;
+}
+
+
+
+/*
+ * Dashboard
+ */
+
+/* Placeholders */
+.placeholders {
+    padding-bottom: 3rem;
+}
+
+.placeholder img {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+
+
+/*
 .navbar-brand {
     display: block;
-/*    padding-left: 85px;*/
     padding-top: 23px;
-/*    background: url("/images/visp_logo.png") no-repeat 8px 8px;*/
     height: 60px;
     background-size: 70px auto;
 }
@@ -58,7 +150,6 @@ div.panel-heading .btn {
     margin-right: -9px;
 }
 
-/* forms */
     .form-buttons {
         margin-top: 20px;
         text-align: center;
@@ -71,7 +162,6 @@ div.panel-heading .btn {
 
 
 
-/* empty state */
     .emptystate {
         text-align: center;
     }
@@ -94,7 +184,6 @@ div.panel-heading .btn {
         margin: 20px auto;
     }
 
-/* remove first line of table has no head */
     .table.nohead > tbody {
         border: none;
     }
@@ -108,7 +197,6 @@ div.panel-heading .btn {
         border: none;
     }
 
-/* status symbols */
 
 .status-ok,
 .status-warning {
@@ -133,5 +221,5 @@ div.panel-heading .btn {
     margin-top: 5px;
 }
 
-
+*/
 

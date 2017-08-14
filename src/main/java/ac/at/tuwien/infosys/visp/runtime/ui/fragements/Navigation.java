@@ -1,20 +1,20 @@
 package ac.at.tuwien.infosys.visp.runtime.ui.fragements;
 
-import org.springframework.context.annotation.Configuration;
-
 import java.util.Arrays;
 import java.util.List;
+
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class Navigation {
 
     public List<NavEntry> getNavEntries() {
         return Arrays.asList(
-                new NavEntry("/", "about", "About"),
-                new NavEntry("/topology", "changeTopology", "Topology Configuration"),
-                new NavEntry("/pooledvms", "pooledvms", "Resource Pools"),
-                new NavEntry("/console", "consoleoutput", "Console"),
-                new NavEntry("/configuration", "configuration", "Configuration")
+                new NavEntry("/", "/about", "About"),
+                new NavEntry("/topology", "/topology", "Topology Configuration"),
+                new NavEntry("/pooledvms", "/pooledvms", "Resource Pools"),
+                new NavEntry("/console", "/console", "Console"),
+                new NavEntry("/configuration", "/configuration", "Configuration")
                 );
     }
 

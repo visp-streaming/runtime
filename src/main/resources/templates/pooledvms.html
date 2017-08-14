@@ -6,31 +6,23 @@
 <body>
 <th:block layout:fragment="content">
 
-    <div class="message" th:if="${message != null}">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-            </div>
-            <div class="panel-body">
-                <span th:text="${message}"></span>
-            </div>
-        </div>
-   </div>
+    <div th:if="${message != null}" class="alert alert-info" role="alert">
+        <span th:text="${message}"></span>
+    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading"></div>
-        <div class="panel-body text-center">
-            <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
-            <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
-            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
-        </div>
+    <div class="text-center">
+        <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
+        <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
+        <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
     </div>
 
     <th:block th:unless="${#arrays.length(hosts) == 0}">
 
-        <div class="panel panel-default">
-            <div class="panel-heading">Hosts
-            </div>
-            <div class="panel-body">
+        <div class="card card-default">
+            <div class="card-header">Running Hosts</div>
+            <div class="card-body text-center">
+
+
                 <table class="table table-hover nohead">
                     <tbody>
                         <tr>

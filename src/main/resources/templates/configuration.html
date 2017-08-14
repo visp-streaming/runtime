@@ -7,74 +7,114 @@
 <body>
 <th:block layout:fragment="content">
 
-    <div class="message" th:if="${message != null}">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-            </div>
-            <div class="panel-body">
-                <span th:text="${message}"></span>
-            </div>
-        </div>
+    <div th:if="${message != null}" class="alert alert-info" role="alert">
+        <span th:text="${message}"></span>
     </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading">Configuration</div>
-        <div class="panel-body">
-            <form method="post" th:action="@{/configurationSaved}" th:object="${configurationForm}" class="form-horizontal">
+    <form method="post" th:action="@{/configurationSaved}" th:object="${configurationForm}"
+          class="form-horizontal">
 
-                <div class="form-group">
-                    <label for="runtimeip" class="col-sm-2 control-label">Runtime IP</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="runtimeip" name="runtimeip" th:field="*{runtimeip}" th:value="${configurationForm.runtimeip}"  required="true"/>
+        <div class="card card-default border-light">
+            <div class="card-header">Runtime</div>
+            <div class="card-body">
+
+                <div class="form-group row">
+                    <label for="runtimeip" class="col-sm-3 form-control-label">Runtime IP</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="runtimeip" name="runtimeip"
+                               th:field="*{runtimeip}" th:value="${configurationForm.runtimeip}"
+                               required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="infrastructureip" class="col-sm-2 control-label">Infrastructure IP</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="infrastructureip" name="infrastructureip" th:field="*{infrastructureip}" th:value="${configurationForm.getInfrastructureip()}"  required="true"/>
+                <div class="form-group row">
+                    <label for="infrastructureip" class="col-sm-3 form-control-label">Infrastructure IP</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="infrastructureip" name="infrastructureip"
+                               th:field="*{infrastructureip}"
+                               th:value="${configurationForm.getInfrastructureip()}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="openstackhostimageid" class="col-sm-2 control-label">Openstack Host Image ID</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="openstackhostimageid" name="openstackhostimageid" th:field="*{openstackhostimageid}" th:value="${configurationForm.openstackhostimageid}"  required="true"/>
+                <div class="form-group row">
+                    <label for="processingimageid" class="col-sm-3 form-control-label">FallBack Processing Image
+                        ID</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="processingimageid" name="processingimageid"
+                               th:field="*{processingimageid}" th:value="${configurationForm.processingimageid}"
+                               required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="processingimageid" class="col-sm-2 control-label">Processing Image ID</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="processingimageid" name="processingimageid" th:field="*{processingimageid}" th:value="${configurationForm.processingimageid}"  required="true"/>
+            </div>
+        </div>
+
+        <div class="card card-default border-light">
+            <div class="card-header">VMs</div>
+            <div class="card-body">
+
+                <div class="form-group row">
+                    <label for="btu" class="col-sm-3 form-control-label">BTU (sec)</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="btu" name="btu" th:field="*{btu}"
+                               th:value="${configurationForm.btu}" required="true"/>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="reasoner" class="col-sm-2 control-label">Reasoner</label>
-                    <div class="col-sm-10">
+            </div>
+        </div>
+
+
+        <div class="card card-default border-light">
+            <div class="card-header">OpenStack</div>
+            <div class="card-body">
+
+                <div class="form-group row">
+                    <label for="openstackhostimageid" class="col-sm-3 form-control-label">Openstack Host Image
+                        ID</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="openstackhostimageid"
+                               name="openstackhostimageid"
+                               th:field="*{openstackhostimageid}"
+                               th:value="${configurationForm.openstackhostimageid}"
+                               required="true"/>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="card card-default border-light">
+            <div class="card-header">Resoner</div>
+            <div class="card-body">
+
+                <div class="form-group row">
+                    <label for="reasoner" class="col-sm-3 form-control-label">Type</label>
+                    <div class="col-sm-9">
                         <select id="reasoner" class="form-control" th:field="*{reasoner}">
                             <option th:each="rs : ${reasoners}" th:value="${rs}"
-                                    th:selected="${configurationForm.reasoner != null and configurationForm.getReasoner().equals(rs)}" th:text="${rs}"></option>
+                                    th:selected="${configurationForm.reasoner != null and configurationForm.getReasoner().equals(rs)}"
+                                    th:text="${rs}"></option>
                         </select>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="btu" class="col-sm-2 control-label">VM BTU (sec)</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="btu" name="btu" th:field="*{btu}" th:value="${configurationForm.btu}"  required="true"/>
-                    </div>
-                </div>
+            </div>
+        </div>
 
+
+        <div class="card card-default border-light">
+            <div class="card-body text-center">
                 <div class="form-buttons">
                     <div class="btn-group">
-                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="submit" class="btn btn-success">Update Configuration</button>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
+
+    </form>
 </th:block>
 
 </body>
