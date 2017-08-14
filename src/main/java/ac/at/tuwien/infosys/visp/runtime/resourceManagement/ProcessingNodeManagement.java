@@ -3,6 +3,7 @@ package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 import java.util.List;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
@@ -16,15 +17,11 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
 @Service
 public class ProcessingNodeManagement {
-
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
 
     @Autowired
     private DockerContainerManagement dcm;
@@ -41,14 +38,16 @@ public class ProcessingNodeManagement {
     @Autowired
     private ReasonerUtility reasonerUtility;
 
+    @Autowired
+    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(ProcessingNodeManagement.class);
 
     public void removeContainerWhichAreFlaggedToShutdown() {
         for (DockerContainer dc : dcr.findByStatus("stopping")) {
             DateTime now = new DateTime(DateTimeZone.UTC);
-            LOG.debug("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperatorType() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(graceperiod));
-            if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(graceperiod))) {
+            LOG.debug("removeContainerWhichAreFlaggedToShutdown shuptdown container (" + dc.getOperatorType() + ") : current time: " + now + " - " + "termination time:" + new DateTime(dc.getTerminationTime()).plusMinutes(config.getShutdowngrace()));
+            if (now.isAfter(new DateTime(dc.getTerminationTime()).plusSeconds(config.getShutdowngrace()))) {
                 dcm.removeContainer(dc);
             }
         }
@@ -122,7 +121,7 @@ public class ProcessingNodeManagement {
             LOG.error("Could not trigger shutdown on container: " + dc.getContainerid(), e);
         }
 
-        dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(graceperiod)));
+        dc.setTerminationTime((new DateTime(DateTimeZone.UTC).plusSeconds(config.getShutdowngrace())));
         sar.save(new ScalingActivity("container", new DateTime(DateTimeZone.UTC), dc.getOperatorType(), "scaledown", dc.getHost()));
         LOG.debug("VISP - Scale DOWN " + dc.getOperatorType() + "-" + dc.getContainerid());
 

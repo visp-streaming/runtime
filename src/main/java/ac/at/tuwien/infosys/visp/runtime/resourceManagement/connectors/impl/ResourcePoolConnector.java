@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
@@ -30,9 +29,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResourcePoolConnector extends ResourceConnector {
 
-    @Value("${visp.simulated.startuptime}")
-    private Integer startuptime;
-
     @Value("${visp.computational.resources.cleanuppool}")
     private Boolean cleanupPool;
 
@@ -43,9 +39,6 @@ public class ResourcePoolConnector extends ResourceConnector {
 
     @Autowired
     private PooledVMRepository pvmr;
-
-    @Autowired
-    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
@@ -76,7 +69,7 @@ public class ResourcePoolConnector extends ResourceConnector {
         dh.setName(availableVM.getName());
 
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
-        btuEnd = btuEnd.plusSeconds(Integer.valueOf(config.getBtu()) + (startuptime / 1000));
+        btuEnd = btuEnd.plusSeconds(config.getBtu() + (config.getSimulatestartup() / 1000));
         dh.setBTUend(btuEnd);
 
 
@@ -87,7 +80,7 @@ public class ResourcePoolConnector extends ResourceConnector {
         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "startVM", dh.getName()));
 
         try {
-            TimeUnit.MILLISECONDS.sleep(startuptime);
+            TimeUnit.MILLISECONDS.sleep(config.getSimulatestartup());
         } catch (InterruptedException ignore) {
             LOG.error("Host could not be selected from resourcepool");
         }

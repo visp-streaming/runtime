@@ -24,10 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Data
-@Service
+@Configuration
 public class Configurationprovider {
 
     @Autowired
@@ -50,9 +51,30 @@ public class Configurationprovider {
     private String openstackProcessingHostImage = null;
     private String processingNodeImage = null;
     private String reasoner = null;
-    private String btu = null;
+    private Integer btu = null;
+    public Integer monitoringperiod = null;
+    private Integer availabilitycheck = null;
+    private Integer simulatestartup = null;
+    private Integer shutdowngrace = null;
+    private Integer reasoninginterval = null;
+    private Integer upscalingthreshold = null;
 
     private static final Logger LOG = LoggerFactory.getLogger(Configurationprovider.class);
+
+    @Bean
+    public Integer monitoringperiod() {
+        return monitoringperiod;
+    }
+
+    @Bean
+    public Integer availabilitycheck() {
+        return availabilitycheck;
+    }
+
+    @Bean
+    public Integer reasoninginterval() {
+        return reasoninginterval;
+    }
 
     @PostConstruct
     public void initialize() {
@@ -61,7 +83,14 @@ public class Configurationprovider {
         this.openstackProcessingHostImage = getData("openstackProcessingHostImage");
         this.processingNodeImage = getData("processingNodeImage");
         this.reasoner = getData("reasoner");
-        this.btu = getData("btu");
+        this.btu = getDataAsInt("btu");
+        this.monitoringperiod = getDataAsInt("monitoringperiod");
+        this.availabilitycheck = getDataAsInt("availabilitycheck");
+        this.simulatestartup = getDataAsInt("simulatestartup");
+        this.shutdowngrace = getDataAsInt("shutdowngrace");
+        this.reasoninginterval = getDataAsInt("resoninginterval");
+        this.upscalingthreshold = getDataAsInt("upscalingthreshold");
+
 
         if (this.runtimeIP == null) {
             this.runtimeIP = getIp();
@@ -85,7 +114,37 @@ public class Configurationprovider {
 
         if (this.btu == null) {
             //default value = 600 sec
-            this.btu = String.valueOf(600);
+            this.btu = 600;
+        }
+
+        if (this.monitoringperiod == null) {
+            //default value = 15000 millisec
+            this.monitoringperiod = 15000;
+        }
+
+        if (this.availabilitycheck == null) {
+            //default value = 60000 millisec
+            this.availabilitycheck = 60000;
+        }
+
+        if (this.simulatestartup == null) {
+            //default value = 15  sec
+            this.simulatestartup = 15;
+        }
+
+        if (this.shutdowngrace == null) {
+            //default value = 20  sec
+            this.shutdowngrace = 20;
+        }
+
+        if (this.reasoninginterval == null) {
+            //default value = 20000  millisec
+            this.reasoninginterval = 20000;
+        }
+
+        if (this.upscalingthreshold == null) {
+            //default value = 30
+            this.upscalingthreshold = 30;
         }
 
     }
@@ -133,12 +192,30 @@ public class Configurationprovider {
         return null;
     }
 
+    private Integer getDataAsInt(String identifier) {
+        RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
+        if (rc != null) {
+            return Integer.parseInt(rc.getValue());
+        }
+        return null;
+    }
+
     private void storeSingle(String identifier, String value) {
         RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
         if (rc == null) {
             rfr.saveAndFlush(new RuntimeConfiguration(identifier, value));
         } else {
             rc.setValue(value);
+            rfr.saveAndFlush(rc);
+        }
+    }
+
+    private void storeSingle(String identifier, Integer value) {
+        RuntimeConfiguration rc = rfr.findFirstByKey(identifier);
+        if (rc == null) {
+            rfr.saveAndFlush(new RuntimeConfiguration(identifier, String.valueOf(value)));
+        } else {
+            rc.setValue(String.valueOf(value));
             rfr.saveAndFlush(rc);
         }
     }
@@ -171,6 +248,12 @@ public class Configurationprovider {
         storeSingle("processingNodeImage", this.processingNodeImage);
         storeSingle("reasoner", this.reasoner);
         storeSingle("btu", this.btu);
+        storeSingle("monitoringperiod", this.monitoringperiod);
+        storeSingle("availabilitycheck", this.availabilitycheck);
+        storeSingle("simulatestartup", this.simulatestartup);
+        storeSingle("shutdowngrace", this.shutdowngrace);
+        storeSingle("reasoninginterval", this.reasoninginterval);
+        storeSingle("upscalingthreshold", this.upscalingthreshold);
 
         try {
             Files.write(Paths.get("runtimeConfiguration/database.properties"), this.infrastructureIP.getBytes());

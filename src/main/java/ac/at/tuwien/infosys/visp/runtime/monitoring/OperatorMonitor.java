@@ -1,5 +1,12 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import ac.at.tuwien.infosys.visp.common.ProcessingNodeMetricsMessage;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
@@ -14,8 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.*;
 
 /**
  * The OperatorMonitor retrieves the statistics related
@@ -55,7 +60,7 @@ public class OperatorMonitor {
     private long lastUpdate = 0;
 
     //TODO reenable again
-    //@Scheduled(fixedRateString = "${visp.monitor.period}")
+    //    @Scheduled(fixedRateString = "#{@configurationprovider.monitoringperiod}")
     public synchronized void retrieveOperatorsMetricsFromAllContainers() {
 
         if (lastUpdate == 0) {

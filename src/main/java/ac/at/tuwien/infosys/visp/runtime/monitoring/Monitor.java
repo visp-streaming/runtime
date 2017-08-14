@@ -49,9 +49,6 @@ public class Monitor {
     @Value("${visp.relaxationfactor}")
     private Double relaxationfactor;
 
-    @Value("${visp.minimalqueueloadforupscaling}")
-    private Integer queueUpscalingThreshold;
-
     @Autowired
     private ProcessingDurationRepository pcr;
 
@@ -64,7 +61,7 @@ public class Monitor {
     @Autowired
     private Configurationprovider config;
 
-    @Scheduled(fixedRateString = "${visp.monitor.period}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.monitoringperiod}")
     public void recordData() {
         for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
             for (String queue : topologyMgmt.getIncomingQueuesAsList(op.getName())) {
@@ -89,7 +86,7 @@ public class Monitor {
 
         if (sa == ScalingAction.DONOTHING) {
             //assume that we may not have any monitoring information
-            if (max > (queueUpscalingThreshold * 5)) {
+            if (max > (config.getUpscalingthreshold() * 5)) {
                 return ScalingAction.SCALEUP;
             }
         }
@@ -128,11 +125,11 @@ public class Monitor {
 
         if (pds.get(0).getDuration() * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
 
-            if (maxQueue * 5 > queueUpscalingThreshold) {
+            if (maxQueue * 5 > config.getUpscalingthreshold()) {
                 return ScalingAction.SCALEUPDOUBLE;
             }
 
-            if (maxQueue > queueUpscalingThreshold) {
+            if (maxQueue > config.getUpscalingthreshold()) {
                 return ScalingAction.SCALEUP;
             }
         }
@@ -151,7 +148,7 @@ public class Monitor {
         Double expectedDurationValue = regression.predict(6);
 
         if (expectedDurationValue * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
-            if (maxQueue > queueUpscalingThreshold) {
+            if (maxQueue > config.getUpscalingthreshold()) {
                 return ScalingAction.SCALEUP;
             }
         }

@@ -1,5 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.reasoner;
 
+import javax.annotation.PostConstruct;
+
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.reasoner.rl.CentralizedRLReasoner;
 import org.slf4j.Logger;
@@ -8,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 
 @Service
 @DependsOn({"configurationprovider","resourceProvider"})
@@ -28,8 +28,8 @@ public class ReasonerRL {
     	LOG.info("Initializing RLReasoner");
     	rlReasoner.initialize();
     }
-    
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+
+    @Scheduled(fixedRateString = "#{@configurationprovider.reasoninginterval}")
     public synchronized void updateResourceconfiguration() {
         if (!config.getReasoner().equals("rl")) {
             return;

@@ -1,5 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors;
 
+import java.net.URI;
+
+import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.connectors.impl.OpenstackConnector;
@@ -16,19 +19,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.net.URI;
-
 
 public abstract class ResourceConnector {
-
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
 
     @Value("${visp.entropyContainerName}")
     private String entropyContainerName;
 
     @Autowired
     protected DockerHostRepository dhr;
+
+    @Autowired
+    protected Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
@@ -42,8 +43,8 @@ public abstract class ResourceConnector {
         for (DockerHost dh : dhr.findAll()) {
             if (dh.getScheduledForShutdown()) {
                 DateTime now = new DateTime(DateTimeZone.UTC);
-                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 3));
-                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(graceperiod * 2))) {
+                LOG.info("Housekeeping shuptdown host: current time: " + now + " - " + "termination time:" + new DateTime(dh.getTerminationTime()).plusSeconds(config.getShutdowngrace() * 3));
+                if (now.isAfter(new DateTime(dh.getTerminationTime()).plusSeconds(config.getShutdowngrace() * 2))) {
                     stopDockerHost(dh);
                 }
             }

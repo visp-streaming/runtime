@@ -1,6 +1,8 @@
 package ac.at.tuwien.infosys.visp.runtime.monitoring;
 
 
+import java.net.URL;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
@@ -21,8 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.net.URL;
 
 @Service
 public class AvailabilityWatchdog {
@@ -56,7 +56,7 @@ public class AvailabilityWatchdog {
     @Autowired
     private Utilities utilities;
 
-    @Scheduled(fixedRateString = "${visp.checkavilability.period}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.availabilitycheck}")
     public void checkAvailablitiyOfContainer() {
         for (Operator op : topologyMgmt.getOperatorsForAConcreteLocation(config.getRuntimeIP())) {
             if (op instanceof ProcessingOperator) {

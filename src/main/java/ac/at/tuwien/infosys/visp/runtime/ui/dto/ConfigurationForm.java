@@ -11,16 +11,13 @@ public class ConfigurationForm {
     private String openstackhostimageid;
     private String processingimageid;
     private String reasoner;
-    private String btu;
-
-    public ConfigurationForm(String runtimeip, String infrastructureip, String openstackhostimageid, String processingimageid, String reasoner, String btu) {
-        this.runtimeip = runtimeip;
-        this.infrastructureip = infrastructureip;
-        this.openstackhostimageid = openstackhostimageid;
-        this.processingimageid = processingimageid;
-        this.reasoner = reasoner;
-        this.btu = btu;
-    }
+    private Integer btu;
+    private Integer monitoringperiod;
+    private Integer availabilitycheck;
+    private Integer simulatestartup;
+    private Integer shutdowngrace;
+    private Integer reasoninginterval;
+    private Integer upscalingthreshold;
 
     public ConfigurationForm() {
     }

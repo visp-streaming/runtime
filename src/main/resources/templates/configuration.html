@@ -19,8 +19,8 @@
             <div class="card-body">
 
                 <div class="form-group row">
-                    <label for="runtimeip" class="col-sm-3 form-control-label">Runtime IP</label>
-                    <div class="col-sm-9">
+                    <label for="runtimeip" class="col-sm-5 form-control-label">Runtime IP</label>
+                    <div class="col-sm-7">
                         <input type="text" class="form-control" id="runtimeip" name="runtimeip"
                                th:field="*{runtimeip}" th:value="${configurationForm.runtimeip}"
                                required="true"/>
@@ -28,24 +28,40 @@
                 </div>
 
                 <div class="form-group row">
-                    <label for="infrastructureip" class="col-sm-3 form-control-label">Infrastructure IP</label>
-                    <div class="col-sm-9">
+                    <label for="infrastructureip" class="col-sm-5 form-control-label">Infrastructure IP</label>
+                    <div class="col-sm-7">
                         <input type="text" class="form-control" id="infrastructureip" name="infrastructureip"
                                th:field="*{infrastructureip}"
-                               th:value="${configurationForm.getInfrastructureip()}" required="true"/>
+                               th:value="${configurationForm.infrastructureip}" required="true"/>
                     </div>
                 </div>
 
                 <div class="form-group row">
-                    <label for="processingimageid" class="col-sm-3 form-control-label">FallBack Processing Image
+                    <label for="processingimageid" class="col-sm-5 form-control-label">FallBack Processing Image
                         ID</label>
-                    <div class="col-sm-9">
+                    <div class="col-sm-7">
                         <input type="text" class="form-control" id="processingimageid" name="processingimageid"
                                th:field="*{processingimageid}" th:value="${configurationForm.processingimageid}"
                                required="true"/>
                     </div>
                 </div>
 
+                <div class="form-group row">
+                    <label for="monitoringperiod" class="col-sm-5 form-control-label">Monitoring Period (millisec)</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="monitoringperiod" th:id="cost" th:name="monitoringperiod"
+                               th:value="${configurationForm.monitoringperiod}" step="1000"  required="true"/>
+                    </div>
+                </div>
+
+
+                    <div class="form-group row">
+                        <label for="availabilitycheck" class="col-sm-5 form-control-label">Availability Check (millisec)</label>
+                        <div class="col-sm-7">
+                            <input type="number" class="form-control" id="availabilitycheck" th:id="cost" th:name="availabilitycheck"
+                                   th:value="${configurationForm.availabilitycheck}" step="1000"  required="true"/>
+                        </div>
+                    </div>
             </div>
         </div>
 
@@ -54,10 +70,26 @@
             <div class="card-body">
 
                 <div class="form-group row">
-                    <label for="btu" class="col-sm-3 form-control-label">BTU (sec)</label>
-                    <div class="col-sm-9">
-                        <input type="text" class="form-control" id="btu" name="btu" th:field="*{btu}"
+                    <label for="btu" class="col-sm-5 form-control-label">BTU (sec)</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="btu" name="btu" th:field="*{btu}"
                                th:value="${configurationForm.btu}" required="true"/>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="simulatestartup" class="col-sm-5 form-control-label">Simulated Startup (sec)</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="simulatestartup" name="btu" th:field="*{simulatestartup}"
+                               th:value="${configurationForm.simulatestartup}" required="true"/>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="shutdowngrace" class="col-sm-5 form-control-label">Shutdown Graceperiod (sec)</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="shutdowngrace" name="btu" th:field="*{shutdowngrace}"
+                               th:value="${configurationForm.shutdowngrace}" required="true"/>
                     </div>
                 </div>
 
@@ -70,9 +102,9 @@
             <div class="card-body">
 
                 <div class="form-group row">
-                    <label for="openstackhostimageid" class="col-sm-3 form-control-label">Openstack Host Image
+                    <label for="openstackhostimageid" class="col-sm-5 form-control-label">Openstack Host Image
                         ID</label>
-                    <div class="col-sm-9">
+                    <div class="col-sm-7">
                         <input type="text" class="form-control" id="openstackhostimageid"
                                name="openstackhostimageid"
                                th:field="*{openstackhostimageid}"
@@ -86,17 +118,33 @@
 
 
         <div class="card card-default border-light">
-            <div class="card-header">Resoner</div>
+            <div class="card-header">Reasoner</div>
             <div class="card-body">
 
                 <div class="form-group row">
-                    <label for="reasoner" class="col-sm-3 form-control-label">Type</label>
-                    <div class="col-sm-9">
-                        <select id="reasoner" class="form-control" th:field="*{reasoner}">
+                    <label for="reasoner" class="col-sm-5 form-control-label">Type</label>
+                    <div class="col-sm-7">
+                        <select id="reasoner" class="custom-select" th:field="*{reasoner}">
                             <option th:each="rs : ${reasoners}" th:value="${rs}"
                                     th:selected="${configurationForm.reasoner != null and configurationForm.getReasoner().equals(rs)}"
                                     th:text="${rs}"></option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="reasoninginterval" class="col-sm-5 form-control-label">Reasoning Interval (sec)</label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="reasoninginterval" name="reasoninginterval" th:field="*{reasoninginterval}"
+                               th:value="${configurationForm.reasoninginterval}" required="true"/>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="upscalingthreshold" class="col-sm-5 form-control-label">Upscaling Threshold </label>
+                    <div class="col-sm-7">
+                        <input type="number" class="form-control" id="upscalingthreshold" name="upscalingthreshold" th:field="*{upscalingthreshold}"
+                               th:value="${configurationForm.upscalingthreshold}" required="true"/>
                     </div>
                 </div>
 

@@ -1,5 +1,9 @@
 package ac.at.tuwien.infosys.visp.runtime.resourceManagement;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.Sink;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
@@ -17,10 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @DependsOn("configurationprovider")
@@ -46,7 +46,7 @@ public class ManualOperatorManagement {
 
     private static final Logger LOG = LoggerFactory.getLogger(ManualOperatorManagement.class);
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.reasoninginterval}")
     public synchronized void updateResourceconfiguration() {
         pcm.removeContainerWhichAreFlaggedToShutdown();
     }

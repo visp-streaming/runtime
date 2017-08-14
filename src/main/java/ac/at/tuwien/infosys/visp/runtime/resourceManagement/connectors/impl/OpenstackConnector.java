@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.configuration.CredentialProperties;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ScalingActivityRepository;
@@ -40,9 +39,6 @@ import org.springframework.stereotype.Service;
 @DependsOn("configurationprovider")
 public class OpenstackConnector extends ResourceConnector {
 
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
-
     @Value("${visp.openstack.publicip}")
     private Boolean PUBLICIPUSAGE;
 
@@ -54,9 +50,6 @@ public class OpenstackConnector extends ResourceConnector {
 
     @Autowired
     private DockerHostRepository dhr;
-
-    @Autowired
-    private Configurationprovider config;
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenstackConnector.class);
 
@@ -169,7 +162,7 @@ public class OpenstackConnector extends ResourceConnector {
         dh.setStorage(flavor.getDisk() * 1024 + 0F);
         dh.setScheduledForShutdown(false);
         DateTime btuEnd = new DateTime(DateTimeZone.UTC);
-        btuEnd = btuEnd.plusSeconds(Integer.valueOf(config.getBtu()));
+        btuEnd = btuEnd.plusSeconds(config.getBtu());
         dh.setBTUend(btuEnd);
 
 

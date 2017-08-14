@@ -67,7 +67,7 @@ public class ReasonerBasic {
     /**
      * This Scheduling approach provides a simple threshold based scheduling approach.
      */
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.reasoninginterval}")
     public synchronized void updateResourceconfiguration() {
         if (!config.getReasoner().equals("basic")) {
             return;
@@ -92,7 +92,7 @@ public class ReasonerBasic {
                 DateTime btuEnd = new DateTime(dh.getBTUend());
 
                 if (btuEnd.isBefore(new DateTime(DateTimeZone.UTC))) {
-                    dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
+                    dh.setBTUend((btuEnd.plusSeconds(config.getBtu())));
                     dhr.save(dh);
                     sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                 }

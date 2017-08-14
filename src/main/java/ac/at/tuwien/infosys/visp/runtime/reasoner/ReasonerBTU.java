@@ -30,7 +30,6 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -73,16 +72,13 @@ public class ReasonerBTU {
     @Autowired
     private DockerContainerManagement dcm;
 
-    @Value("${visp.shutdown.graceperiod}")
-    private Integer graceperiod;
-
 
     @Autowired
     private ScalingActivityRepository sar;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReasonerBTU.class);
 
-    @Scheduled(fixedRateString = "${visp.reasoning.timespan}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.reasoninginterval}")
     public synchronized void updateResourceconfiguration() {
         if (!config.getReasoner().equals("btu")) {
             return;
@@ -149,9 +145,9 @@ public class ReasonerBTU {
                 DateTime potentialHostTerminationTime = new DateTime(DateTimeZone.UTC);
 
                 //ensure that the host has enough time to shut down
-                Integer remainingfivepercent = (int) (Integer.valueOf(config.getBtu()) * 0.05);
-                if (remainingfivepercent < graceperiod * 2) {
-                    remainingfivepercent = graceperiod * 2;
+                Integer remainingfivepercent = (int) (config.getBtu() * 0.05);
+                if (remainingfivepercent < config.getShutdowngrace() * 2) {
+                    remainingfivepercent = config.getShutdowngrace() * 2;
                 }
 
                 potentialHostTerminationTime = potentialHostTerminationTime.plusSeconds(remainingfivepercent);
@@ -164,7 +160,7 @@ public class ReasonerBTU {
                     //Do not scale down a vm is one has just been started 3 min ago
                     if (sa.getTime().plusMinutes(3).isAfter(new DateTime(DateTimeZone.UTC))) {
                         LOG.info("Could not shutdown Dockerhost: " + dh.getName() + " -- one was started in less than 3 min ago.");
-                        dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
+                        dh.setBTUend((btuEnd.plusSeconds(config.getBtu())));
                         dhr.save(dh);
                         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                         LOG.info("the host: " + dh.getName() + " was leased for another BTU");
@@ -243,7 +239,7 @@ public class ReasonerBTU {
                         resourceProvider.get(dh.getResourcepool()).markHostForRemoval(dh);
                    } else {
                        LOG.info("Could not shutdown Dockerhost: " + dh.getName() + "because there are still containers running on it.");
-                       dh.setBTUend((btuEnd.plusSeconds(Integer.valueOf(config.getBtu()))));
+                       dh.setBTUend((btuEnd.plusSeconds(config.getBtu())));
                        dhr.save(dh);
                        sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
                        LOG.info("the host: " + dh.getName() + " was leased for another BTU");

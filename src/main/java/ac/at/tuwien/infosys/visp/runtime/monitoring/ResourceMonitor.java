@@ -13,6 +13,7 @@ import com.spotify.docker.client.messages.ContainerStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
  * and stores this information in the Runtime repository.
  */
 @Service
+@DependsOn("configurationprovider")
 public class ResourceMonitor {
 
     @Autowired
@@ -38,7 +40,7 @@ public class ResourceMonitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourceMonitor.class);
 
-    @Scheduled(fixedRateString = "${visp.monitor.period}")
+    @Scheduled(fixedRateString = "#{@configurationprovider.monitoringperiod}")
     public void updateAllHostsCpuUtilization() {
         for (DockerHost dh : dhr.findAll()) {
             for (DockerContainer container : dcr.findByHost(dh.getName())) {

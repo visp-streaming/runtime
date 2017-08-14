@@ -28,7 +28,33 @@ public class ConfigurationController {
     @RequestMapping("/configuration")
     public String configuration(Model model) {
 
-        ConfigurationForm configurationForm = new ConfigurationForm(config.getRuntimeIP(), config.getInfrastructureIP(), config.getOpenstackProcessingHostImage(), config.getProcessingNodeImage(), config.getReasoner(), config.getBtu());
+        ConfigurationForm configurationForm = new ConfigurationForm();
+        configurationForm.setRuntimeip(config.getRuntimeIP());
+        configurationForm.setInfrastructureip(config.getInfrastructureIP());
+        configurationForm.setOpenstackhostimageid(config.getOpenstackProcessingHostImage());
+        configurationForm.setProcessingimageid(config.getProcessingNodeImage());
+        configurationForm.setReasoner(config.getReasoner());
+        configurationForm.setBtu(config.getBtu());
+        configurationForm.setMonitoringperiod(config.getMonitoringperiod());
+        configurationForm.setAvailabilitycheck(config.getAvailabilitycheck());
+        configurationForm.setSimulatestartup(config.getSimulatestartup());
+        configurationForm.setShutdowngrace(config.getShutdowngrace());
+        configurationForm.setReasoninginterval(config.getReasoninginterval());
+        configurationForm.setUpscalingthreshold(config.getUpscalingthreshold());
+
+
+
+
+        /**
+         * use
+         *         private Integer monitoringperiod;
+         private Integer availabilitycheck;
+         private Integer simulatestartup;
+         private Integer shutdowngrace;
+         private Integer resoninginterval;
+         private  Integer upscalingthreshold;
+         */
+
 
         model.addAttribute("reasoners", Arrays.asList("none", "basic", "btu", "rl"));
         model.addAttribute("configurationForm", configurationForm);
@@ -44,6 +70,12 @@ public class ConfigurationController {
         config.setProcessingNodeImage(form.getProcessingimageid());
         config.setReasoner(form.getReasoner());
         config.setBtu(form.getBtu());
+        config.setMonitoringperiod(form.getMonitoringperiod());
+        config.setAvailabilitycheck(form.getAvailabilitycheck());
+        config.setSimulatestartup(form.getSimulatestartup());
+        config.setShutdowngrace(form.getShutdowngrace());
+        config.setReasoninginterval(form.getReasoninginterval());
+        config.setUpscalingthreshold(form.getUpscalingthreshold());
 
 
         config.storeDataToDB();
