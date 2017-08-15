@@ -14,7 +14,7 @@
         <div class="card-body text-center">
             <a class="btn btn-success" th:href="${'/pooledvms/addOpenStackVM'}">Add new OpenStack VM</a>
             <a class="btn btn-success" th:href="${'/pooledvms/addCustomHost'}">Add new Custom Host</a>
-            <a class="btn btn-danger" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
+            <a class="btn btn-warning" th:href="${'/pooledvms/killall'}">Remove all Hosts</a>
         </div>
     </div>
 
@@ -49,7 +49,11 @@
                             <td class="vertmiddle col-md-2" th:text="${host.flavour}"></td>
                             <td class="vertmiddle col-md-1">
                                 <div class="pull-right">
-                                    <a class="btn btn-danger" th:href="${'/pooledvms/kill/' + host.id}">Kill</a>
+                                    <div class="btn-group" role="group" >
+                                        <a class="btn btn-warning" th:href="${'/pooledvms/remove/' + host.id}">Remove</a>
+                                        <a class="btn btn-danger" th:href="${'/pooledvms/kill/' + host.id}">Kill</a>
+                                    </div>
+
                                 </div>
                             </td>
                         </tr>

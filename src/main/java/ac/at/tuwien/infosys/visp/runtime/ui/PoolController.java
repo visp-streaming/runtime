@@ -1,8 +1,14 @@
 package ac.at.tuwien.infosys.visp.runtime.ui;
 
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerHostRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerHost;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.PooledVM;
 import ac.at.tuwien.infosys.visp.runtime.resourceManagement.DockerContainerManagement;
@@ -23,10 +29,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 @Controller
 @DependsOn("configurationprovider")
 public class PoolController {
@@ -45,6 +47,9 @@ public class PoolController {
 
     @Autowired
     private DockerContainerManagement dcm;
+
+    @Autowired
+    private DockerContainerRepository dcr;
 
     @Autowired
     private ResourceProvider rpp;
@@ -163,9 +168,45 @@ public class PoolController {
     public String utilKillSingle(Model model, @PathVariable String id)  {
 
         PooledVM pvm = pvmr.findFirstById(Long.valueOf(id));
+        DockerHost dh = dhr.findFirstByName(pvm.getName());
+
+        if (dcr.findByHost(dh.getName()) != null) {
+            for (DockerContainer dc : dcr.findByHost(dh.getName())) {
+                dcm.removeContainer(dc);
+            }
+
+            if (pvm.getType().equals("openstack")) {
+                opc.stopDockerHost(pvm.getName());
+            }
+            pvmr.delete(pvm);
+            dhr.delete(dh);
+
+            model.addAttribute("message", "The host has been killed with all its containers.");
+        } else {
+            if (pvm.getType().equals("openstack")) {
+                opc.stopDockerHost(pvm.getName());
+            }
+            pvmr.delete(pvm);
+            dhr.delete(dh);
+            model.addAttribute("message", "The host has been killed.");
+        }
+
+        rpp.updateResourceProvider();
+        List<PooledVMDTO> vms = checkAvailablilityOfPooledVMs();
+
+        model.addAttribute("hosts", vms);
+
+        rp.updateResourceProvider();
+        return "pooledvms";
+    }
+
+    @RequestMapping("/pooledvms/remove/{id}")
+    public String utilRemoveSingle(Model model, @PathVariable String id)  {
+
+        PooledVM pvm = pvmr.findFirstById(Long.valueOf(id));
 
         if (dhr.findFirstByName(pvm.getName()) != null) {
-            model.addAttribute("message", "The pooled VM cannot not be deleted because there are still instances running.");
+            model.addAttribute("message", "The pooled VM cannot not be removed because there are still instances running.");
         } else {
             if (pvm.getType().equals("openstack")) {
                 opc.stopDockerHost(pvm.getName());

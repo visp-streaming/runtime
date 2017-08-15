@@ -14,6 +14,7 @@ public class Navigation {
                 new NavEntry("/topology", "/topology", "Topology Configuration"),
                 new NavEntry("/pooledvms", "/pooledvms", "Resource Pools"),
                 new NavEntry("/console", "/console", "Console"),
+                new NavEntry("/container", "/container", "Container"),
                 new NavEntry("/configuration", "/configuration", "Configuration")
                 );
     }

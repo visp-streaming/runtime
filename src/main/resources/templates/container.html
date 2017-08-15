@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/main">
+<head></head>
+
+<body>
+<th:block layout:fragment="content">
+
+    <div th:if="${message != null}" class="alert alert-info" role="alert">
+        <span th:text="${message}"></span>
+    </div>
+
+
+    <th:block th:unless="${#arrays.length(containers) == 0}">
+
+        <div class="card card-default">
+            <div class="card-header">Running Hosts</div>
+            <div class="card-body text-center">
+
+                <table class="table table-hover nohead" id="container">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Host</th>
+                            <th>Cores</th>
+                            <th>Memory</th>
+                            <th><div class="center-block">Actions</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="container : ${containers}">
+                        <td th:text="${container.id}"></td>
+                        <td>
+                            <a th:text="${container.operatorName}" th:href="${'/container/name/' + container.operatorName}">Name</a>
+                        </td>
+                        <td >
+                            <a th:text="${container.host}" th:href="${'/container/host/' + container.host}">Name</a>
+                        </td>
+                        <td th:text="${container.cpuCores}"></td>
+                        <td th:text="${container.memory}"></td>
+                        <td th:if="${container.status == 'running'}">
+                            <div class="pull-right">
+                                <a class="btn btn-danger" th:href="${'/container/kill/' + container.id}">Kill</a>
+                            </div>
+                        </td>
+                        <td class="alert alert-danger" th:if="${container.status == 'stopping'}">Stopping</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <div class="card card-default"  th:if="${#arrays.length(containers) == 0}">
+        <div class="card-body text-center">
+            Currently there are no container running.
+        </div>
+    </div>
+
+</th:block>
+
+<th:block layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            $('#container').DataTable();
+        } );
+    </script>
+</th:block>
+
+</body>
+</html>
