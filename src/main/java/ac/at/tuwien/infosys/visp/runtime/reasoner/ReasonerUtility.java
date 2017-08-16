@@ -260,8 +260,10 @@ public class ReasonerUtility {
 
             QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(op);
             Integer queueFactor = 0;
-            if (qm.getAmount() < 1) {
-                queueFactor = 100;
+            if (qm!=null) {
+                if (qm.getAmount() < 1) {
+                    queueFactor = 100;
+                }
             }
 
             Double instanceFactorWeighted = instancefactor * 1.0;
