@@ -159,7 +159,7 @@ public class ReasonerBTU {
 
                     //Do not scale down a vm is one has just been started 3 min ago
                     if (sa.getTime().plusMinutes(3).isAfter(new DateTime(DateTimeZone.UTC))) {
-                        LOG.info("Could not shutdown Dockerhost: " + dh.getName() + " -- one was started in less than 3 min ago.");
+                        LOG.info("Could Fnot shutdown Dockerhost: " + dh.getName() + " -- one was started in less than 3 min ago.");
                         dh.setBTUend((btuEnd.plusSeconds(config.getBtu())));
                         dhr.save(dh);
                         sar.save(new ScalingActivity("host", new DateTime(DateTimeZone.UTC), "", "prolongLease", dh.getName()));
@@ -331,7 +331,7 @@ public class ReasonerBTU {
                 if (alreadyScaledOperators.containsKey(scaledownoperator)) {
                     Integer scaledownOperations =  alreadyScaledOperators.get(scaledownoperator);
 
-                    if (scaledownOperations >= 1) {
+                    if (scaledownOperations >= 2) {
                         scaledowns.remove(scaledownoperator);
                         if (!scaledowns.isEmpty()) {
                             scaledownoperator = scaledowns.firstKey();

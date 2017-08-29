@@ -82,7 +82,7 @@ public class DockerContainerManagement {
                 availableImages.add(op.getType());
                 dh.setAvailableImages(availableImages);
                 dhr.save(dh);
-                usedImage=op.getType();
+                usedImage = op.getType();
             } catch (ImageNotFoundException ex) {
                 LOG.info("Operator type docker image (" + op.getType() + ") is not available - falling back to default image: " + config.getProcessingNodeImage());
                 if (!dh.getAvailableImages().contains(config.getProcessingNodeImage())) {
@@ -168,37 +168,17 @@ public class DockerContainerManagement {
 
 
         try {
-            int count = 0;
-            int maxTries = 1;
-            while(true) {
-                try {
-                    if (docker.ping().equals("OK")) {
-                        docker.killContainer(dc.getContainerid());
-                    }
-                    break;
-                } catch (InterruptedException | DockerException e) {
-                    LOG.warn("Could not kill a docker container - trying again.", e);
-                    if (++count == maxTries) throw e;
-                }
+            if (docker.ping().equals("OK")) {
+                docker.killContainer(dc.getContainerid());
             }
-        } catch (DockerException | InterruptedException e) {
-            LOG.error("Could not kill the container", e);
+        } catch (InterruptedException | DockerException e) {
+            LOG.warn("Could not kill a docker container.", e);
         }
 
         try {
-            int count = 0;
-            int maxTries = 1;
-            while(true) {
-                try {
-                    docker.removeContainer(dc.getContainerid());
-                    break;
-                } catch (InterruptedException | DockerException e) {
-                    LOG.warn("Could not remove a docker container - trying again.", e);
-                    if (++count == maxTries) throw e;
-                }
-            }
-        } catch (DockerException | InterruptedException e) {
-            LOG.error("Could not kill the container", e);
+            docker.removeContainer(dc.getContainerid());
+        } catch (InterruptedException | DockerException e) {
+            LOG.warn("Could not remove a docker container .", e);
         }
 
         /* Free monitoring port previously used by the docker container */
@@ -216,7 +196,7 @@ public class DockerContainerManagement {
     public String executeCommand(DockerContainer dc, String cmd, Boolean resultExpected) throws DockerException, InterruptedException {
         final String[] command = {"bash", "-c", cmd};
         DockerHost dh = dhr.findFirstByName(dc.getHost());
-        if(dh == null) {
+        if (dh == null) {
             throw new DockerException("Could not find dockerhost by name: " + dc.getHost());
         }
 
@@ -289,5 +269,4 @@ public class DockerContainerManagement {
         dh.setUsedPorts(usedPorts);
         dhr.save(dh);
     }
-
 }

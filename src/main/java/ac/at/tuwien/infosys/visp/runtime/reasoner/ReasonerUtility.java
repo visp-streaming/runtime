@@ -147,7 +147,7 @@ public class ReasonerUtility {
      * utility function optimization
      */
     public DockerHost selectSuitableHostforContainer(DockerContainer dc, DockerHost blacklistedHost) {
-        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") started. ####");
+        LOG.debug("##### select suitable host for Container (" + dc.getOperatorType() + ") started. ####");
         Double value = Double.MAX_VALUE;
         DockerHost selectedHost = null;
 
@@ -180,7 +180,7 @@ public class ReasonerUtility {
             }
         }
 
-        LOG.info("##### select suitable host for Container (" + dc.getOperatorType() + ") finished with host (" + selectedHost +"). ####");
+        LOG.info("select suitable host for Container (" + dc.getOperatorType() + ") finished with host (" + selectedHost +").");
         return selectedHost;
     }
 
@@ -280,7 +280,8 @@ public class ReasonerUtility {
 
 
             Double overallFactor = 1 + instanceFactorWeighted - delayFactorWeighted - scalingFactorWeighted + queueFactor - stopScaling;
-            LOG.info("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 1.0 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor * 1.0 + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 1.0 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 1.0 + ")");
+
+            LOG.debug("Downscaling - overallfactor for " + op + " : overall = " + overallFactor + ", " + "instanceFactor = " + instancefactor + "(w=" + instancefactor * 1.0 + ")" + ", " + "delayFactor = " + delayFactor + "(w=" + delayFactor * 1.0 + ")" + ", " + "scalingFactor = " + scalingFactor + "(w=" + scalingFactor * 1.0 + ")" + "queuefactor = " + queueFactor + "(w=" + queueFactor * 1.0 + ")");
 
 
             try {

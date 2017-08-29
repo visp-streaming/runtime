@@ -85,7 +85,7 @@ public class PoolController {
         CreateOpenStackVMForm form = new CreateOpenStackVMForm();
         form.setCost(1.5);
         form.setFrequency(2400);
-        form.setFlavour("m2.medium");
+        form.setFlavour("m1.large");
         form.setInstanceName("dockerhost");
         form.setInstancecount(1);
 

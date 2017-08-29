@@ -4,7 +4,6 @@ import java.util.List;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
-import ac.at.tuwien.infosys.visp.common.operators.Source;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
@@ -117,19 +116,28 @@ public class Monitor {
         List<ProcessingDuration> pds = pcr.findFirst5ByOperatornameOrderByIdDesc(operator.getName());
 
         if (pds.isEmpty()) {
-            if (operator instanceof Source) {
-                return ScalingAction.DONOTHING;
-            }
             return ScalingAction.DONOTHING;
         }
 
-        if (pds.get(0).getDuration() * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
+        //calculate average of last three observations
+        Integer counter = 0;
+        Double durationAverage = 0.0;
+        for (int i = 0; i < pds.size(); i++) {
+            durationAverage += pds.get(i).getDuration();
+            counter++;
+        }
 
-            if (maxQueue * 5 > config.getUpscalingthreshold()) {
+        durationAverage = durationAverage / counter;
+
+        if (durationAverage * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
+
+            if ((maxQueue) > config.getUpscalingthreshold() * 5) {
+                LOG.info("Scaleup Double: " + operator.getName() + " - durationAverage: " + durationAverage + " - maxqueue: " + maxQueue);
                 return ScalingAction.SCALEUPDOUBLE;
             }
 
             if (maxQueue > config.getUpscalingthreshold()) {
+                LOG.info("Scaleup: " + operator.getName() + " - durationAverage: " + durationAverage + " - maxqueue: " + maxQueue);
                 return ScalingAction.SCALEUP;
             }
         }
@@ -149,6 +157,7 @@ public class Monitor {
 
         if (expectedDurationValue * relaxationfactor > ((ProcessingOperator) topologyMgmt.getOperatorByIdentifier(operator.getName())).getExpectedDuration()) {
             if (maxQueue > config.getUpscalingthreshold()) {
+                LOG.info("Scaleup: " + operator.getName() + " - durationAverage: " + durationAverage + " - maxqueue: " + maxQueue);
                 return ScalingAction.SCALEUP;
             }
         }
