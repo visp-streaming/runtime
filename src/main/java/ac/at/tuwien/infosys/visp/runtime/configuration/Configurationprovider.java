@@ -145,13 +145,13 @@ public class Configurationprovider {
         }
 
         if (this.reasoninginterval == null) {
-            //default value = 20000  millisec
-            this.reasoninginterval = 20000;
+            //default value = 60000  millisec
+            this.reasoninginterval = 60000;
         }
 
         if (this.upscalingthreshold == null) {
-            //default value = 30
-            this.upscalingthreshold = 30;
+            //default value = 50
+            this.upscalingthreshold = 50;
         }
 
         if (this.openstackondemand == null) {
