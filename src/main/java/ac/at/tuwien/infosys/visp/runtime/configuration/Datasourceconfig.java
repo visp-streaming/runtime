@@ -1,17 +1,18 @@
 package ac.at.tuwien.infosys.visp.runtime.configuration;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 @Configuration
 public class Datasourceconfig {
@@ -42,7 +43,7 @@ public class Datasourceconfig {
 
         LOG.info("Using database at IP " + IP);
 
-        String uri = "jdbc:mariadb://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
+        String uri = "jdbc:mysql://" + IP + ":3306/visp?verifyServerCertificate=false&useSSL=false&requireSSL=false";
 
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
         dataSourceBuilder.url(uri);
