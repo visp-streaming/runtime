@@ -23,6 +23,7 @@
         <joda.version>2.9.9</joda.version>
         <visp.common.version>0.5-SNAPSHOT</visp.common.version>
         <visp.topologyParser.version>1.4</visp.topologyParser.version>
+        <visp.topologyParser.version>1.6</visp.topologyParser.version>
         <spotify.docker.version>8.8.3</spotify.docker.version>
         <quartz.version>2.3.0</quartz.version>
         <apache.commons.lang.version>3.6</apache.commons.lang.version>

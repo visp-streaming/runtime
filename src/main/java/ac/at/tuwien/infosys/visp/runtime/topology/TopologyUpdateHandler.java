@@ -1,7 +1,10 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
+import ac.at.tuwien.infosys.visp.common.operators.Join;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
+import ac.at.tuwien.infosys.visp.common.operators.Split;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.PooledVMRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
@@ -121,6 +124,9 @@ public class TopologyUpdateHandler {
         for (Map.Entry<String, Operator> entry : oldTopology.entrySet()) {
             String oldOperatorName = entry.getKey();
             Operator oldOperator = entry.getValue();
+            if(oldOperator instanceof Split || oldOperator instanceof Join) {
+                continue;
+            }
             if (!newTopology.containsKey(oldOperatorName)) {
                 // operatorType no longer existing, remove it
                 returnList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
@@ -132,6 +138,9 @@ public class TopologyUpdateHandler {
         for (Map.Entry<String, Operator> entry : newTopology.entrySet()) {
             String newOperatorName = entry.getKey();
             Operator newOperator = entry.getValue();
+            if(newOperator instanceof Split || newOperator instanceof Join) {
+                continue;
+            }
             if (!oldTopology.containsKey(newOperatorName)) {
                 // operatorType is new, create it
                 returnList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
@@ -146,6 +155,10 @@ public class TopologyUpdateHandler {
         /**
          * checks whether there are differences between the two operators and adds the according updates if there are
          */
+        if(oldOperator instanceof Split || oldOperator instanceof Join) {
+            LOG.warn("Unimplemented edge case: Split operator is updated"); // TODO implement
+            return;
+        }
         if (!oldOperator.getConcreteLocation().equals(newOperator.getConcreteLocation())) {
             // operator is migrated
             boolean sameIp = oldOperator.getConcreteLocation().getIpAddress().equals(newOperator.getConcreteLocation().getIpAddress());
@@ -336,6 +349,9 @@ public class TopologyUpdateHandler {
         List<Operator> resultList = new ArrayList<>();
 
         for(Operator o : topology.values()) {
+            if(o instanceof Split || o instanceof Join) {
+                continue;
+            }
             if(o.getConcreteLocation().getIpAddress().equals(runtimeIP)) {
                 resultList.add(o);
             }
@@ -445,6 +461,9 @@ public class TopologyUpdateHandler {
          */
 
         for (Operator op : topology.values()) {
+            if(!(op instanceof ProcessingOperator)) {
+                continue;
+            }
             if (!"*".equals(op.getConcreteLocation().getResourcePool())) {
                 continue;
             }
