@@ -4,7 +4,7 @@
 
     <groupId>ac.at.tuwien.infosys.visp</groupId>
     <artifactId>runtime</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <packaging>jar</packaging>
 
     <name>visp</name>
@@ -44,7 +44,7 @@
         <connection>scm:git:https://github.com/visp-streaming/runtime</connection>
         <developerConnection>scm:git:git@github.com:visp-streaming/runtime</developerConnection>
         <url>https://github.com/visp-streaming/runtime</url>
-        <tag>HEAD</tag>
+        <tag>runtime-0.2</tag>
     </scm>
 
     <dependencies>
