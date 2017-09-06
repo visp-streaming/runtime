@@ -426,7 +426,7 @@ public class RabbitMqManager {
                 }
                 try {
                     LOG.debug("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
-                    pair = Pair.of(source,
+                    pair = Pair.of(update.getAffectedOperator(),
                             addMessageFlow(source.getName(), update.getAffectedOperatorId(), source.getConcreteLocation().getIpAddress()));
                     if (pair != null) {
                         resultList.add(pair);
@@ -444,7 +444,7 @@ public class RabbitMqManager {
                 }
                 try {
                     LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
-                    pair = Pair.of(update.getAffectedOperator(),
+                    pair = Pair.of(downstreamOp,
                             addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress()));
                     if (pair != null) {
                         resultList.add(pair);
