@@ -23,7 +23,7 @@
         <joda.version>2.9.9</joda.version>
         <visp.common.version>0.5</visp.common.version>
         <visp.topologyParser.version>1.4</visp.topologyParser.version>
-        <spotify.docker.version>8.8.3</spotify.docker.version>
+        <spotify.docker.version>8.9.0</spotify.docker.version>
         <quartz.version>2.3.0</quartz.version>
         <apache.commons.lang.version>3.6</apache.commons.lang.version>
         <apache.commons.io.version>2.5</apache.commons.io.version>
@@ -35,8 +35,8 @@
         <webjars.version.bootstrap>4.0.0-beta</webjars.version.bootstrap>
         <webjars.version.jquery>3.2.1</webjars.version.jquery>
         <lombok.version>1.16.18</lombok.version>
-        <junit.jupiter.version>5.0.0-RC2</junit.jupiter.version>
-        <dockerfile.maven.version>1.3.4</dockerfile.maven.version>
+        <junit.jupiter.version>5.0.0-RC3</junit.jupiter.version>
+        <dockerfile.maven.version>1.3.5</dockerfile.maven.version>
         <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     </properties>
 
