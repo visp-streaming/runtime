@@ -2,6 +2,7 @@ package ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq;
 
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
 import ac.at.tuwien.infosys.visp.common.operators.Source;
+import ac.at.tuwien.infosys.visp.common.operators.Split;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
@@ -128,8 +129,9 @@ public class RabbitMqManager {
     }
 
 
+    @SuppressWarnings("Duplicates")
     private String addMessageFlow(String fromOperatorId, String toOperatorId,
-                                 String fromInfrastructureHost) throws IOException, TimeoutException {
+                                  String fromInfrastructureHost, boolean queueExchangeMappingActive) throws IOException, TimeoutException {
         /**
          * add a message flow from operatorType FROM to operatorType TO
          */
@@ -145,9 +147,11 @@ public class RabbitMqManager {
             LOG.debug("Declaring queue " + queueName + " on host " + fromInfrastructureHost);
             fromChannel.queueDeclare(queueName, true, false, false, null);
 
-            // tell exchange to send msgs to queue:
-            LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
-            fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
+            if (queueExchangeMappingActive) {
+                // tell exchange to send msgs to queue:
+                LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
+                fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
+            }
 
         } catch (Exception e) {
             LOG.error("Exception during exchange setup", e);
@@ -162,7 +166,36 @@ public class RabbitMqManager {
         return "ADD " + fromInfrastructureHost + "/" + fromOperatorId + ">" + toOperatorId;
     }
 
-    private void sendDockerSignalForUpdate(Operator operator, String updateCommand)  {
+    /**
+     * Modify the already existing exchange such that messages are also forwarded to another queue (toOperatorId)
+     *
+     * @param fromOperatorId         the exchange's owning operator
+     * @param toOperatorId           the other queue's owning operator
+     * @param fromInfrastructureHost the host where the change should be made
+     */
+    private void activateAlternativePath(String fromOperatorId, String toOperatorId, String fromInfrastructureHost) throws IOException, TimeoutException {
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
+        try {
+            String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
+
+            // tell exchange to send msgs to queue:
+            LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
+            fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
+
+        } catch (Exception e) {
+            LOG.error("Exception during exchange setup", e);
+        } finally {
+            try {
+                fromChannel.close();
+                connection.close();
+            } catch (Exception e) {
+                LOG.error("Could not close rabbitmq channel", e);
+            }
+        }
+    }
+
+    private void sendDockerSignalForUpdate(Operator operator, String updateCommand) {
         if (operator instanceof Source) {
             return; // source is no actual container
         }
@@ -192,7 +225,7 @@ public class RabbitMqManager {
     }
 
     private String removeMessageFlow(String fromOperatorId, String toOperatorId,
-                                    String fromInfrastructureHost) throws IOException, TimeoutException {
+                                     String fromInfrastructureHost) throws IOException, TimeoutException {
 
         Connection connection = createConnection(config.getRuntimeIP());
         Channel fromChannel = connection.createChannel();
@@ -265,16 +298,32 @@ public class RabbitMqManager {
                     int oldSizeInt = 0;
                     int newSizeInt = 0;
                     switch (oldSize) {
-                        case SMALL: oldSizeInt = 1; break;
-                        case MEDIUM: oldSizeInt = 2; break;
-                        case LARGE: oldSizeInt = 4; break;
-                        default: oldSizeInt = 1; break;
+                        case SMALL:
+                            oldSizeInt = 1;
+                            break;
+                        case MEDIUM:
+                            oldSizeInt = 2;
+                            break;
+                        case LARGE:
+                            oldSizeInt = 4;
+                            break;
+                        default:
+                            oldSizeInt = 1;
+                            break;
                     }
                     switch (newSize) {
-                        case SMALL: newSizeInt = 1; break;
-                        case MEDIUM: newSizeInt = 2; break;
-                        case LARGE: newSizeInt = 4; break;
-                        default: newSizeInt = 1; break;
+                        case SMALL:
+                            newSizeInt = 1;
+                            break;
+                        case MEDIUM:
+                            newSizeInt = 2;
+                            break;
+                        case LARGE:
+                            newSizeInt = 4;
+                            break;
+                        default:
+                            newSizeInt = 1;
+                            break;
                     }
 
 
@@ -424,16 +473,24 @@ public class RabbitMqManager {
                 if (!source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
-                try {
-                    LOG.debug("Adding message flow between operators " + source.getName() + " and " + update.getAffectedOperatorId());
-                    pair = Pair.of(update.getAffectedOperator(),
-                            addMessageFlow(source.getName(), update.getAffectedOperatorId(), source.getConcreteLocation().getIpAddress()));
-                    if (pair != null) {
-                        resultList.add(pair);
+                if (update.getAffectedOperator() instanceof Split) {
+                    // Split operators are not mapped to rabbitmq directly
+                    // instead, create queue for each of Split's children
+                    int childIndex = 0;
+                    for (String childId : ((Split) update.getAffectedOperator()).getPathOrder()) {
+                        if (childIndex == 0) {
+                            // per default, the first path is directly wired
+                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, false);
+                        } else {
+                            // all other entries are created as inactive
+                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, true);
+                        }
+
+
+                        childIndex += 1;
                     }
-                } catch (Exception e) {
-                    LOG.error(e.getLocalizedMessage());
                 }
+                helpHandleAddOperator(source, update.getAffectedOperator(), resultList, true);
             }
             for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
                 if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
@@ -445,7 +502,7 @@ public class RabbitMqManager {
                 try {
                     LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
                     pair = Pair.of(downstreamOp,
-                            addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress()));
+                            addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress(), true));
                     if (pair != null) {
                         resultList.add(pair);
                     }
@@ -456,6 +513,20 @@ public class RabbitMqManager {
         }
 
         return resultList;
+    }
+
+    private void helpHandleAddOperator(Operator fromOperator, Operator toOperator, List<Pair<Operator, String>> resultList, boolean queueExchangeMappingActive) {
+        Pair<Operator, String> pair;
+        try {
+            LOG.debug("Adding message flow between operators " + fromOperator.getName() + " and " + toOperator.getName());
+            pair = Pair.of(toOperator,
+                    addMessageFlow(fromOperator.getName(), toOperator.getName(), fromOperator.getConcreteLocation().getIpAddress(), queueExchangeMappingActive));
+            if (pair != null) {
+                resultList.add(pair);
+            }
+        } catch (Exception e) {
+            LOG.error(e.getLocalizedMessage());
+        }
     }
 
     private List<Pair<Operator, String>> handleRabbitmqUpdateOperator(TopologyUpdate update) {
@@ -495,7 +566,7 @@ public class RabbitMqManager {
                 LOG.debug("Adding message flow between operators " + newSourceEntry.getName() + " and " + update.getAffectedOperatorId());
                 pair = Pair.of(newSourceEntry,
                         addMessageFlow(newSourceEntry.getName(), update.getAffectedOperatorId(),
-                                newSourceEntry.getConcreteLocation().getIpAddress()));
+                                newSourceEntry.getConcreteLocation().getIpAddress(), true));
                 if (pair != null) {
                     resultList.add(pair);
                 }
