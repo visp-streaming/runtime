@@ -1,7 +1,9 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
+import ac.at.tuwien.infosys.visp.common.operators.Join;
 import ac.at.tuwien.infosys.visp.common.operators.Operator;
+import ac.at.tuwien.infosys.visp.common.operators.Split;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
@@ -189,6 +191,9 @@ public class TopologyManagement {
     public List<Operator> getOperatorsForAConcreteLocation(String location) {
         List<Operator> operators = new ArrayList<>();
         for (Operator op : topology.values()) {
+            if(op instanceof Split || op instanceof Join) {
+                continue;
+            }
             if (op.getConcreteLocation().getIpAddress().equals(location)) {
                 operators.add(op);
             }
