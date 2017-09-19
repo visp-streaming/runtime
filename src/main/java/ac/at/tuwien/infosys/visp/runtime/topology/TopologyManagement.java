@@ -1,9 +1,7 @@
 package ac.at.tuwien.infosys.visp.runtime.topology;
 
 
-import ac.at.tuwien.infosys.visp.common.operators.Join;
-import ac.at.tuwien.infosys.visp.common.operators.Operator;
-import ac.at.tuwien.infosys.visp.common.operators.Split;
+import ac.at.tuwien.infosys.visp.common.operators.*;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.RuntimeConfigurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.VISPInstanceRepository;
@@ -29,6 +27,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 @Service
 @DependsOn("configurationprovider")
@@ -87,7 +86,7 @@ public class TopologyManagement {
             Connection connection;
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
-            
+
 
             //declare error message channel
             channel.exchangeDeclare("error", "fanout", true);
@@ -97,7 +96,7 @@ public class TopologyManagement {
             channel.exchangeDeclare("processingduration", "fanout", true);
             channel.queueDeclare("processingduration", true, false, false, null);
             channel.queueBind("processingduration", "processingduration", "processingduration");
-            
+
             /* Declare Management Message Channels */
             channel.exchangeDeclare("applicationmetrics", "fanout", true);
             channel.queueDeclare("applicationmetrics", true, false, false, null);
@@ -146,28 +145,23 @@ public class TopologyManagement {
     }
 
     public String getIncomingQueues(String operator) {
-        StringBuilder incomingQueues = new StringBuilder();
-        for (Operator op : topology.values()) {
-            if (op.getName().equals(operator)) {
-                if (op.getSources()!=null) {
-                    for (Operator source : op.getSources()) {
-                        incomingQueues.append(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName())).append("_");
-                    }
-                }
-            }
-        }
-        return incomingQueues.toString();
+        return Joiner.on('_').join(getIncomingQueuesAsList(operator));
     }
 
     public List<String> getIncomingQueuesAsList(String operator) {
+        // TODO: differentiate between processing operators and join/split
+
         List<String> incomingQueues = new ArrayList<>();
-        for (Operator op : topology.values()) {
-            if (op.getName().equals(operator)) {
-                if (op.getSources()!=null) {
-                    for (Operator source : op.getSources()) {
-                        incomingQueues.add(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName()));
+        Operator op = topology.get(operator);
+        if(op.getSources() != null) {
+            for(Operator source: op.getSources()) {
+                if(source instanceof Split) {
+                    // take "grandchildren" as sources
+                    for(Operator grandchild : source.getSources()) {
+                        incomingQueues.add(RabbitMqManager.getQueueName(grandchild.getConcreteLocation().getIpAddress(), grandchild.getName(), op.getName()));
                     }
-                    break;
+                } else {
+                    incomingQueues.add(RabbitMqManager.getQueueName(source.getConcreteLocation().getIpAddress(), source.getName(), op.getName()));
                 }
             }
         }
@@ -177,21 +171,27 @@ public class TopologyManagement {
     public List<String> getOperatorsAsList() {
         List<String> operators = new ArrayList<>();
         for (Operator op : topology.values()) {
-            operators.add(op.getName());
+            if (op instanceof ProcessingOperator || op instanceof Source || op instanceof Sink) {
+                operators.add(op.getName());
+            }
         }
         return operators;
     }
 
     public List<Operator> getOperators() {
         List<Operator> operators = new ArrayList<>();
-        operators.addAll(topology.values());
+        for (Operator op : topology.values()) {
+            if (op instanceof ProcessingOperator || op instanceof Source || op instanceof Sink) {
+                operators.add(op);
+            }
+        }
         return operators;
     }
 
     public List<Operator> getOperatorsForAConcreteLocation(String location) {
         List<Operator> operators = new ArrayList<>();
         for (Operator op : topology.values()) {
-            if(op instanceof Split || op instanceof Join) {
+            if (!(op instanceof ProcessingOperator || op instanceof Source || op instanceof Sink)) {
                 continue;
             }
             if (op.getConcreteLocation().getIpAddress().equals(location)) {
@@ -204,42 +204,37 @@ public class TopologyManagement {
     public Operator getOperatorByIdentifier(String identifier) {
         return topology.get(identifier);
     }
-    
-    public String getDownstreamOperators(String operator){
-    
-    	Set<String> ops = new HashSet<>();
-    	
-        for (Operator n : topology.values()) {
 
-        	if (n.getSources() == null)
-            	continue;
-        	
-            for (Operator source : n.getSources()) {
-            	if (source.getName().equals(operator)){
-            		ops.add(n.getName());
-            	}
-            }
-        }
+    public String getDownstreamOperators(String operator) {
+        return Joiner.on(',').join(getDownstreamOperatorsAsList(topology.get(operator)));
 
-        return Joiner.on(',').join(ops);
-   
     }
 
     public List<Operator> getDownstreamOperatorsAsList(Operator operator) {
-        List<Operator> resultSet = new ArrayList<>();
+        List<Operator> ops = new ArrayList<>();
 
-        for(Operator o : topology.values()) {
-            if(o.getSources() == null) {
+        for (Operator n : topology.values()) {
+            if (n.getSources() == null)
                 continue;
-            }
-            for( Operator source : o.getSources()) {
-                if(source.getName().equals(operator.getName())) {
-                    resultSet.add(o);
+
+            for (Operator source : n.getSources()) {
+                if (source.getName().equals(operator)) {
+                    /*   Must treat split differently - each outgoing path's first operator is added
+                     */
+                    if (n instanceof Split) {
+                        for (String splitChild : ((Split) n).getPathOrder()) {
+                            ops.add(topology.get(splitChild));
+                        }
+                    } else if (n instanceof Join) {
+                        ops.addAll(getDownstreamOperatorsAsList(n));
+                    } else {
+                        ops.add(n);
+                    }
                 }
             }
         }
 
-        return resultSet;
+        return ops;
     }
 
     public String getDotFile() {
@@ -260,7 +255,7 @@ public class TopologyManagement {
         LOG.info("Saved test deployment file: ");
         String result;
         try {
-            if(topologyFile.exists()) {
+            if (topologyFile.exists()) {
                 result = new String(Files.readAllBytes(topologyFile.toPath()));
                 LOG.info(result);
             }
@@ -284,7 +279,7 @@ public class TopologyManagement {
 
         List<VISPInstance> allVispInstances = (List<VISPInstance>) vir.findAll();
 
-        if(allVispInstances.size() == 0) {
+        if (allVispInstances.size() == 0) {
             LOG.warn("Could not restore topology from peers because no peers known");
             return false;
         }
@@ -292,8 +287,8 @@ public class TopologyManagement {
         LOG.debug("Restoring topology from peers - still knowing of " + allVispInstances.size() + " VISP instances...");
 
 
-        for(VISPInstance instance : allVispInstances) {
-            if(instance.getIp().equals(config.getRuntimeIP())) {
+        for (VISPInstance instance : allVispInstances) {
+            if (instance.getIp().equals(config.getRuntimeIP())) {
                 continue;
             }
             try {
@@ -307,7 +302,7 @@ public class TopologyManagement {
                 String url = "http://" + instance.getIp() + ":8080/getTopology";
                 LOG.debug("Trying to retrieve topology from VISP instance " + instance.getIp() + "...");
                 String topologyContent = restTemplate.getForObject(url, String.class);
-                if(topologyContent == null || topologyContent.equals("")) {
+                if (topologyContent == null || topologyContent.equals("")) {
                     continue;
                 }
 
@@ -328,13 +323,13 @@ public class TopologyManagement {
     public boolean restoreTopologyFromDatabase() {
         RuntimeConfiguration rc = rcr.findFirstByKey("last_topology_file");
 
-        if(rc == null) {
+        if (rc == null) {
             return false;
         }
 
         String topologyContent = rc.getValue();
 
-        if(topologyContent == null || topologyContent.equals("")) {
+        if (topologyContent == null || topologyContent.equals("")) {
             LOG.warn("Retreived empty topology file from database");
             return false;
         }
