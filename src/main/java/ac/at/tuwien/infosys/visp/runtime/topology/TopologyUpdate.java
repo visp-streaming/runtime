@@ -79,7 +79,7 @@ public class TopologyUpdate {
 
     @Override
     public int hashCode() {
-        int result = affectedHost.hashCode();
+        int result = affectedHost != null ? affectedHost.hashCode() : 7;
         result = 31 * result + action.hashCode();
         result = 31 * result + affectedOperator.getName().hashCode();
         return result;

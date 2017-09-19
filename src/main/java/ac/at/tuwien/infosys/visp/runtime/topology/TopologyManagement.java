@@ -228,7 +228,7 @@ public class TopologyManagement {
                 continue;
 
             for (Operator source : n.getSources()) {
-                if (source.getName().equals(operator)) {
+                if (source.getName().equals(operator.getName())) {
                     /*   Must treat split differently - each outgoing path's first operator is added
                      */
                     if (n instanceof Split) {

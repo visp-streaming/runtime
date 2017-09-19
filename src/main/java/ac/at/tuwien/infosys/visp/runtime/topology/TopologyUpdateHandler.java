@@ -124,12 +124,10 @@ public class TopologyUpdateHandler {
         for (Map.Entry<String, Operator> entry : oldTopology.entrySet()) {
             String oldOperatorName = entry.getKey();
             Operator oldOperator = entry.getValue();
-            if(oldOperator instanceof Split || oldOperator instanceof Join) {
-                continue;
-            }
+
             if (!newTopology.containsKey(oldOperatorName)) {
                 // operatorType no longer existing, remove it
-                returnList.add(new TopologyUpdate(oldOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
+                returnList.add(new TopologyUpdate(oldOperator.getConcreteLocation() != null ? oldOperator.getConcreteLocation().getIpAddress() : null, TopologyUpdate.Action.REMOVE_OPERATOR, oldOperator));
             } else {
                 // operatorType is still here, check if we need to update
                 updateSingleOperator(returnList, oldOperator, newTopology.get(oldOperatorName));
@@ -138,12 +136,10 @@ public class TopologyUpdateHandler {
         for (Map.Entry<String, Operator> entry : newTopology.entrySet()) {
             String newOperatorName = entry.getKey();
             Operator newOperator = entry.getValue();
-            if(newOperator instanceof Split || newOperator instanceof Join) {
-                continue;
-            }
+
             if (!oldTopology.containsKey(newOperatorName)) {
                 // operatorType is new, create it
-                returnList.add(new TopologyUpdate(newOperator.getConcreteLocation().getIpAddress(), TopologyUpdate.Action.ADD_OPERATOR, newOperator));
+                returnList.add(new TopologyUpdate(newOperator.getConcreteLocation() != null ? newOperator.getConcreteLocation().getIpAddress() : null, TopologyUpdate.Action.ADD_OPERATOR, newOperator));
             } else {
                 // this should already have been handled above...
             }
@@ -545,6 +541,9 @@ public class TopologyUpdateHandler {
         List<String> involvedRuntimes = new ArrayList<>();
         for (TopologyUpdate update : updates) {
             String runtime = update.getAffectedHost();
+            if(runtime == null) {
+                continue;
+            }
             if (runtime.equals(config.getRuntimeIP())) {
                 // the own runtime is not queried via REST
                 LOG.debug("Skipping own runtime with IP " + config.getRuntimeIP());

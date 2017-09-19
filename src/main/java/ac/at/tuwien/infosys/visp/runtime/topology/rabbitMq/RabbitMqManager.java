@@ -1,8 +1,6 @@
 package ac.at.tuwien.infosys.visp.runtime.topology.rabbitMq;
 
-import ac.at.tuwien.infosys.visp.common.operators.Operator;
-import ac.at.tuwien.infosys.visp.common.operators.Source;
-import ac.at.tuwien.infosys.visp.common.operators.Split;
+import ac.at.tuwien.infosys.visp.common.operators.*;
 import ac.at.tuwien.infosys.visp.runtime.configuration.Configurationprovider;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
@@ -36,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.concurrent.TimeoutException;
 
 
@@ -108,6 +107,9 @@ public class RabbitMqManager {
         Connection connection = createConnection(config.getRuntimeIP());
         Channel fromChannel = connection.createChannel();
         for (TopologyUpdate update : updates) {
+            if(update.getAffectedOperator() instanceof Split || update.getAffectedOperator() instanceof Join) {
+                continue;
+            }
             if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 continue;
             }
@@ -149,7 +151,7 @@ public class RabbitMqManager {
 
             if (queueExchangeMappingActive) {
                 // tell exchange to send msgs to queue:
-                LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
+                LOG.info("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
                 fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
             }
 
@@ -196,7 +198,7 @@ public class RabbitMqManager {
     }
 
     private void sendDockerSignalForUpdate(Operator operator, String updateCommand) {
-        if (operator instanceof Source) {
+        if (operator instanceof Source || operator instanceof Sink) {
             return; // source is no actual container
         }
         String toOperatorId = operator.getName();
@@ -370,6 +372,9 @@ public class RabbitMqManager {
 
     private void addNewContainersFromUpdate(List<TopologyUpdate> updates) {
         for (TopologyUpdate update : updates) {
+            if(update.getAffectedOperator() instanceof Split || update.getAffectedOperator() instanceof Join) {
+                continue;
+            }
             if (update.getAction().equals(TopologyUpdate.Action.ADD_OPERATOR) &&
                     update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 LOG.debug("Spawning operator " + update.getAffectedOperatorId());
@@ -380,6 +385,9 @@ public class RabbitMqManager {
 
     private void removeOldContainersFromUpdate(List<TopologyUpdate> updates) {
         for (TopologyUpdate update : updates) {
+            if(update.getAffectedOperator() instanceof Split || update.getAffectedOperator() instanceof Join) {
+                continue;
+            }
             if (update.getAction().equals(TopologyUpdate.Action.REMOVE_OPERATOR) &&
                     update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                 LOG.debug("Removing operator " + update.getAffectedOperatorId());
@@ -463,51 +471,84 @@ public class RabbitMqManager {
     }
 
     private List<Pair<Operator, String>> handleRabbitmqAddOperator(TopologyUpdate update) {
+        LOG.info("Dealing with update for operator " + update.getAffectedOperatorId());
         List<Pair<Operator, String>> resultList = new ArrayList<>();
         Pair<Operator, String> pair;
         if (update.shouldChangeTopologyMessageFlow()) {
             for (Operator source : update.getAffectedOperator().getSources()) {
+                if(source instanceof Split || source instanceof Join) {
+                    continue;
+                }
                 if (source.getName().equals(update.getAffectedOperatorId())) {
                     continue;
                 }
-                if (!source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
+                if ((source.getConcreteLocation() != null) && !source.getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
                     continue;
                 }
                 if (update.getAffectedOperator() instanceof Split) {
                     // Split operators are not mapped to rabbitmq directly
                     // instead, create queue for each of Split's children
                     int childIndex = 0;
-                    for (String childId : ((Split) update.getAffectedOperator()).getPathOrder()) {
+                    List<String> pathOrder = ((Split) update.getAffectedOperator()).getPathOrder();
+                    for (String childId : pathOrder) {
                         if (childIndex == 0) {
                             // per default, the first path is directly wired
-                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, false);
+                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, true);
                         } else {
                             // all other entries are created as inactive
-                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, true);
+                            LOG.info("Adding inactive message flow between " + source.getName() + " and " + childId);
+                            helpHandleAddOperator(source, topologyManagement.getOperatorByIdentifier(childId), resultList, false);
                         }
-
 
                         childIndex += 1;
                     }
-                }
-                helpHandleAddOperator(source, update.getAffectedOperator(), resultList, true);
-            }
-            for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
-                if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
-                    continue;
-                }
-                if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
-                    continue;
-                }
-                try {
-                    LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
-                    pair = Pair.of(downstreamOp,
-                            addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress(), true));
-                    if (pair != null) {
-                        resultList.add(pair);
+                } else if(update.getAffectedOperator() instanceof Join) {
+                    LOG.info("Handling join");
+                    List<Operator> downstreamOperators = topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator());
+                    for(Operator child : downstreamOperators) {
+                        LOG.info("Adding connection from " + source.getName() + " to " + child.getName());
+                        helpHandleAddOperator(source, child, resultList, true);
                     }
-                } catch (Exception e) {
-                    LOG.error(e.getLocalizedMessage());
+                } else {
+                    helpHandleAddOperator(source, update.getAffectedOperator(), resultList, true);
+                }
+            }
+            if(!(update.getAffectedOperator() instanceof Split || update.getAffectedOperator() instanceof Join)) {
+                for (Operator downstreamOp : topologyManagement.getDownstreamOperatorsAsList(update.getAffectedOperator())) {
+                    if(downstreamOp instanceof Split || downstreamOp instanceof Join) {
+                        continue;
+                    }
+                    if (!update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
+                        continue;
+                    }
+                    if (downstreamOp.getName().equals(update.getAffectedOperatorId())) {
+                        continue;
+                    }
+                    try {
+                        int pathIndex = -1;
+                        for(Operator s : downstreamOp.getSources()) {
+                            if(s instanceof Split) {
+                                pathIndex = ((Split) s).getPathOrder().indexOf(downstreamOp.getName());
+                            }
+                        }
+
+                        if(pathIndex != -1) {
+                            // direkt upstream op of downstreamOp is a split node - make communication path inactive
+                            LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
+                            pair = Pair.of(downstreamOp,
+                                    addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress(), pathIndex == 0));
+                        } else {
+                            LOG.debug("Adding message flow between operators " + update.getAffectedOperatorId() + " and " + downstreamOp.getName());
+                            pair = Pair.of(downstreamOp,
+                                    addMessageFlow(update.getAffectedOperatorId(), downstreamOp.getName(), update.getAffectedOperator().getConcreteLocation().getIpAddress(), true));
+
+                        }
+                        if (pair != null) {
+                            resultList.add(pair);
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Error during message flow configuration for operator " + update.getAffectedOperatorId(), e);
+                    }
                 }
             }
         }
@@ -517,15 +558,23 @@ public class RabbitMqManager {
 
     private void helpHandleAddOperator(Operator fromOperator, Operator toOperator, List<Pair<Operator, String>> resultList, boolean queueExchangeMappingActive) {
         Pair<Operator, String> pair;
+        if(fromOperator instanceof Split ||fromOperator instanceof Join) {
+            LOG.warn("Cannot add message flow directly from split/join - ignoring (" + fromOperator.getName() + " -> " + toOperator.getName() + ")");
+            return;
+        }
+        if(toOperator instanceof Split || toOperator instanceof Join || toOperator instanceof Sink) {
+            LOG.warn("Cannot add message flow directly to split/join/sink - ignoring (" + fromOperator.getName() + " -> " + toOperator.getName() + ")");
+            return;
+        }
         try {
-            LOG.debug("Adding message flow between operators " + fromOperator.getName() + " and " + toOperator.getName());
+            LOG.info("Adding message flow between operators " + fromOperator.getName() + " and " + toOperator.getName());
             pair = Pair.of(toOperator,
                     addMessageFlow(fromOperator.getName(), toOperator.getName(), fromOperator.getConcreteLocation().getIpAddress(), queueExchangeMappingActive));
             if (pair != null) {
                 resultList.add(pair);
             }
         } catch (Exception e) {
-            LOG.error(e.getLocalizedMessage());
+            LOG.error("Error during message flow configuration for operator " + fromOperator, e);
         }
     }
 
