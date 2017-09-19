@@ -155,7 +155,7 @@ public class TopologyManagement {
         Operator op = topology.get(operator);
         if(op.getSources() != null) {
             for(Operator source: op.getSources()) {
-                if(source instanceof Split) {
+                if(source instanceof Split || source instanceof Join) {
                     // take "grandchildren" as sources
                     for(Operator grandchild : source.getSources()) {
                         incomingQueues.add(RabbitMqManager.getQueueName(grandchild.getConcreteLocation().getIpAddress(), grandchild.getName(), op.getName()));
@@ -172,6 +172,16 @@ public class TopologyManagement {
         List<String> operators = new ArrayList<>();
         for (Operator op : topology.values()) {
             if (op instanceof ProcessingOperator || op instanceof Source || op instanceof Sink) {
+                operators.add(op.getName());
+            }
+        }
+        return operators;
+    }
+
+    public List<String> getProcessingOperatorsAsList() {
+        List<String> operators = new ArrayList<>();
+        for (Operator op : topology.values()) {
+            if (op instanceof ProcessingOperator) {
                 operators.add(op.getName());
             }
         }

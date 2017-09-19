@@ -32,7 +32,7 @@ public class PathfinderAPI {
     public Map<String, Object> getAllStatistics(HttpServletRequest request) {
         Map<String, Object> jsonData = new HashMap<>();
 
-        for(String operator: topologyManagement.getOperatorsAsList()) {
+        for(String operator: topologyManagement.getProcessingOperatorsAsList()) {
             HashMap<String, Object> hm = new HashMap<>();
 
             hm.put("cpu_now", 0.8);
