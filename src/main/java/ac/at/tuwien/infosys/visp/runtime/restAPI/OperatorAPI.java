@@ -1,11 +1,15 @@
 package ac.at.tuwien.infosys.visp.runtime.restAPI;
 
+import java.util.List;
+
 import ac.at.tuwien.infosys.visp.common.operators.ProcessingOperator;
 import ac.at.tuwien.infosys.visp.common.resources.OperatorConfiguration;
 import ac.at.tuwien.infosys.visp.runtime.configuration.OperatorConfigurationBootstrap;
 import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerMonitorRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.DockerContainerRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.ProcessingDurationRepository;
 import ac.at.tuwien.infosys.visp.runtime.datasources.QueueMonitorRepository;
+import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainer;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.DockerContainerMonitor;
 import ac.at.tuwien.infosys.visp.runtime.datasources.entities.QueueMonitor;
 import ac.at.tuwien.infosys.visp.runtime.monitoring.ResourceUsage;
@@ -35,6 +39,9 @@ public class OperatorAPI {
     @Autowired
     private DockerContainerMonitorRepository dcmr;
 
+    @Autowired
+    private DockerContainerRepository dcr;
+
     @RequestMapping(value = {"/getOperatorConfiguration/type/{operatorType}"}, method = RequestMethod.GET)
     public OperatorConfiguration getOperatorConfigurationForOperatorType(@PathVariable String operatorType) {
         OperatorConfiguration opconfig =  new OperatorConfiguration(operatorType, 2400);
@@ -44,6 +51,13 @@ public class OperatorAPI {
                 .filter(i -> i instanceof ProcessingOperator)
                 .findFirst()
                 .ifPresent(i -> opconfig.setExpectedDuration(((ProcessingOperator) i).getExpectedDuration()));
+
+        List<DockerContainer> instances =  dcr.findByOperatorType(operatorType);
+        if (instances != null) {
+            opconfig.setInstances(instances.size());
+        } else {
+            opconfig.setInstances(0);
+        }
 
         Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatortypeOrderByIdDesc(operatorType).
@@ -79,7 +93,7 @@ public class OperatorAPI {
         } else {
             opconfig.setDeliveryRate(0.0);
         }
-        
+
 
         DockerContainerMonitor dcm = dcmr.findFirstByOperatortypeOrderByTimestampDesc(operatorType);
 
@@ -99,6 +113,14 @@ public class OperatorAPI {
                 .filter(i -> i instanceof ProcessingOperator)
                 .findFirst()
                 .ifPresent(i -> opconfig.setExpectedDuration(((ProcessingOperator) i).getExpectedDuration()));
+
+        List<DockerContainer> instances =  dcr.findByOperatorName(operatorName);
+        if (instances != null) {
+            opconfig.setInstances(instances.size());
+        } else {
+            opconfig.setInstances(0);
+        }
+
 
         Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatornameOrderByIdDesc(operatorName).
