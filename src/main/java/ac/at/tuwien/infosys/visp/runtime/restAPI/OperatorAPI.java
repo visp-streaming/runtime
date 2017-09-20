@@ -109,8 +109,8 @@ public class OperatorAPI {
         OperatorConfiguration opconfig =  new OperatorConfiguration(operatorName, 2400);
 
         topologymgmt.getTopology().values().stream()
-                .filter(i -> i.getType().equals(operatorName))
                 .filter(i -> i instanceof ProcessingOperator)
+                .filter(i -> i.getType().equals(operatorName))
                 .findFirst()
                 .ifPresent(i -> opconfig.setExpectedDuration(((ProcessingOperator) i).getExpectedDuration()));
 
