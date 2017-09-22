@@ -74,21 +74,21 @@ public class OperatorAPI {
 
         QueueMonitor qm = qmr.findFirstByOperatorOrderByIdDesc(operatorType);
 
-        if (qm.getIncomingRate() == null) {
+        if (qm.getIncomingRate() != null) {
             opconfig.setIncomingRate(qm.getIncomingRate());
         } else {
             opconfig.setIncomingRate(0.0);
         }
 
 
-        if (qm.getAmount() == null) {
+        if (qm.getAmount() != null) {
             opconfig.setItemsWaiting(qm.getAmount());
         } else {
             opconfig.setItemsWaiting(0);
         }
 
 
-        if (qm.getDeliveryRate() == null) {
+        if (qm.getDeliveryRate() != null) {
             opconfig.setDeliveryRate(qm.getDeliveryRate());
         } else {
             opconfig.setDeliveryRate(0.0);
