@@ -59,14 +59,13 @@ public class OperatorAPI {
             opconfig.setInstances(0);
         }
 
-        Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatortypeOrderByIdDesc(operatorType).
                 stream().mapToDouble(i -> i.getDuration()).sum();
 
-        if (counter == 0) {
+        if (opconfig.getInstances() == 0) {
             opconfig.setActualDuration(-1.0);
         } else {
-            opconfig.setActualDuration(duration/counter);
+            opconfig.setActualDuration(duration/opconfig.getInstances());
         }
 
         opconfig.setPlannedResources(new OperatorConfigurationBootstrap().getExpected(operatorType));
@@ -121,15 +120,13 @@ public class OperatorAPI {
             opconfig.setInstances(0);
         }
 
-
-        Integer counter = 0;
         Double duration = pcdr.findFirst5ByOperatornameOrderByIdDesc(operatorName).
                 stream().mapToDouble(i -> i.getDuration()).sum();
         
-        if (counter == 0) {
+        if (opconfig.getInstances() == 0) {
             opconfig.setActualDuration(-1.0);
         } else {
-            opconfig.setActualDuration(duration/counter);
+            opconfig.setActualDuration(duration/opconfig.getInstances());
         }
 
         opconfig.setPlannedResources(new OperatorConfigurationBootstrap().getExpected(operatorName));
