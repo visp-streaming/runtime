@@ -31,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 
@@ -132,7 +129,7 @@ public class RabbitMqManager {
 
 
     @SuppressWarnings("Duplicates")
-    private String addMessageFlow(String fromOperatorId, String toOperatorId,
+    public String addMessageFlow(String fromOperatorId, String toOperatorId,
                                   String fromInfrastructureHost, boolean queueExchangeMappingActive) throws IOException, TimeoutException {
         /**
          * add a message flow from operatorType FROM to operatorType TO
@@ -147,7 +144,11 @@ public class RabbitMqManager {
             String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
 
             LOG.debug("Declaring queue " + queueName + " on host " + fromInfrastructureHost);
-            fromChannel.queueDeclare(queueName, true, false, false, null);
+            Map<String, Object> args = new HashMap<String, Object>();
+            final int REMOVE_DATA_ITEMS_AFTER = 30; // minutes
+            args.put("x-message-ttl", REMOVE_DATA_ITEMS_AFTER * 60 * 1000);
+
+            fromChannel.queueDeclare(queueName, true, false, false, args);
 
             if (queueExchangeMappingActive) {
                 // tell exchange to send msgs to queue:
@@ -169,13 +170,43 @@ public class RabbitMqManager {
     }
 
     /**
+     * Queries rabbitmq for the queue size
+     * @param queueName
+     * @return number of messages on the queue
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    public int getQueueSize(String queueName) throws IOException, TimeoutException {
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
+        try {
+            com.rabbitmq.client.AMQP.Queue.DeclareOk dok = fromChannel.queueDeclarePassive(queueName);
+            int queueSize = dok.getMessageCount();
+            return queueSize;
+
+        } catch (Exception e) {
+            LOG.error("Exception during exchange setup", e);
+        } finally {
+            try {
+                fromChannel.close();
+                connection.close();
+            } catch (Exception e) {
+                LOG.error("Could not close rabbitmq channel", e);
+            }
+        }
+
+        return -1;
+    }
+
+
+    /**
      * Modify the already existing exchange such that messages are also forwarded to another queue (toOperatorId)
      *
      * @param fromOperatorId         the exchange's owning operator
      * @param toOperatorId           the other queue's owning operator
      * @param fromInfrastructureHost the host where the change should be made
      */
-    private void activateAlternativePath(String fromOperatorId, String toOperatorId, String fromInfrastructureHost) throws IOException, TimeoutException {
+    public void activateAlternativePath(String fromOperatorId, String toOperatorId, String fromInfrastructureHost) throws IOException, TimeoutException {
         Connection connection = createConnection(config.getRuntimeIP());
         Channel fromChannel = connection.createChannel();
         try {
@@ -184,6 +215,35 @@ public class RabbitMqManager {
             // tell exchange to send msgs to queue:
             LOG.debug("Set exchange " + fromOperatorId + " to forward messages to queue " + queueName);
             fromChannel.queueBind(queueName, fromOperatorId, fromOperatorId); // third parameter is ignored in fanout mode
+
+        } catch (Exception e) {
+            LOG.error("Exception during exchange setup", e);
+        } finally {
+            try {
+                fromChannel.close();
+                connection.close();
+            } catch (Exception e) {
+                LOG.error("Could not close rabbitmq channel", e);
+            }
+        }
+    }
+
+    /**
+     * Modify the already existing exchange such that messages are no longer forwarded to another queue (toOperatorId)
+     *
+     * @param fromOperatorId         the exchange's owning operator
+     * @param toOperatorId           the other queue's owning operator
+     * @param fromInfrastructureHost the host where the change should be made
+     */
+    public void deactivateAlternativePath(String fromOperatorId, String toOperatorId, String fromInfrastructureHost) throws IOException, TimeoutException {
+        Connection connection = createConnection(config.getRuntimeIP());
+        Channel fromChannel = connection.createChannel();
+        try {
+            String queueName = getQueueName(fromInfrastructureHost, fromOperatorId, toOperatorId);
+
+            // tell exchange to send msgs to queue:
+            LOG.debug("Set exchange " + fromOperatorId + " to no longer forward messages to queue " + queueName);
+            fromChannel.queueUnbind(queueName, fromOperatorId, fromOperatorId);  // third parameter is ignored in fanout mode
 
         } catch (Exception e) {
             LOG.error("Exception during exchange setup", e);
@@ -220,6 +280,7 @@ public class RabbitMqManager {
             LOG.debug("Executing command on dockercontainer " + dc.getContainerid() + ": [" + command + "]");
             try {
                 dcm.executeCommand(dc, command, false);
+                Thread.sleep(500); // give file system time to handle change
             } catch (DockerException | InterruptedException e) {
                 LOG.error("Could not execute command on container " + dc.getContainerid() + ": [" + command + "]");
             }
@@ -362,7 +423,10 @@ public class RabbitMqManager {
                 continue;
             }
             try {
-                sendDockerSignalForUpdate(updateSignal.getFirst(), updateSignal.getSecond());
+                if(topologyManagement.getOperatorDeploymentStatus(updateSignal.getFirst().getName())) {
+                    // only send docker signal for update if operator is to be physically deployed
+                    sendDockerSignalForUpdate(updateSignal.getFirst(), updateSignal.getSecond());
+                }
                 uniques.add(updateSignal.getSecond());
             } catch (Exception e) {
                 LOG.error("Exception during sending docker signal for update to operator " + updateSignal.getFirst(), e);
@@ -377,9 +441,36 @@ public class RabbitMqManager {
             }
             if (update.getAction().equals(TopologyUpdate.Action.ADD_OPERATOR) &&
                     update.getAffectedOperator().getConcreteLocation().getIpAddress().equals(config.getRuntimeIP())) {
-                LOG.debug("Spawning operator " + update.getAffectedOperatorId());
-                rpp.addOperator(update.getAffectedOperator());
+                LOG.info("Spawning operator " + update.getAffectedOperatorId());
+                if(shouldOperatorBeDeployed(update.getAffectedOperator())) {
+                    topologyManagement.setOperatorDeploymentStatus(update.getAffectedOperator().getName(), true);
+                    rpp.addOperator(update.getAffectedOperator());
+                } else {
+                    topologyManagement.setOperatorDeploymentStatus(update.getAffectedOperator().getName(), false);
+                    LOG.warn("Will not deploy operator " + update.getAffectedOperator().getName() + " right now");
+                }
             }
+        }
+    }
+
+    private boolean shouldOperatorBeDeployed(Operator operator) {
+        Split parentSplit = topologyManagement.getParentSplitOperator(operator);
+        if(parentSplit == null) {
+            LOG.info("Deploy operator " + operator.getName() + " because it is not part of a fallback");
+            return true; // operator not part of a fallback path
+        }
+        if(!parentSplit.isLazyDeployment()) {
+            LOG.info("Deploy operator " + operator.getName() + " because lazy deployment is disabled");
+            return true; // without lazy deployment, all operators are deployed anyway
+        }
+        if(parentSplit.getPathOrder().get(0).equals(operator.getName())) {
+            // operator in question is in the main path, deploy
+            LOG.info("Deploy operator " + operator.getName() + " because it is part of the main path");
+            return true;
+        } else {
+            LOG.info("Will not deploy operator " + operator.getName() + " because it is part of a fallback path");
+            // operator in question is in the fallback path, do not deploy right now
+            return false;
         }
     }
 
@@ -564,6 +655,10 @@ public class RabbitMqManager {
         }
         if(toOperator instanceof Split || toOperator instanceof Join || toOperator instanceof Sink) {
             LOG.warn("Cannot add message flow directly to split/join/sink - ignoring (" + fromOperator.getName() + " -> " + toOperator.getName() + ")");
+            return;
+        }
+        if(!(shouldOperatorBeDeployed(fromOperator) && shouldOperatorBeDeployed(toOperator))) {
+            LOG.warn("Cannot add message flow between " + fromOperator.getName() + " to " + toOperator.getName() + " because one of the is not do be deployed");
             return;
         }
         try {

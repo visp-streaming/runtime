@@ -61,8 +61,12 @@ public class ResourceMonitor {
         try {
             stats = docker.stats(dc.getContainerid());
 
-            long cpuDelta = stats.cpuStats().cpuUsage().totalUsage() -  stats.precpuStats().cpuUsage().totalUsage();
-            long systemDelta = stats.cpuStats().systemCpuUsage() - stats.precpuStats().systemCpuUsage();
+            long cpuDelta;
+            try {
+                cpuDelta = stats.cpuStats().cpuUsage().totalUsage() - stats.precpuStats().cpuUsage().totalUsage();
+            } catch(NullPointerException e) {
+                cpuDelta = 0;
+            }            long systemDelta = stats.cpuStats().systemCpuUsage() - stats.precpuStats().systemCpuUsage();
             double allocatedCpuShares = dc.getCpuCores() / dh.getCores();
             double cpuUsage = ((double) cpuDelta / (double) systemDelta) / allocatedCpuShares * 100;
 
