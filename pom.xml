@@ -21,8 +21,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <joda.version>2.9.9</joda.version>
-        <visp.common.version>0.6</visp.common.version>
-        <visp.topologyParser.version>1.5</visp.topologyParser.version>
+        <visp.common.version>0.7</visp.common.version>
+        <visp.topologyParser.version>1.6</visp.topologyParser.version>
         <spotify.docker.version>8.9.0</spotify.docker.version>
         <quartz.version>2.3.0</quartz.version>
         <apache.commons.lang.version>3.6</apache.commons.lang.version>
